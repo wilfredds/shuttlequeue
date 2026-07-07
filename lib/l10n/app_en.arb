@@ -1,0 +1,21 @@
+{
+  "@@locale": "en",
+
+  "appTitle": "ShuttleQueue",
+  "@appTitle": {
+    "description": "The application name, shown in the app bar and task switcher"
+  },
+
+  "m0ScaffoldReady": "Scaffold ready",
+  "m0FirebaseConnected": "Firebase project: {projectId}",
+  "@m0FirebaseConnected": {
+    "placeholders": {
+      "projectId": {
+        "type": "String"
+      }
+    }
+  },
+  "m0FirebaseNotInitialized": "Firebase not initialized",
+  "m0OfflinePersistence": "Offline persistence: unlimited cache",
+  "m0NextMilestone": "Next up: M1 — Queue Master sign-in"
+}
