@@ -6,16 +6,36 @@
     "description": "The application name, shown in the app bar and task switcher"
   },
 
-  "m0ScaffoldReady": "Scaffold ready",
-  "m0FirebaseConnected": "Firebase project: {projectId}",
-  "@m0FirebaseConnected": {
+  "loginTagline": "Queue Master sign-in",
+  "displayNameLabel": "Your name",
+  "emailLabel": "Email",
+  "passwordLabel": "Password",
+  "signInButton": "Sign in",
+  "registerButton": "Create account",
+  "switchToRegister": "New Queue Master? Create an account",
+  "switchToSignIn": "Already have an account? Sign in",
+  "showPassword": "Show password",
+  "hidePassword": "Hide password",
+
+  "errNameRequired": "Please enter your name",
+  "errEmailRequired": "Please enter your email",
+  "errPasswordTooShort": "Password must be at least 6 characters",
+  "errInvalidCredentials": "Email or password is incorrect",
+  "errEmailAlreadyInUse": "That email already has an account — try signing in",
+  "errWeakPassword": "Please use a stronger password (at least 6 characters)",
+  "errInvalidEmail": "That doesn't look like a valid email",
+  "errNetwork": "No connection — signing in for the first time needs internet",
+  "errTooManyRequests": "Too many attempts — wait a minute and try again",
+  "errUnknown": "Something went wrong — please try again",
+
+  "signedInAs": "Signed in as {name}",
+  "@signedInAs": {
     "placeholders": {
-      "projectId": {
+      "name": {
         "type": "String"
       }
     }
   },
-  "m0FirebaseNotInitialized": "Firebase not initialized",
-  "m0OfflinePersistence": "Offline persistence: unlimited cache",
-  "m0NextMilestone": "Next up: M1 — Queue Master sign-in"
+  "signOut": "Sign out",
+  "sessionsComingSoon": "Your sessions will appear here (M2)"
 }

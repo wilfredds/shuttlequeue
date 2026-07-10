@@ -1,0 +1,39 @@
+rules_version = '2';
+
+// ShuttleQueue security rules — M1 baseline.
+// Prinsipyo: walang anonymous access, at bawat QM ay sarili lang niyang
+// data ang nakikita't nagagalaw. Sa M5 dadagdagan ito ng field-level
+// validation (types, ranges, immutable fields).
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // users/{uid} — profile ng QM. Sariling doc lang ang pwedeng
+    // basahin/sulatan; walang paraan para silipin ang ibang QM.
+    match /users/{uid} {
+      allow read, write: if request.auth != null && request.auth.uid == uid;
+    }
+
+    // sessions/{sessionId} — pag-create, dapat ikaw ang nakalagay na
+    // ownerUid (hindi ka pwedeng gumawa ng session para sa iba).
+    // Pagbasa/edit/delete: may-ari ka dapat.
+    match /sessions/{sessionId} {
+      allow create: if request.auth != null
+                    && request.resource.data.ownerUid == request.auth.uid;
+      allow read, update, delete: if request.auth != null
+                    && resource.data.ownerUid == request.auth.uid;
+
+      // players / courts / matches — walang sariling ownerUid ang mga
+      // subcollection docs, kaya ang parent session ang chine-check.
+      // May cost na 1 extra read ang get() per operation — katanggap-tanggap
+      // ito sa v1; puwedeng i-denormalize ang ownerUid sa v2 kung kailangan.
+      match /{document=**} {
+        allow read, write: if request.auth != null
+          && get(/databases/$(database)/documents/sessions/$(sessionId)).data.ownerUid == request.auth.uid;
+      }
+    }
+
+    // Lahat ng hindi nabanggit: implicit DENY. Walang "allow if true"
+    // kahit saan — ito ang tunay na backend guard ng app.
+  }
+}

@@ -100,35 +100,143 @@ abstract class AppLocalizations {
   /// **'ShuttleQueue'**
   String get appTitle;
 
-  /// No description provided for @m0ScaffoldReady.
+  /// No description provided for @loginTagline.
   ///
   /// In en, this message translates to:
-  /// **'Scaffold ready'**
-  String get m0ScaffoldReady;
+  /// **'Queue Master sign-in'**
+  String get loginTagline;
 
-  /// No description provided for @m0FirebaseConnected.
+  /// No description provided for @displayNameLabel.
   ///
   /// In en, this message translates to:
-  /// **'Firebase project: {projectId}'**
-  String m0FirebaseConnected(String projectId);
+  /// **'Your name'**
+  String get displayNameLabel;
 
-  /// No description provided for @m0FirebaseNotInitialized.
+  /// No description provided for @emailLabel.
   ///
   /// In en, this message translates to:
-  /// **'Firebase not initialized'**
-  String get m0FirebaseNotInitialized;
+  /// **'Email'**
+  String get emailLabel;
 
-  /// No description provided for @m0OfflinePersistence.
+  /// No description provided for @passwordLabel.
   ///
   /// In en, this message translates to:
-  /// **'Offline persistence: unlimited cache'**
-  String get m0OfflinePersistence;
+  /// **'Password'**
+  String get passwordLabel;
 
-  /// No description provided for @m0NextMilestone.
+  /// No description provided for @signInButton.
   ///
   /// In en, this message translates to:
-  /// **'Next up: M1 — Queue Master sign-in'**
-  String get m0NextMilestone;
+  /// **'Sign in'**
+  String get signInButton;
+
+  /// No description provided for @registerButton.
+  ///
+  /// In en, this message translates to:
+  /// **'Create account'**
+  String get registerButton;
+
+  /// No description provided for @switchToRegister.
+  ///
+  /// In en, this message translates to:
+  /// **'New Queue Master? Create an account'**
+  String get switchToRegister;
+
+  /// No description provided for @switchToSignIn.
+  ///
+  /// In en, this message translates to:
+  /// **'Already have an account? Sign in'**
+  String get switchToSignIn;
+
+  /// No description provided for @showPassword.
+  ///
+  /// In en, this message translates to:
+  /// **'Show password'**
+  String get showPassword;
+
+  /// No description provided for @hidePassword.
+  ///
+  /// In en, this message translates to:
+  /// **'Hide password'**
+  String get hidePassword;
+
+  /// No description provided for @errNameRequired.
+  ///
+  /// In en, this message translates to:
+  /// **'Please enter your name'**
+  String get errNameRequired;
+
+  /// No description provided for @errEmailRequired.
+  ///
+  /// In en, this message translates to:
+  /// **'Please enter your email'**
+  String get errEmailRequired;
+
+  /// No description provided for @errPasswordTooShort.
+  ///
+  /// In en, this message translates to:
+  /// **'Password must be at least 6 characters'**
+  String get errPasswordTooShort;
+
+  /// No description provided for @errInvalidCredentials.
+  ///
+  /// In en, this message translates to:
+  /// **'Email or password is incorrect'**
+  String get errInvalidCredentials;
+
+  /// No description provided for @errEmailAlreadyInUse.
+  ///
+  /// In en, this message translates to:
+  /// **'That email already has an account — try signing in'**
+  String get errEmailAlreadyInUse;
+
+  /// No description provided for @errWeakPassword.
+  ///
+  /// In en, this message translates to:
+  /// **'Please use a stronger password (at least 6 characters)'**
+  String get errWeakPassword;
+
+  /// No description provided for @errInvalidEmail.
+  ///
+  /// In en, this message translates to:
+  /// **'That doesn\'t look like a valid email'**
+  String get errInvalidEmail;
+
+  /// No description provided for @errNetwork.
+  ///
+  /// In en, this message translates to:
+  /// **'No connection — signing in for the first time needs internet'**
+  String get errNetwork;
+
+  /// No description provided for @errTooManyRequests.
+  ///
+  /// In en, this message translates to:
+  /// **'Too many attempts — wait a minute and try again'**
+  String get errTooManyRequests;
+
+  /// No description provided for @errUnknown.
+  ///
+  /// In en, this message translates to:
+  /// **'Something went wrong — please try again'**
+  String get errUnknown;
+
+  /// No description provided for @signedInAs.
+  ///
+  /// In en, this message translates to:
+  /// **'Signed in as {name}'**
+  String signedInAs(String name);
+
+  /// No description provided for @signOut.
+  ///
+  /// In en, this message translates to:
+  /// **'Sign out'**
+  String get signOut;
+
+  /// No description provided for @sessionsComingSoon.
+  ///
+  /// In en, this message translates to:
+  /// **'Your sessions will appear here (M2)'**
+  String get sessionsComingSoon;
 }
 
 class _AppLocalizationsDelegate

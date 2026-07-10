@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
 import 'l10n/app_localizations.dart';
-import 'screens/home_placeholder_screen.dart';
+import 'screens/auth_gate.dart';
 
 /// Root widget. Walang Firebase init dito — nasa main.dart yun — para
 /// pwedeng i-pump ang buong app sa widget tests nang walang network.
@@ -15,9 +15,7 @@ class ShuttleQueueApp extends StatelessWidget {
       localizationsDelegates: AppLocalizations.localizationsDelegates,
       supportedLocales: AppLocalizations.supportedLocales,
       theme: _buildTheme(),
-      // M1 will replace this with an auth gate: logged out -> login screen,
-      // logged in -> sessions list.
-      home: const HomePlaceholderScreen(),
+      home: const AuthGate(),
     );
   }
 
