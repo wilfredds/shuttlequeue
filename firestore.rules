@@ -1,39 +1,74 @@
 rules_version = '2';
 
-// ShuttleQueue security rules — M1 baseline.
-// Prinsipyo: walang anonymous access, at bawat QM ay sarili lang niyang
-// data ang nakikita't nagagalaw. Sa M5 dadagdagan ito ng field-level
-// validation (types, ranges, immutable fields).
+// ShuttleQueue security rules — M2 baseline.
+//
+// Prinsipyo: walang anonymous access, at bawat QM ay sarili lang niyang data
+// ang nakikita't nagagalaw. Ang field-level validation (types, ranges,
+// immutable fields) ay dadagdag sa M5 — tingnan ang R-11 sa design brief.
 
 service cloud.firestore {
   match /databases/{database}/documents {
 
-    // users/{uid} — profile ng QM. Sariling doc lang ang pwedeng
-    // basahin/sulatan; walang paraan para silipin ang ibang QM.
-    match /users/{uid} {
-      allow read, write: if request.auth != null && request.auth.uid == uid;
+    // -----------------------------------------------------------------------
+    // Helpers
+    // -----------------------------------------------------------------------
+
+    function isSignedIn() {
+      return request.auth != null;
     }
 
-    // sessions/{sessionId} — pag-create, dapat ikaw ang nakalagay na
-    // ownerUid (hindi ka pwedeng gumawa ng session para sa iba).
-    // Pagbasa/edit/delete: may-ari ka dapat.
-    match /sessions/{sessionId} {
-      allow create: if request.auth != null
-                    && request.resource.data.ownerUid == request.auth.uid;
-      allow read, update, delete: if request.auth != null
-                    && resource.data.ownerUid == request.auth.uid;
+    // Ikaw ba ang nakalagay na may-ari ng dokumentong ito?
+    function ownsExisting() {
+      return isSignedIn() && resource.data.ownerUid == request.auth.uid;
+    }
 
-      // players / courts / matches — walang sariling ownerUid ang mga
-      // subcollection docs, kaya ang parent session ang chine-check.
-      // May cost na 1 extra read ang get() per operation — katanggap-tanggap
-      // ito sa v1; puwedeng i-denormalize ang ownerUid sa v2 kung kailangan.
+    // Sa create, wala pang `resource` — ang papasok na data ang tinitingnan.
+    // Pinipigilan nito ang paggawa ng dokumento para sa ibang tao.
+    function ownsIncoming() {
+      return isSignedIn() && request.resource.data.ownerUid == request.auth.uid;
+    }
+
+    // -----------------------------------------------------------------------
+    // users/{uid} — profile ng QM
+    // -----------------------------------------------------------------------
+    // Sariling doc lang ang pwedeng basahin o sulatan. Walang paraan para
+    // silipin ang ibang QM.
+    match /users/{uid} {
+      allow read, write: if isSignedIn() && request.auth.uid == uid;
+    }
+
+    // -----------------------------------------------------------------------
+    // clubs/{clubId} — ang regulars book
+    // -----------------------------------------------------------------------
+    match /clubs/{clubId} {
+      allow create: if ownsIncoming();
+      allow read, update, delete: if ownsExisting();
+
+      // members/{memberId} — walang sariling ownerUid ang mga miyembro,
+      // kaya ang parent club ang chine-check. May halagang 1 dagdag na read
+      // kada operasyon; tanggap ito sa v1 na laki ng datos.
+      match /members/{memberId} {
+        allow read, write: if isSignedIn()
+          && get(/databases/$(database)/documents/clubs/$(clubId)).data.ownerUid == request.auth.uid;
+      }
+    }
+
+    // -----------------------------------------------------------------------
+    // sessions/{sessionId} — isang gabi ng laro
+    // -----------------------------------------------------------------------
+    match /sessions/{sessionId} {
+      allow create: if ownsIncoming();
+      allow read, update, delete: if ownsExisting();
+
+      // players / courts / matches — parehong pattern: ang parent session
+      // ang pinagbabatayan ng pagmamay-ari.
       match /{document=**} {
-        allow read, write: if request.auth != null
+        allow read, write: if isSignedIn()
           && get(/databases/$(database)/documents/sessions/$(sessionId)).data.ownerUid == request.auth.uid;
       }
     }
 
-    // Lahat ng hindi nabanggit: implicit DENY. Walang "allow if true"
-    // kahit saan — ito ang tunay na backend guard ng app.
+    // Lahat ng hindi nabanggit: implicit DENY. Walang "allow if true" kahit
+    // saan — ito ang tunay na backend guard ng app, hindi ang client code.
   }
 }

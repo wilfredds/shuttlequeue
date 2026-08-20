@@ -76,13 +76,131 @@ class AppLocalizationsEn extends AppLocalizations {
   String get errUnknown => 'Something went wrong — please try again';
 
   @override
-  String signedInAs(String name) {
-    return 'Signed in as $name';
-  }
-
-  @override
   String get signOut => 'Sign out';
 
   @override
-  String get sessionsComingSoon => 'Your sessions will appear here (M2)';
+  String get sessionsTitle => 'Sessions';
+
+  @override
+  String get sessionsEmptyTitle => 'No sessions yet';
+
+  @override
+  String get sessionsEmptyBody =>
+      'Create one for tonight, then paste your signup list.';
+
+  @override
+  String get newSession => 'New session';
+
+  @override
+  String get pendingSync =>
+      'Saved on this device — will sync when you\'re back online';
+
+  @override
+  String get sessionStatusSetup => 'Setup';
+
+  @override
+  String get sessionStatusLive => 'Live';
+
+  @override
+  String get sessionStatusEnded => 'Ended';
+
+  @override
+  String courtCountLabel(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count courts',
+      one: '1 court',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get newSessionTitle => 'New session';
+
+  @override
+  String get editSessionTitle => 'Edit session';
+
+  @override
+  String get sessionNameLabel => 'Session name';
+
+  @override
+  String get sessionNameHint => 'Monday Night Palo';
+
+  @override
+  String get venueLabel => 'Venue';
+
+  @override
+  String get venueHint => 'Yspacio, Alapan, Imus';
+
+  @override
+  String get dateLabel => 'Date';
+
+  @override
+  String get courtsLabel => 'Courts';
+
+  @override
+  String get courtFeeLabel => 'Court fee for the night';
+
+  @override
+  String get shuttlePriceLabel => 'Price per shuttlecock';
+
+  @override
+  String get feeModeLabel => 'How to split the cost';
+
+  @override
+  String get feeModePerHead => 'Per head';
+
+  @override
+  String get feeModePerHeadHelp =>
+      'Court fee is split evenly; each player pays for their own shuttles.';
+
+  @override
+  String get feeModeAmerican => 'American';
+
+  @override
+  String get feeModeAmericanHelp =>
+      'Everything is pooled — court and shuttles — then split evenly.';
+
+  @override
+  String get createSessionButton => 'Create session';
+
+  @override
+  String get saveChangesButton => 'Save changes';
+
+  @override
+  String get errSessionNameRequired =>
+      'Give tonight a name so you can find it later';
+
+  @override
+  String get errVenueRequired => 'Where are you playing?';
+
+  @override
+  String get errCourtsRange => 'Enter between 1 and 12 courts';
+
+  @override
+  String get errFeeInvalid => 'Enter a valid amount, like 1200 or 1200.50';
+
+  @override
+  String get deleteSession => 'Delete session';
+
+  @override
+  String deleteSessionConfirm(String title) {
+    return 'Delete \"$title\" and everything in it? Players, matches and fees for this night will be permanently removed.';
+  }
+
+  @override
+  String get deleteSessionCta => 'Delete';
+
+  @override
+  String get cancel => 'Cancel';
+
+  @override
+  String get sessionDeleted => 'Session deleted';
+
+  @override
+  String get openSession => 'Open';
+
+  @override
+  String get rosterComingSoon => 'Roster and courts arrive in the next step.';
 }

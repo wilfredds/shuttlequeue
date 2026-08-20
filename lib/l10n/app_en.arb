@@ -28,14 +28,63 @@
   "errTooManyRequests": "Too many attempts — wait a minute and try again",
   "errUnknown": "Something went wrong — please try again",
 
-  "signedInAs": "Signed in as {name}",
-  "@signedInAs": {
+  "signOut": "Sign out",
+
+  "sessionsTitle": "Sessions",
+  "sessionsEmptyTitle": "No sessions yet",
+  "sessionsEmptyBody": "Create one for tonight, then paste your signup list.",
+  "newSession": "New session",
+  "pendingSync": "Saved on this device — will sync when you're back online",
+
+  "sessionStatusSetup": "Setup",
+  "sessionStatusLive": "Live",
+  "sessionStatusEnded": "Ended",
+
+  "courtCountLabel": "{count, plural, =1{1 court} other{{count} courts}}",
+  "@courtCountLabel": {
     "placeholders": {
-      "name": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+
+  "newSessionTitle": "New session",
+  "editSessionTitle": "Edit session",
+  "sessionNameLabel": "Session name",
+  "sessionNameHint": "Monday Night Palo",
+  "venueLabel": "Venue",
+  "venueHint": "Yspacio, Alapan, Imus",
+  "dateLabel": "Date",
+  "courtsLabel": "Courts",
+  "courtFeeLabel": "Court fee for the night",
+  "shuttlePriceLabel": "Price per shuttlecock",
+  "feeModeLabel": "How to split the cost",
+  "feeModePerHead": "Per head",
+  "feeModePerHeadHelp": "Court fee is split evenly; each player pays for their own shuttles.",
+  "feeModeAmerican": "American",
+  "feeModeAmericanHelp": "Everything is pooled — court and shuttles — then split evenly.",
+  "createSessionButton": "Create session",
+  "saveChangesButton": "Save changes",
+
+  "errSessionNameRequired": "Give tonight a name so you can find it later",
+  "errVenueRequired": "Where are you playing?",
+  "errCourtsRange": "Enter between 1 and 12 courts",
+  "errFeeInvalid": "Enter a valid amount, like 1200 or 1200.50",
+
+  "deleteSession": "Delete session",
+  "deleteSessionConfirm": "Delete \"{title}\" and everything in it? Players, matches and fees for this night will be permanently removed.",
+  "@deleteSessionConfirm": {
+    "placeholders": {
+      "title": {
         "type": "String"
       }
     }
   },
-  "signOut": "Sign out",
-  "sessionsComingSoon": "Your sessions will appear here (M2)"
+  "deleteSessionCta": "Delete",
+  "cancel": "Cancel",
+  "sessionDeleted": "Session deleted",
+
+  "openSession": "Open",
+  "rosterComingSoon": "Roster and courts arrive in the next step."
 }

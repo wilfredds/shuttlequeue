@@ -220,23 +220,233 @@ abstract class AppLocalizations {
   /// **'Something went wrong — please try again'**
   String get errUnknown;
 
-  /// No description provided for @signedInAs.
-  ///
-  /// In en, this message translates to:
-  /// **'Signed in as {name}'**
-  String signedInAs(String name);
-
   /// No description provided for @signOut.
   ///
   /// In en, this message translates to:
   /// **'Sign out'**
   String get signOut;
 
-  /// No description provided for @sessionsComingSoon.
+  /// No description provided for @sessionsTitle.
   ///
   /// In en, this message translates to:
-  /// **'Your sessions will appear here (M2)'**
-  String get sessionsComingSoon;
+  /// **'Sessions'**
+  String get sessionsTitle;
+
+  /// No description provided for @sessionsEmptyTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'No sessions yet'**
+  String get sessionsEmptyTitle;
+
+  /// No description provided for @sessionsEmptyBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Create one for tonight, then paste your signup list.'**
+  String get sessionsEmptyBody;
+
+  /// No description provided for @newSession.
+  ///
+  /// In en, this message translates to:
+  /// **'New session'**
+  String get newSession;
+
+  /// No description provided for @pendingSync.
+  ///
+  /// In en, this message translates to:
+  /// **'Saved on this device — will sync when you\'re back online'**
+  String get pendingSync;
+
+  /// No description provided for @sessionStatusSetup.
+  ///
+  /// In en, this message translates to:
+  /// **'Setup'**
+  String get sessionStatusSetup;
+
+  /// No description provided for @sessionStatusLive.
+  ///
+  /// In en, this message translates to:
+  /// **'Live'**
+  String get sessionStatusLive;
+
+  /// No description provided for @sessionStatusEnded.
+  ///
+  /// In en, this message translates to:
+  /// **'Ended'**
+  String get sessionStatusEnded;
+
+  /// No description provided for @courtCountLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{1 court} other{{count} courts}}'**
+  String courtCountLabel(int count);
+
+  /// No description provided for @newSessionTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'New session'**
+  String get newSessionTitle;
+
+  /// No description provided for @editSessionTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Edit session'**
+  String get editSessionTitle;
+
+  /// No description provided for @sessionNameLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Session name'**
+  String get sessionNameLabel;
+
+  /// No description provided for @sessionNameHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Monday Night Palo'**
+  String get sessionNameHint;
+
+  /// No description provided for @venueLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Venue'**
+  String get venueLabel;
+
+  /// No description provided for @venueHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Yspacio, Alapan, Imus'**
+  String get venueHint;
+
+  /// No description provided for @dateLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Date'**
+  String get dateLabel;
+
+  /// No description provided for @courtsLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Courts'**
+  String get courtsLabel;
+
+  /// No description provided for @courtFeeLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Court fee for the night'**
+  String get courtFeeLabel;
+
+  /// No description provided for @shuttlePriceLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Price per shuttlecock'**
+  String get shuttlePriceLabel;
+
+  /// No description provided for @feeModeLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'How to split the cost'**
+  String get feeModeLabel;
+
+  /// No description provided for @feeModePerHead.
+  ///
+  /// In en, this message translates to:
+  /// **'Per head'**
+  String get feeModePerHead;
+
+  /// No description provided for @feeModePerHeadHelp.
+  ///
+  /// In en, this message translates to:
+  /// **'Court fee is split evenly; each player pays for their own shuttles.'**
+  String get feeModePerHeadHelp;
+
+  /// No description provided for @feeModeAmerican.
+  ///
+  /// In en, this message translates to:
+  /// **'American'**
+  String get feeModeAmerican;
+
+  /// No description provided for @feeModeAmericanHelp.
+  ///
+  /// In en, this message translates to:
+  /// **'Everything is pooled — court and shuttles — then split evenly.'**
+  String get feeModeAmericanHelp;
+
+  /// No description provided for @createSessionButton.
+  ///
+  /// In en, this message translates to:
+  /// **'Create session'**
+  String get createSessionButton;
+
+  /// No description provided for @saveChangesButton.
+  ///
+  /// In en, this message translates to:
+  /// **'Save changes'**
+  String get saveChangesButton;
+
+  /// No description provided for @errSessionNameRequired.
+  ///
+  /// In en, this message translates to:
+  /// **'Give tonight a name so you can find it later'**
+  String get errSessionNameRequired;
+
+  /// No description provided for @errVenueRequired.
+  ///
+  /// In en, this message translates to:
+  /// **'Where are you playing?'**
+  String get errVenueRequired;
+
+  /// No description provided for @errCourtsRange.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter between 1 and 12 courts'**
+  String get errCourtsRange;
+
+  /// No description provided for @errFeeInvalid.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter a valid amount, like 1200 or 1200.50'**
+  String get errFeeInvalid;
+
+  /// No description provided for @deleteSession.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete session'**
+  String get deleteSession;
+
+  /// No description provided for @deleteSessionConfirm.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete \"{title}\" and everything in it? Players, matches and fees for this night will be permanently removed.'**
+  String deleteSessionConfirm(String title);
+
+  /// No description provided for @deleteSessionCta.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete'**
+  String get deleteSessionCta;
+
+  /// No description provided for @cancel.
+  ///
+  /// In en, this message translates to:
+  /// **'Cancel'**
+  String get cancel;
+
+  /// No description provided for @sessionDeleted.
+  ///
+  /// In en, this message translates to:
+  /// **'Session deleted'**
+  String get sessionDeleted;
+
+  /// No description provided for @openSession.
+  ///
+  /// In en, this message translates to:
+  /// **'Open'**
+  String get openSession;
+
+  /// No description provided for @rosterComingSoon.
+  ///
+  /// In en, this message translates to:
+  /// **'Roster and courts arrive in the next step.'**
+  String get rosterComingSoon;
 }
 
 class _AppLocalizationsDelegate

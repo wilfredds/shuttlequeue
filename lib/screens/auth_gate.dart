@@ -3,7 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../providers/auth_providers.dart';
 import 'login_screen.dart';
-import 'sessions_placeholder_screen.dart';
+import 'sessions_list_screen.dart';
 
 /// Ang tanging daanan papasok ng app: naka-login → sessions,
 /// hindi → login. Walang ibang ruta papunta sa session screens,
@@ -18,7 +18,7 @@ class AuthGate extends ConsumerWidget {
     return authState.when(
       data: (user) => user == null
           ? const LoginScreen()
-          : const SessionsPlaceholderScreen(),
+          : const SessionsListScreen(),
       loading: () => const Scaffold(
         body: Center(child: CircularProgressIndicator()),
       ),
