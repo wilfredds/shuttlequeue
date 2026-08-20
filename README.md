@@ -5,16 +5,16 @@ Queue Master) runs an entire social badminton night — attendance, fair match
 rotation, and end-of-night cost splitting — from her phone, **fully offline**,
 syncing to the cloud when signal returns.
 
-Built with Flutter (Android-first) + Firebase (Firestore, Auth) on the free
-Spark tier. State management: Riverpod.
+Built with Flutter + Firebase (Firestore, Auth) on the free Spark tier.
+State management: Riverpod. **One codebase, two targets: Android and web.**
 
 ## Status
 
 | Milestone | Scope | Status |
 |---|---|---|
 | M0 | Scaffold, toolchain, Firebase wiring, offline persistence | ✅ |
-| M1 | Queue Master auth (email/password) | — |
-| M2 | Sessions + Messenger roster import + live roster editing | — |
+| M1 | Queue Master auth (email/password) | ✅ |
+| M2 | Sessions + Messenger roster import + live roster editing | in progress |
 | M3 | Courts + fair rotation (MatchmakingService) | — |
 | M4 | Cost split (FeeCalculator, per-head / american) | — |
 | M5 | Firestore security rules + offline polish + docs | — |
@@ -33,7 +33,24 @@ Spark tier. State management: Riverpod.
    ```
    This generates `lib/firebase_options.dart` (gitignored — regenerate, don't
    copy from someone else).
-4. Run: `flutter run` &nbsp;·&nbsp; Test: `flutter test` &nbsp;·&nbsp; Lint: `flutter analyze`
+4. Run on Android: `flutter run -d emulator-5554`
+5. Run in a browser: `flutter run -d chrome`
+6. Test: `flutter test` &nbsp;·&nbsp; Lint: `flutter analyze`
+7. Ship the web build: `flutter build web --release` then `firebase deploy --only hosting`
+
+## Platforms
+
+| | Android | Web |
+|---|---|---|
+| Install | APK sideload | just a link; installable to the home screen |
+| Offline store | SQLite, on by default | IndexedDB, enabled explicitly in `main.dart` |
+| Multi-tab | n/a | `WebPersistentMultipleTabManager` so two tabs share one cache |
+| Best for | the QM's own phone on trial night | demos, laptops, and the future Up Next board |
+
+**Known web limits.** Private/incognito windows disable IndexedDB, so offline
+mode will not persist there. Browsers may evict site storage under heavy disk
+pressure. Both are why the Android build stays the recommendation for the
+Queue Master's live session.
 
 ## Folder structure
 

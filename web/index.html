@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <base href="$FLUTTER_BASE_HREF">
+
+  <meta charset="UTF-8">
+  <meta content="IE=Edge" http-equiv="X-UA-Compatible">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="description" content="Run a badminton night without the spreadsheet: fair queueing, court rotation, and cost splitting that works offline.">
+  <meta name="theme-color" content="#1B5E20">
+
+  <!-- Installable to the home screen so the QM opens it like a real app. -->
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="ShuttleQueue">
+  <link rel="apple-touch-icon" href="icons/Icon-192.png">
+
+  <link rel="icon" type="image/png" href="favicon.png"/>
+
+  <title>ShuttleQueue</title>
+  <link rel="manifest" href="manifest.json">
+
+  <style>
+    /* Habang naglo-load ang Flutter engine (~2s sa unang bukas), puti ang
+       screen by default. Sa gitna ng gabi, mukhang sirang app iyon — kaya
+       may splash tayong tumutugma sa theme ng app. */
+    html, body { margin: 0; padding: 0; height: 100%; background: #F4F7F2; }
+    @media (prefers-color-scheme: dark) { html, body { background: #101510; } }
+
+    #boot {
+      position: fixed;
+      inset: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 18px;
+      font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+      color: #1B5E20;
+      transition: opacity .25s ease;
+    }
+    @media (prefers-color-scheme: dark) { #boot { color: #7FC99A; } }
+
+    #boot .name {
+      font-size: 26px;
+      font-weight: 700;
+      letter-spacing: -.02em;
+    }
+    #boot .bar {
+      width: 132px;
+      height: 3px;
+      background: currentColor;
+      opacity: .18;
+      overflow: hidden;
+      border-radius: 2px;
+    }
+    #boot .bar::after {
+      content: "";
+      display: block;
+      width: 40%;
+      height: 100%;
+      background: currentColor;
+      opacity: 1;
+      animation: slide 1.1s ease-in-out infinite;
+    }
+    @keyframes slide {
+      0%   { transform: translateX(-100%); }
+      100% { transform: translateX(330%); }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      #boot .bar::after { animation: none; width: 100%; }
+    }
+  </style>
+</head>
+<body>
+  <div id="boot">
+    <div class="name">ShuttleQueue</div>
+    <div class="bar"></div>
+  </div>
+
+  <script>
+    // Tinatanggal ang splash sa unang frame ng Flutter, hindi sa window load —
+    // ang window load ay masyadong maaga at kikislap ang puting screen.
+    window.addEventListener('flutter-first-frame', function () {
+      var boot = document.getElementById('boot');
+      if (!boot) return;
+      boot.style.opacity = '0';
+      setTimeout(function () { boot.remove(); }, 260);
+    });
+  </script>
+  <script src="flutter_bootstrap.js" async></script>
+</body>
+</html>
