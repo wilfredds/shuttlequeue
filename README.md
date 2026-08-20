@@ -5,6 +5,8 @@ Queue Master) runs an entire social badminton night — attendance, fair match
 rotation, and end-of-night cost splitting — from her phone, **fully offline**,
 syncing to the cloud when signal returns.
 
+**Live:** https://badminton-ph.web.app
+
 Built with Flutter + Firebase (Firestore, Auth) on the free Spark tier.
 State management: Riverpod. **One codebase, two targets: Android and web.**
 
