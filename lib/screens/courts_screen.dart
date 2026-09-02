@@ -8,6 +8,7 @@ import '../models/session_player.dart';
 import '../providers/session_providers.dart';
 import '../services/matchmaking_service.dart';
 import '../widgets/skill_badge.dart';
+import '../widgets/sync_indicator.dart';
 
 /// Ang pangunahing screen ng QM habang tumatakbo ang gabi.
 ///
@@ -23,9 +24,12 @@ class CourtsScreen extends ConsumerWidget {
     final l10n = AppLocalizations.of(context)!;
     final theme = Theme.of(context);
 
-    final courts = ref.watch(courtsProvider(sessionId)).value?.data ?? const [];
-    final players =
-        ref.watch(playersProvider(sessionId)).value?.data ?? const [];
+    final courtsSynced = ref.watch(courtsProvider(sessionId)).value;
+    final playersSynced = ref.watch(playersProvider(sessionId)).value;
+    final courts = courtsSynced?.data ?? const [];
+    final players = playersSynced?.data ?? const [];
+    final pendingWrites = (courtsSynced?.hasPendingWrites ?? false) ||
+        (playersSynced?.hasPendingWrites ?? false);
     final liveMatches = ref.watch(liveMatchesProvider(sessionId));
     final queue = ref.watch(queueOrderProvider(sessionId));
 
@@ -37,6 +41,7 @@ class CourtsScreen extends ConsumerWidget {
       body: SafeArea(
         child: Column(
           children: [
+            SyncIndicator(hasPendingWrites: pendingWrites),
             Expanded(
               child: ListView(
                 padding: const EdgeInsets.fromLTRB(12, 12, 12, 16),

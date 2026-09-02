@@ -1,0 +1,14 @@
+{
+  "name": "shuttlequeue-rules-tests",
+  "private": true,
+  "version": "1.0.0",
+  "description": "Firestore security rules tests, run against the local emulator.",
+  "type": "module",
+  "scripts": {
+    "test": "firebase emulators:exec --only firestore --project shuttlequeue-rules-test \"node rules.test.mjs\""
+  },
+  "dependencies": {
+    "@firebase/rules-unit-testing": "^4.0.1",
+    "firebase": "^11.0.0"
+  }
+}

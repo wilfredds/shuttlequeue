@@ -1,4 +1,5 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:flutter/foundation.dart';
 
 import '../models/enums.dart';
 import '../models/session.dart';
@@ -192,7 +193,10 @@ class SessionRepository {
 /// ang buong dependency para sa isang linya.)
 void unawaited(Future<void> future) {
   future.catchError((Object error) {
-    // Ang mga pending write ay nire-retry ng Firestore mismo. Dito lang
-    // natin pinipigilan ang unhandled-error na pumatay sa app.
+    // Ang mga pending write ay nire-retry ng Firestore mismo, kaya hindi
+    // ito dapat pumatay sa app. Pero mula M5, kayang tanggihan ng security
+    // rules ang isang sulat — at ang tahimik na pagkabigo ang pinakamasama
+    // sa lahat. Kaya iniiwan natin ito sa log para makita sa debugging.
+    debugPrint('ShuttleQueue: deferred write failed — $error');
   });
 }

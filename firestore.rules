@@ -1,23 +1,31 @@
 rules_version = '2';
 
-// ShuttleQueue security rules — M2 baseline.
+// ShuttleQueue security rules — M5, hardened.
 //
-// Prinsipyo: walang anonymous access, at bawat QM ay sarili lang niyang data
-// ang nakikita't nagagalaw. Ang field-level validation (types, ranges,
-// immutable fields) ay dadagdag sa M5 — tingnan ang R-11 sa design brief.
+// Dahil direktang kausap ng Flutter ang Firestore, **ito ang tunay na
+// backend guard**. Walang server na namamagitan. Kung papasa dito, papasa
+// sa database — kaya dalawa ang trabaho ng file na ito:
+//
+//   1. PAGMAMAY-ARI — sarili mo lang ang nakikita at nagagalaw mo.
+//   2. HUGIS NG DATA — tamang uri, saklaw, at haba ng bawat field, at
+//      hindi na mababago ang ownerUid at createdAt kahit kailan.
+//
+// Ang #2 ang idinagdag sa M5 (R-11 sa design brief). Bago ito, kayang
+// magsulat ng authenticated client ng `gamesPlayed: -999` o ng pangalang
+// 900 KB ang haba — hindi mananakaw ang datos ng iba, pero masisira ang
+// fairness at lolobo ang bill ng Firestore.
 
 service cloud.firestore {
   match /databases/{database}/documents {
 
-    // -----------------------------------------------------------------------
-    // Helpers
-    // -----------------------------------------------------------------------
+    // =======================================================================
+    // Mga panuntunan sa pagmamay-ari
+    // =======================================================================
 
     function isSignedIn() {
       return request.auth != null;
     }
 
-    // Ikaw ba ang nakalagay na may-ari ng dokumentong ito?
     function ownsExisting() {
       return isSignedIn() && resource.data.ownerUid == request.auth.uid;
     }
@@ -28,47 +36,251 @@ service cloud.firestore {
       return isSignedIn() && request.resource.data.ownerUid == request.auth.uid;
     }
 
-    // -----------------------------------------------------------------------
-    // users/{uid} — profile ng QM
-    // -----------------------------------------------------------------------
-    // Sariling doc lang ang pwedeng basahin o sulatan. Walang paraan para
-    // silipin ang ibang QM.
-    match /users/{uid} {
-      allow read, write: if isSignedIn() && request.auth.uid == uid;
+    // Hindi mababago ang may-ari at ang petsa ng paggawa — kahit ng may-ari
+    // mismo. Ang pag-edit ng ownerUid ay pag-abot ng session sa iba.
+    function ownerUidUnchanged() {
+      return request.resource.data.ownerUid == resource.data.ownerUid;
     }
 
-    // -----------------------------------------------------------------------
-    // clubs/{clubId} — ang regulars book
-    // -----------------------------------------------------------------------
-    match /clubs/{clubId} {
-      allow create: if ownsIncoming();
-      allow read, update, delete: if ownsExisting();
+    function createdAtUnchanged() {
+      return request.resource.data.createdAt == resource.data.createdAt;
+    }
 
-      // members/{memberId} — walang sariling ownerUid ang mga miyembro,
-      // kaya ang parent club ang chine-check. May halagang 1 dagdag na read
-      // kada operasyon; tanggap ito sa v1 na laki ng datos.
+    // =======================================================================
+    // Mga panuntunan sa hugis ng data
+    // =======================================================================
+
+    function isText(value, maxLength) {
+      return value is string && value.size() > 0 && value.size() <= maxLength;
+    }
+
+    // Pwedeng walang laman (hal. venue na hindi pa alam).
+    function isOptionalText(value, maxLength) {
+      return value is string && value.size() <= maxLength;
+    }
+
+    function isCount(value, maxValue) {
+      return value is int && value >= 0 && value <= maxValue;
+    }
+
+    // Pera: laging int centavos, hindi kailanman negatibo, may sanity cap
+    // na ₱1,000,000 kada session.
+    function isMoney(value) {
+      return value is int && value >= 0 && value <= 100000000;
+    }
+
+    function isSkillTier(value) {
+      return value in ['beginner', 'intermediate', 'advanced'];
+    }
+
+    function isNullOrString(value) {
+      return value == null || value is string;
+    }
+
+    function isNullOrInt(value) {
+      return value == null || value is int;
+    }
+
+    function isNullOrTimestamp(value) {
+      return value == null || value is timestamp;
+    }
+
+    // =======================================================================
+    // users/{uid} — profile ng QM
+    // =======================================================================
+
+    function validUser(data) {
+      return data.keys().hasOnly(['displayName', 'email', 'role', 'createdAt'])
+        && isText(data.displayName, 80)
+        && isText(data.email, 254)
+        // Nakalaan ang role para sa mga papasok pang papel (hal. player sa v2).
+        // Ngayon, ang QM lang ang pwedeng gawin ng kliyente.
+        && data.role == 'qm'
+        && data.createdAt is timestamp;
+    }
+
+    match /users/{uid} {
+      allow read: if isSignedIn() && request.auth.uid == uid;
+      allow create: if isSignedIn()
+        && request.auth.uid == uid
+        && validUser(request.resource.data);
+      allow update: if isSignedIn()
+        && request.auth.uid == uid
+        && validUser(request.resource.data)
+        && createdAtUnchanged();
+      allow delete: if isSignedIn() && request.auth.uid == uid;
+    }
+
+    // =======================================================================
+    // clubs/{clubId} — ang regulars book
+    // =======================================================================
+
+    function validClub(data) {
+      return data.keys().hasOnly(['name', 'ownerUid', 'createdAt'])
+        && isText(data.name, 100)
+        && data.ownerUid is string
+        && data.createdAt is timestamp;
+    }
+
+    function validMember(data) {
+      return data.keys().hasOnly([
+          'name', 'skillTier', 'aliases', 'balanceCentavos',
+          'sessionsAttended', 'lastPlayedAt', 'createdAt'
+        ])
+        && isText(data.name, 60)
+        && isSkillTier(data.skillTier)
+        && data.aliases is list
+        && data.aliases.size() <= 20
+        // Ang balanse lang ang pwedeng negatibo — sobrang bayad iyon.
+        && data.balanceCentavos is int
+        && data.balanceCentavos >= -100000000
+        && data.balanceCentavos <= 100000000
+        && isCount(data.sessionsAttended, 10000)
+        && isNullOrTimestamp(data.lastPlayedAt)
+        && data.createdAt is timestamp;
+    }
+
+    function ownsClub(clubId) {
+      return isSignedIn()
+        && get(/databases/$(database)/documents/clubs/$(clubId)).data.ownerUid == request.auth.uid;
+    }
+
+    match /clubs/{clubId} {
+      allow read, delete: if ownsExisting();
+      allow create: if ownsIncoming() && validClub(request.resource.data);
+      allow update: if ownsExisting()
+        && validClub(request.resource.data)
+        && ownerUidUnchanged()
+        && createdAtUnchanged();
+
+      // Walang sariling ownerUid ang mga miyembro, kaya ang parent club ang
+      // chine-check. May halagang 1 dagdag na read kada operasyon — tanggap
+      // ito sa laki ng datos ng isang club.
       match /members/{memberId} {
-        allow read, write: if isSignedIn()
-          && get(/databases/$(database)/documents/clubs/$(clubId)).data.ownerUid == request.auth.uid;
+        allow read, delete: if ownsClub(clubId);
+        allow create: if ownsClub(clubId) && validMember(request.resource.data);
+        allow update: if ownsClub(clubId)
+          && validMember(request.resource.data)
+          && createdAtUnchanged();
       }
     }
 
-    // -----------------------------------------------------------------------
+    // =======================================================================
     // sessions/{sessionId} — isang gabi ng laro
-    // -----------------------------------------------------------------------
-    match /sessions/{sessionId} {
-      allow create: if ownsIncoming();
-      allow read, update, delete: if ownsExisting();
+    // =======================================================================
 
-      // players / courts / matches — parehong pattern: ang parent session
-      // ang pinagbabatayan ng pagmamay-ari.
-      match /{document=**} {
-        allow read, write: if isSignedIn()
-          && get(/databases/$(database)/documents/sessions/$(sessionId)).data.ownerUid == request.auth.uid;
+    function validSession(data) {
+      return data.keys().hasOnly([
+          'ownerUid', 'clubId', 'title', 'venue', 'sessionDate', 'status',
+          'courtCount', 'courtFeeCentavos', 'shuttlePriceCentavos',
+          'feeMode', 'createdAt', 'updatedAt'
+        ])
+        && data.ownerUid is string
+        && isOptionalText(data.clubId, 128)
+        && isText(data.title, 100)
+        && isOptionalText(data.venue, 200)
+        && data.sessionDate is timestamp
+        && data.status in ['setup', 'live', 'ended']
+        // 1–12 court: sapat sa kahit anong social session, at pumipigil sa
+        // aksidenteng paggawa ng libu-libong court document.
+        && data.courtCount is int
+        && data.courtCount >= 1
+        && data.courtCount <= 12
+        && isMoney(data.courtFeeCentavos)
+        && isMoney(data.shuttlePriceCentavos)
+        && data.feeMode in ['per_head', 'american']
+        && data.createdAt is timestamp
+        && data.updatedAt is timestamp;
+    }
+
+    function ownsSession(sessionId) {
+      return isSignedIn()
+        && get(/databases/$(database)/documents/sessions/$(sessionId)).data.ownerUid == request.auth.uid;
+    }
+
+    match /sessions/{sessionId} {
+      allow read, delete: if ownsExisting();
+      allow create: if ownsIncoming() && validSession(request.resource.data);
+      allow update: if ownsExisting()
+        && validSession(request.resource.data)
+        && ownerUidUnchanged()
+        && createdAtUnchanged();
+
+      // ---------------------------------------------------------------------
+      // players — dito nakatira ang fairness counters
+      // ---------------------------------------------------------------------
+      //
+      // Ang `gamesPlayed >= 0` ay hindi lang panlaban sa masamang kliyente:
+      // nahuhuli rin nito ang sirang undo (R-03). Kung may bug sa pagbawi
+      // ng laro, dito ito babagsak imbes na tahimik na sumira ng bilang.
+      match /players/{playerId} {
+        function validPlayer(data) {
+          return data.keys().hasOnly([
+              'name', 'skillTier', 'gamesPlayed', 'waitingSince', 'status',
+              'shuttlesUsed', 'hasPaid', 'memberId', 'createdAt'
+            ])
+            && isText(data.name, 60)
+            && isSkillTier(data.skillTier)
+            && isCount(data.gamesPlayed, 500)
+            && data.waitingSince is timestamp
+            && data.status in ['queued', 'playing', 'resting', 'left']
+            && isCount(data.shuttlesUsed, 200)
+            && data.hasPaid is bool
+            && isNullOrString(data.memberId)
+            && data.createdAt is timestamp;
+        }
+
+        allow read, delete: if ownsSession(sessionId);
+        allow create: if ownsSession(sessionId)
+          && validPlayer(request.resource.data);
+        allow update: if ownsSession(sessionId)
+          && validPlayer(request.resource.data)
+          && createdAtUnchanged();
+      }
+
+      // ---------------------------------------------------------------------
+      // courts
+      // ---------------------------------------------------------------------
+      match /courts/{courtId} {
+        function validCourt(data) {
+          return data.keys().hasOnly(['label', 'status', 'currentMatchId'])
+            && isText(data.label, 40)
+            && data.status in ['free', 'playing']
+            && isNullOrString(data.currentMatchId);
+        }
+
+        allow read, delete: if ownsSession(sessionId);
+        allow create, update: if ownsSession(sessionId)
+          && validCourt(request.resource.data);
+      }
+
+      // ---------------------------------------------------------------------
+      // matches
+      // ---------------------------------------------------------------------
+      match /matches/{matchId} {
+        function validMatch(data) {
+          return data.keys().hasOnly([
+              'courtId', 'teamA', 'teamB', 'scoreA', 'scoreB',
+              'startedAt', 'endedAt'
+            ])
+            && data.courtId is string
+            // Doubles: eksaktong dalawa kada panig. Ang laro ng badminton
+            // ang tumatakda nito, hindi ang UI.
+            && data.teamA is list && data.teamA.size() == 2
+            && data.teamB is list && data.teamB.size() == 2
+            && isNullOrInt(data.scoreA)
+            && isNullOrInt(data.scoreB)
+            && data.startedAt is timestamp
+            && isNullOrTimestamp(data.endedAt);
+        }
+
+        allow read, delete: if ownsSession(sessionId);
+        allow create, update: if ownsSession(sessionId)
+          && validMatch(request.resource.data);
       }
     }
 
     // Lahat ng hindi nabanggit: implicit DENY. Walang "allow if true" kahit
-    // saan — ito ang tunay na backend guard ng app, hindi ang client code.
+    // saan sa file na ito — sinasadya iyon.
   }
 }

@@ -57,3 +57,9 @@ firebase-debug.log
 *.jks
 *.keystore
 key.properties
+
+# Emulator artifacts
+firestore-debug.log
+firebase-debug.log
+ui-debug.log
+test_rules/node_modules/

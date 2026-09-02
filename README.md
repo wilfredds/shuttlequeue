@@ -19,7 +19,7 @@ State management: Riverpod. **One codebase, two targets: Android and web.**
 | M2 | Sessions + Messenger roster import + live roster editing | ✅ |
 | M3 | Courts + fair rotation (MatchmakingService) | ✅ |
 | M4 | Cost split (FeeCalculator, per-head / american) | ✅ |
-| M5 | Rules hardening (field validation) + polish + docs | next |
+| M5 | Rules hardening (field validation) + polish + docs | ✅ |
 
 ## Setup
 
@@ -39,6 +39,44 @@ State management: Riverpod. **One codebase, two targets: Android and web.**
 5. Run in a browser: `flutter run -d chrome`
 6. Test: `flutter test` &nbsp;·&nbsp; Lint: `flutter analyze`
 7. Ship the web build: `flutter build web --release` then `firebase deploy --only hosting`
+
+## Testing
+
+```bash
+flutter analyze                       # static analysis, must be clean
+flutter test                          # 55 unit + widget tests
+cd test_rules && npm install && npm test   # 34 security-rules checks
+```
+
+The rules tests run against the local Firestore emulator (needs Java — the
+JDK bundled with Android Studio works: set `JAVA_HOME` to
+`C:\Program Files\Android\Android Studio\jbr`). They never touch the real
+project.
+
+**The acceptance test that actually matters** is the offline drill:
+airplane mode on → create a session → paste a roster → run three rotations
+on two courts → compute fees → airplane mode off → confirm everything
+appears in the Firestore console and the pending-sync banner clears.
+
+## What runs the night
+
+| Screen | Job |
+|---|---|
+| Sessions | Every night this Queue Master has run |
+| Roster | Paste-import from Messenger, skill tiers, late arrivals, leavers |
+| Courts | The court grid, the queue, and one big **Next match** button |
+| Money | Per-player breakdown, paid toggles, share back to the group chat |
+
+Two pure services carry the correctness burden and are covered by tests:
+`MatchmakingService` (who plays next) and `FeeCalculator` (who owes what).
+See [docs/architecture.md](docs/architecture.md).
+
+## Privacy (RA 10173)
+
+Player names and skill tiers only — no phone numbers, no emails, no
+addresses. The import screen says so in plain language. Deleting a session
+really deletes its players, matches and fees; Firestore does not cascade, so
+the app removes each document explicitly.
 
 ## Platforms
 
