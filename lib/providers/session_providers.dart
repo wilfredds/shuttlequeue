@@ -1,12 +1,16 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../models/club_member.dart';
+import '../models/court.dart';
+import '../models/match.dart';
 import '../models/session.dart';
 import '../models/session_player.dart';
 import '../models/synced.dart';
 import '../repositories/club_repository.dart';
+import '../repositories/match_repository.dart';
 import '../repositories/player_repository.dart';
 import '../repositories/session_repository.dart';
+import '../services/matchmaking_service.dart';
 import 'auth_providers.dart';
 import 'firebase_providers.dart';
 
@@ -78,4 +82,44 @@ final playerRepositoryProvider = Provider<PlayerRepository>(
 final playersProvider =
     StreamProvider.family<Synced<List<SessionPlayer>>, String>((ref, sessionId) {
   return ref.watch(playerRepositoryProvider).watchPlayers(sessionId);
+});
+
+// ---------------------------------------------------------------------------
+// Courts, matches at ang mungkahi ng algorithm
+// ---------------------------------------------------------------------------
+
+final matchRepositoryProvider = Provider<MatchRepository>(
+  (ref) => MatchRepository(ref.watch(firestoreProvider)),
+);
+
+final courtsProvider =
+    StreamProvider.family<Synced<List<Court>>, String>((ref, sessionId) {
+  return ref.watch(matchRepositoryProvider).watchCourts(sessionId);
+});
+
+final matchesProvider =
+    StreamProvider.family<List<GameMatch>, String>((ref, sessionId) {
+  return ref.watch(matchRepositoryProvider).watchMatches(sessionId);
+});
+
+/// Mga laro na kasalukuyang tumatakbo, naka-index ayon sa court.
+final liveMatchesProvider =
+    Provider.family<Map<String, GameMatch>, String>((ref, sessionId) {
+  final matches = ref.watch(matchesProvider(sessionId)).value ?? const [];
+  return {
+    for (final match in matches.where((m) => m.isInProgress))
+      match.courtId: match,
+  };
+});
+
+final matchmakingServiceProvider = Provider<MatchmakingService>(
+  (ref) => const MatchmakingService(),
+);
+
+/// Ang pila, ayon sa parehong panuntunan ng fairness na ginagamit ng
+/// algorithm — kaya walang pagkakaiba ang nakikita ng QM sa nangyayari.
+final queueOrderProvider =
+    Provider.family<List<SessionPlayer>, String>((ref, sessionId) {
+  final players = ref.watch(playersProvider(sessionId)).value?.data ?? const [];
+  return queueOrder(players);
 });

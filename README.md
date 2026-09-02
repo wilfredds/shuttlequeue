@@ -16,10 +16,10 @@ State management: Riverpod. **One codebase, two targets: Android and web.**
 |---|---|---|
 | M0 | Scaffold, toolchain, Firebase wiring, offline persistence | ✅ |
 | M1 | Queue Master auth (email/password) | ✅ |
-| M2 | Sessions + Messenger roster import + live roster editing | in progress |
-| M3 | Courts + fair rotation (MatchmakingService) | — |
-| M4 | Cost split (FeeCalculator, per-head / american) | — |
-| M5 | Firestore security rules + offline polish + docs | — |
+| M2 | Sessions + Messenger roster import + live roster editing | ✅ |
+| M3 | Courts + fair rotation (MatchmakingService) | ✅ |
+| M4 | Cost split (FeeCalculator, per-head / american) | ✅ |
+| M5 | Rules hardening (field validation) + polish + docs | next |
 
 ## Setup
 

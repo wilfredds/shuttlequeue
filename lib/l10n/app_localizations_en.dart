@@ -358,4 +358,102 @@ class AppLocalizationsEn extends AppLocalizations {
   String rosterCountSummary(int total, int queued) {
     return '$total players · $queued in queue';
   }
+
+  @override
+  String get nextMatch => 'Next match';
+
+  @override
+  String get courtFree => 'Free';
+
+  @override
+  String get upNext => 'Up next';
+
+  @override
+  String get upNextEmpty => 'Nobody in the queue yet';
+
+  @override
+  String get needFourPlayers => 'Need at least 4 players in the queue';
+
+  @override
+  String get allCourtsBusy => 'All courts are playing';
+
+  @override
+  String get suggestionTitle => 'Suggested match';
+
+  @override
+  String get suggestionMixedSkill =>
+      'Mixed skill levels — no even group was available';
+
+  @override
+  String suggestionForcedWait(String name) {
+    return '$name has been waiting a long time';
+  }
+
+  @override
+  String get swapPlayer => 'Swap';
+
+  @override
+  String get swapTitle => 'Swap in a player';
+
+  @override
+  String startMatch(String court) {
+    return 'Start on $court';
+  }
+
+  @override
+  String get endMatch => 'Done';
+
+  @override
+  String get matchEnded => 'Match finished';
+
+  @override
+  String get cancelMatch => 'Cancel match';
+
+  @override
+  String get scoreOptional => 'Score (optional)';
+
+  @override
+  String waitingTime(int minutes) {
+    return '${minutes}m wait';
+  }
+
+  @override
+  String get noFreeCourt => 'No free court';
+
+  @override
+  String get moneyTitle => 'Cost split';
+
+  @override
+  String get moneyEmpty => 'Add players first, then the split appears here.';
+
+  @override
+  String get totalCost => 'Total cost';
+
+  @override
+  String get collected => 'Collected';
+
+  @override
+  String get outstanding => 'Still owed';
+
+  @override
+  String paidOf(int paid, int total) {
+    return '$paid of $total paid';
+  }
+
+  @override
+  String get shuttlesLabel => 'Shuttles';
+
+  @override
+  String get shareSummary => 'Share summary';
+
+  @override
+  String get markPaid => 'Paid';
+
+  @override
+  String get leftEarlyTag => 'left early';
+
+  @override
+  String shuttleCountShort(int count) {
+    return '${count}x';
+  }
 }

@@ -687,6 +687,180 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'{total} players · {queued} in queue'**
   String rosterCountSummary(int total, int queued);
+
+  /// No description provided for @nextMatch.
+  ///
+  /// In en, this message translates to:
+  /// **'Next match'**
+  String get nextMatch;
+
+  /// No description provided for @courtFree.
+  ///
+  /// In en, this message translates to:
+  /// **'Free'**
+  String get courtFree;
+
+  /// No description provided for @upNext.
+  ///
+  /// In en, this message translates to:
+  /// **'Up next'**
+  String get upNext;
+
+  /// No description provided for @upNextEmpty.
+  ///
+  /// In en, this message translates to:
+  /// **'Nobody in the queue yet'**
+  String get upNextEmpty;
+
+  /// No description provided for @needFourPlayers.
+  ///
+  /// In en, this message translates to:
+  /// **'Need at least 4 players in the queue'**
+  String get needFourPlayers;
+
+  /// No description provided for @allCourtsBusy.
+  ///
+  /// In en, this message translates to:
+  /// **'All courts are playing'**
+  String get allCourtsBusy;
+
+  /// No description provided for @suggestionTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Suggested match'**
+  String get suggestionTitle;
+
+  /// No description provided for @suggestionMixedSkill.
+  ///
+  /// In en, this message translates to:
+  /// **'Mixed skill levels — no even group was available'**
+  String get suggestionMixedSkill;
+
+  /// No description provided for @suggestionForcedWait.
+  ///
+  /// In en, this message translates to:
+  /// **'{name} has been waiting a long time'**
+  String suggestionForcedWait(String name);
+
+  /// No description provided for @swapPlayer.
+  ///
+  /// In en, this message translates to:
+  /// **'Swap'**
+  String get swapPlayer;
+
+  /// No description provided for @swapTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Swap in a player'**
+  String get swapTitle;
+
+  /// No description provided for @startMatch.
+  ///
+  /// In en, this message translates to:
+  /// **'Start on {court}'**
+  String startMatch(String court);
+
+  /// No description provided for @endMatch.
+  ///
+  /// In en, this message translates to:
+  /// **'Done'**
+  String get endMatch;
+
+  /// No description provided for @matchEnded.
+  ///
+  /// In en, this message translates to:
+  /// **'Match finished'**
+  String get matchEnded;
+
+  /// No description provided for @cancelMatch.
+  ///
+  /// In en, this message translates to:
+  /// **'Cancel match'**
+  String get cancelMatch;
+
+  /// No description provided for @scoreOptional.
+  ///
+  /// In en, this message translates to:
+  /// **'Score (optional)'**
+  String get scoreOptional;
+
+  /// No description provided for @waitingTime.
+  ///
+  /// In en, this message translates to:
+  /// **'{minutes}m wait'**
+  String waitingTime(int minutes);
+
+  /// No description provided for @noFreeCourt.
+  ///
+  /// In en, this message translates to:
+  /// **'No free court'**
+  String get noFreeCourt;
+
+  /// No description provided for @moneyTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Cost split'**
+  String get moneyTitle;
+
+  /// No description provided for @moneyEmpty.
+  ///
+  /// In en, this message translates to:
+  /// **'Add players first, then the split appears here.'**
+  String get moneyEmpty;
+
+  /// No description provided for @totalCost.
+  ///
+  /// In en, this message translates to:
+  /// **'Total cost'**
+  String get totalCost;
+
+  /// No description provided for @collected.
+  ///
+  /// In en, this message translates to:
+  /// **'Collected'**
+  String get collected;
+
+  /// No description provided for @outstanding.
+  ///
+  /// In en, this message translates to:
+  /// **'Still owed'**
+  String get outstanding;
+
+  /// No description provided for @paidOf.
+  ///
+  /// In en, this message translates to:
+  /// **'{paid} of {total} paid'**
+  String paidOf(int paid, int total);
+
+  /// No description provided for @shuttlesLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Shuttles'**
+  String get shuttlesLabel;
+
+  /// No description provided for @shareSummary.
+  ///
+  /// In en, this message translates to:
+  /// **'Share summary'**
+  String get shareSummary;
+
+  /// No description provided for @markPaid.
+  ///
+  /// In en, this message translates to:
+  /// **'Paid'**
+  String get markPaid;
+
+  /// No description provided for @leftEarlyTag.
+  ///
+  /// In en, this message translates to:
+  /// **'left early'**
+  String get leftEarlyTag;
+
+  /// No description provided for @shuttleCountShort.
+  ///
+  /// In en, this message translates to:
+  /// **'{count}x'**
+  String shuttleCountShort(int count);
 }
 
 class _AppLocalizationsDelegate

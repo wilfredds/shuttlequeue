@@ -3,6 +3,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../l10n/app_localizations.dart';
 import '../providers/session_providers.dart';
+import 'cost_split_screen.dart';
+import 'courts_screen.dart';
 import 'roster_screen.dart';
 import 'session_form_screen.dart';
 
@@ -44,7 +46,8 @@ class _SessionDetailScreenState extends ConsumerState<SessionDetailScreen> {
       ),
       body: switch (_tabIndex) {
         0 => RosterScreen(sessionId: widget.sessionId),
-        _ => _ComingSoon(index: _tabIndex),
+        1 => CourtsScreen(sessionId: widget.sessionId),
+        _ => CostSplitScreen(sessionId: widget.sessionId),
       },
       bottomNavigationBar: NavigationBar(
         selectedIndex: _tabIndex,
@@ -66,45 +69,6 @@ class _SessionDetailScreenState extends ConsumerState<SessionDetailScreen> {
             label: l10n.tabMoney,
           ),
         ],
-      ),
-    );
-  }
-}
-
-/// Pansamantala hangga't hindi pa tapos ang M3 at M4.
-class _ComingSoon extends StatelessWidget {
-  const _ComingSoon({required this.index});
-
-  final int index;
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.all(32),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(
-              index == 1 ? Icons.grid_view_outlined : Icons.payments_outlined,
-              size: 64,
-              color: theme.colorScheme.outline,
-            ),
-            const SizedBox(height: 12),
-            Text(
-              index == 1 ? 'Courts & rotation' : 'Cost split',
-              style: theme.textTheme.titleLarge,
-            ),
-            const SizedBox(height: 6),
-            Text(
-              'Coming in the next step.',
-              style: theme.textTheme.bodyLarge?.copyWith(
-                color: theme.colorScheme.outline,
-              ),
-            ),
-          ],
-        ),
       ),
     );
   }

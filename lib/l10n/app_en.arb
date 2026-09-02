@@ -160,5 +160,72 @@
         "type": "int"
       }
     }
+  },
+  "nextMatch": "Next match",
+  "courtFree": "Free",
+  "upNext": "Up next",
+  "upNextEmpty": "Nobody in the queue yet",
+  "needFourPlayers": "Need at least 4 players in the queue",
+  "allCourtsBusy": "All courts are playing",
+  "suggestionTitle": "Suggested match",
+  "suggestionMixedSkill": "Mixed skill levels — no even group was available",
+  "suggestionForcedWait": "{name} has been waiting a long time",
+  "@suggestionForcedWait": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "swapPlayer": "Swap",
+  "swapTitle": "Swap in a player",
+  "startMatch": "Start on {court}",
+  "@startMatch": {
+    "placeholders": {
+      "court": {
+        "type": "String"
+      }
+    }
+  },
+  "endMatch": "Done",
+  "matchEnded": "Match finished",
+  "cancelMatch": "Cancel match",
+  "scoreOptional": "Score (optional)",
+  "waitingTime": "{minutes}m wait",
+  "@waitingTime": {
+    "placeholders": {
+      "minutes": {
+        "type": "int"
+      }
+    }
+  },
+  "noFreeCourt": "No free court",
+  "moneyTitle": "Cost split",
+  "moneyEmpty": "Add players first, then the split appears here.",
+  "totalCost": "Total cost",
+  "collected": "Collected",
+  "outstanding": "Still owed",
+  "paidOf": "{paid} of {total} paid",
+  "@paidOf": {
+    "placeholders": {
+      "paid": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
+  "shuttlesLabel": "Shuttles",
+  "shareSummary": "Share summary",
+  "markPaid": "Paid",
+  "leftEarlyTag": "left early",
+  "shuttleCountShort": "{count}x",
+  "@shuttleCountShort": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
   }
 }
