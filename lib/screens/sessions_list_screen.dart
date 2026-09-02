@@ -9,6 +9,7 @@ import '../providers/auth_providers.dart';
 import '../providers/session_providers.dart';
 import '../services/money.dart';
 import '../widgets/sync_indicator.dart';
+import 'session_detail_screen.dart';
 import 'session_form_screen.dart';
 
 /// Home ng QM pagkatapos mag-login: listahan ng mga gabi.
@@ -125,7 +126,7 @@ class _SessionCard extends ConsumerWidget {
       margin: const EdgeInsets.only(bottom: 12),
       clipBehavior: Clip.antiAlias,
       child: InkWell(
-        onTap: () => _openForm(context),
+        onTap: () => _openSession(context),
         child: Padding(
           padding: const EdgeInsets.all(16),
           child: Column(
@@ -187,10 +188,10 @@ class _SessionCard extends ConsumerWidget {
     );
   }
 
-  void _openForm(BuildContext context) {
+  void _openSession(BuildContext context) {
     Navigator.of(context).push(
       MaterialPageRoute<void>(
-        builder: (_) => SessionFormScreen(existing: session),
+        builder: (_) => SessionDetailScreen(sessionId: session.id),
       ),
     );
   }

@@ -203,4 +203,159 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get rosterComingSoon => 'Roster and courts arrive in the next step.';
+
+  @override
+  String get tabRoster => 'Roster';
+
+  @override
+  String get tabCourts => 'Courts';
+
+  @override
+  String get tabMoney => 'Money';
+
+  @override
+  String get importTitle => 'Paste your signup list';
+
+  @override
+  String get importInstructions =>
+      'Copy the numbered list from your group chat and paste it here. We\'ll clean it up — you can fix anything before it\'s saved.';
+
+  @override
+  String get importHint => '1. Jun\n2. Ana\n3. Mark +1';
+
+  @override
+  String get importPreview => 'Preview';
+
+  @override
+  String importFoundPlayers(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count players',
+      one: '1 player',
+      zero: 'No names found yet',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String importSkippedLines(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count lines skipped',
+      one: '1 line skipped',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get importSkippedExplain =>
+      'These looked like headers or chatter. Tap to add one as a player if we got it wrong.';
+
+  @override
+  String importDuplicateWarning(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count names appear twice',
+      one: '1 name appears twice',
+    );
+    return '$_temp0 — check if they\'re the same person or two different players.';
+  }
+
+  @override
+  String get importGuestBadge => 'guest';
+
+  @override
+  String get importAddAll => 'Add to roster';
+
+  @override
+  String get importConsent =>
+      'Names only. No phone numbers or emails are stored, and deleting the session removes everything.';
+
+  @override
+  String get importEmpty => 'Paste a list above to get started.';
+
+  @override
+  String get rosterTitle => 'Roster';
+
+  @override
+  String get rosterEmptyTitle => 'No players yet';
+
+  @override
+  String get rosterEmptyBody =>
+      'Paste your signup list, or add players one by one.';
+
+  @override
+  String get pasteList => 'Paste list';
+
+  @override
+  String get addPlayer => 'Add player';
+
+  @override
+  String get addPlayerTitle => 'Add player';
+
+  @override
+  String get playerNameLabel => 'Name';
+
+  @override
+  String get editPlayerTitle => 'Edit player';
+
+  @override
+  String get skillLabel => 'Skill';
+
+  @override
+  String get skillBeginner => 'Beginner';
+
+  @override
+  String get skillIntermediate => 'Intermediate';
+
+  @override
+  String get skillAdvanced => 'Advanced';
+
+  @override
+  String get statusQueued => 'In queue';
+
+  @override
+  String get statusPlaying => 'Playing';
+
+  @override
+  String get statusResting => 'Resting';
+
+  @override
+  String get statusLeft => 'Left early';
+
+  @override
+  String get markResting => 'Rest';
+
+  @override
+  String get markQueued => 'Back in queue';
+
+  @override
+  String get markLeft => 'Mark as left';
+
+  @override
+  String get removePlayer => 'Remove';
+
+  @override
+  String playerRemoved(String name) {
+    return '$name removed';
+  }
+
+  @override
+  String get undo => 'Undo';
+
+  @override
+  String gamesPlayedShort(int count) {
+    return '$count games';
+  }
+
+  @override
+  String get saveButton => 'Save';
+
+  @override
+  String rosterCountSummary(int total, int queued) {
+    return '$total players · $queued in queue';
+  }
 }

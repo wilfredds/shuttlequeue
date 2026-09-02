@@ -1,11 +1,9 @@
 {
   "@@locale": "en",
-
   "appTitle": "ShuttleQueue",
   "@appTitle": {
     "description": "The application name, shown in the app bar and task switcher"
   },
-
   "loginTagline": "Queue Master sign-in",
   "displayNameLabel": "Your name",
   "emailLabel": "Email",
@@ -16,7 +14,6 @@
   "switchToSignIn": "Already have an account? Sign in",
   "showPassword": "Show password",
   "hidePassword": "Hide password",
-
   "errNameRequired": "Please enter your name",
   "errEmailRequired": "Please enter your email",
   "errPasswordTooShort": "Password must be at least 6 characters",
@@ -27,19 +24,15 @@
   "errNetwork": "No connection — signing in for the first time needs internet",
   "errTooManyRequests": "Too many attempts — wait a minute and try again",
   "errUnknown": "Something went wrong — please try again",
-
   "signOut": "Sign out",
-
   "sessionsTitle": "Sessions",
   "sessionsEmptyTitle": "No sessions yet",
   "sessionsEmptyBody": "Create one for tonight, then paste your signup list.",
   "newSession": "New session",
   "pendingSync": "Saved on this device — will sync when you're back online",
-
   "sessionStatusSetup": "Setup",
   "sessionStatusLive": "Live",
   "sessionStatusEnded": "Ended",
-
   "courtCountLabel": "{count, plural, =1{1 court} other{{count} courts}}",
   "@courtCountLabel": {
     "placeholders": {
@@ -48,7 +41,6 @@
       }
     }
   },
-
   "newSessionTitle": "New session",
   "editSessionTitle": "Edit session",
   "sessionNameLabel": "Session name",
@@ -66,12 +58,10 @@
   "feeModeAmericanHelp": "Everything is pooled — court and shuttles — then split evenly.",
   "createSessionButton": "Create session",
   "saveChangesButton": "Save changes",
-
   "errSessionNameRequired": "Give tonight a name so you can find it later",
   "errVenueRequired": "Where are you playing?",
   "errCourtsRange": "Enter between 1 and 12 courts",
   "errFeeInvalid": "Enter a valid amount, like 1200 or 1200.50",
-
   "deleteSession": "Delete session",
   "deleteSessionConfirm": "Delete \"{title}\" and everything in it? Players, matches and fees for this night will be permanently removed.",
   "@deleteSessionConfirm": {
@@ -84,7 +74,91 @@
   "deleteSessionCta": "Delete",
   "cancel": "Cancel",
   "sessionDeleted": "Session deleted",
-
   "openSession": "Open",
-  "rosterComingSoon": "Roster and courts arrive in the next step."
+  "rosterComingSoon": "Roster and courts arrive in the next step.",
+  "tabRoster": "Roster",
+  "tabCourts": "Courts",
+  "tabMoney": "Money",
+  "importTitle": "Paste your signup list",
+  "importInstructions": "Copy the numbered list from your group chat and paste it here. We'll clean it up — you can fix anything before it's saved.",
+  "importHint": "1. Jun\n2. Ana\n3. Mark +1",
+  "importPreview": "Preview",
+  "importFoundPlayers": "{count, plural, =0{No names found yet} =1{1 player} other{{count} players}}",
+  "@importFoundPlayers": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "importSkippedLines": "{count, plural, =1{1 line skipped} other{{count} lines skipped}}",
+  "@importSkippedLines": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "importSkippedExplain": "These looked like headers or chatter. Tap to add one as a player if we got it wrong.",
+  "importDuplicateWarning": "{count, plural, =1{1 name appears twice} other{{count} names appear twice}} — check if they're the same person or two different players.",
+  "@importDuplicateWarning": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "importGuestBadge": "guest",
+  "importAddAll": "Add to roster",
+  "importConsent": "Names only. No phone numbers or emails are stored, and deleting the session removes everything.",
+  "importEmpty": "Paste a list above to get started.",
+  "rosterTitle": "Roster",
+  "rosterEmptyTitle": "No players yet",
+  "rosterEmptyBody": "Paste your signup list, or add players one by one.",
+  "pasteList": "Paste list",
+  "addPlayer": "Add player",
+  "addPlayerTitle": "Add player",
+  "playerNameLabel": "Name",
+  "editPlayerTitle": "Edit player",
+  "skillLabel": "Skill",
+  "skillBeginner": "Beginner",
+  "skillIntermediate": "Intermediate",
+  "skillAdvanced": "Advanced",
+  "statusQueued": "In queue",
+  "statusPlaying": "Playing",
+  "statusResting": "Resting",
+  "statusLeft": "Left early",
+  "markResting": "Rest",
+  "markQueued": "Back in queue",
+  "markLeft": "Mark as left",
+  "removePlayer": "Remove",
+  "playerRemoved": "{name} removed",
+  "@playerRemoved": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "undo": "Undo",
+  "gamesPlayedShort": "{count} games",
+  "@gamesPlayedShort": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "saveButton": "Save",
+  "rosterCountSummary": "{total} players · {queued} in queue",
+  "@rosterCountSummary": {
+    "placeholders": {
+      "total": {
+        "type": "int"
+      },
+      "queued": {
+        "type": "int"
+      }
+    }
+  }
 }

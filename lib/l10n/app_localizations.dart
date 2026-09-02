@@ -447,6 +447,246 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Roster and courts arrive in the next step.'**
   String get rosterComingSoon;
+
+  /// No description provided for @tabRoster.
+  ///
+  /// In en, this message translates to:
+  /// **'Roster'**
+  String get tabRoster;
+
+  /// No description provided for @tabCourts.
+  ///
+  /// In en, this message translates to:
+  /// **'Courts'**
+  String get tabCourts;
+
+  /// No description provided for @tabMoney.
+  ///
+  /// In en, this message translates to:
+  /// **'Money'**
+  String get tabMoney;
+
+  /// No description provided for @importTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Paste your signup list'**
+  String get importTitle;
+
+  /// No description provided for @importInstructions.
+  ///
+  /// In en, this message translates to:
+  /// **'Copy the numbered list from your group chat and paste it here. We\'ll clean it up — you can fix anything before it\'s saved.'**
+  String get importInstructions;
+
+  /// No description provided for @importHint.
+  ///
+  /// In en, this message translates to:
+  /// **'1. Jun\n2. Ana\n3. Mark +1'**
+  String get importHint;
+
+  /// No description provided for @importPreview.
+  ///
+  /// In en, this message translates to:
+  /// **'Preview'**
+  String get importPreview;
+
+  /// No description provided for @importFoundPlayers.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =0{No names found yet} =1{1 player} other{{count} players}}'**
+  String importFoundPlayers(int count);
+
+  /// No description provided for @importSkippedLines.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{1 line skipped} other{{count} lines skipped}}'**
+  String importSkippedLines(int count);
+
+  /// No description provided for @importSkippedExplain.
+  ///
+  /// In en, this message translates to:
+  /// **'These looked like headers or chatter. Tap to add one as a player if we got it wrong.'**
+  String get importSkippedExplain;
+
+  /// No description provided for @importDuplicateWarning.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{1 name appears twice} other{{count} names appear twice}} — check if they\'re the same person or two different players.'**
+  String importDuplicateWarning(int count);
+
+  /// No description provided for @importGuestBadge.
+  ///
+  /// In en, this message translates to:
+  /// **'guest'**
+  String get importGuestBadge;
+
+  /// No description provided for @importAddAll.
+  ///
+  /// In en, this message translates to:
+  /// **'Add to roster'**
+  String get importAddAll;
+
+  /// No description provided for @importConsent.
+  ///
+  /// In en, this message translates to:
+  /// **'Names only. No phone numbers or emails are stored, and deleting the session removes everything.'**
+  String get importConsent;
+
+  /// No description provided for @importEmpty.
+  ///
+  /// In en, this message translates to:
+  /// **'Paste a list above to get started.'**
+  String get importEmpty;
+
+  /// No description provided for @rosterTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Roster'**
+  String get rosterTitle;
+
+  /// No description provided for @rosterEmptyTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'No players yet'**
+  String get rosterEmptyTitle;
+
+  /// No description provided for @rosterEmptyBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Paste your signup list, or add players one by one.'**
+  String get rosterEmptyBody;
+
+  /// No description provided for @pasteList.
+  ///
+  /// In en, this message translates to:
+  /// **'Paste list'**
+  String get pasteList;
+
+  /// No description provided for @addPlayer.
+  ///
+  /// In en, this message translates to:
+  /// **'Add player'**
+  String get addPlayer;
+
+  /// No description provided for @addPlayerTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Add player'**
+  String get addPlayerTitle;
+
+  /// No description provided for @playerNameLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Name'**
+  String get playerNameLabel;
+
+  /// No description provided for @editPlayerTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Edit player'**
+  String get editPlayerTitle;
+
+  /// No description provided for @skillLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Skill'**
+  String get skillLabel;
+
+  /// No description provided for @skillBeginner.
+  ///
+  /// In en, this message translates to:
+  /// **'Beginner'**
+  String get skillBeginner;
+
+  /// No description provided for @skillIntermediate.
+  ///
+  /// In en, this message translates to:
+  /// **'Intermediate'**
+  String get skillIntermediate;
+
+  /// No description provided for @skillAdvanced.
+  ///
+  /// In en, this message translates to:
+  /// **'Advanced'**
+  String get skillAdvanced;
+
+  /// No description provided for @statusQueued.
+  ///
+  /// In en, this message translates to:
+  /// **'In queue'**
+  String get statusQueued;
+
+  /// No description provided for @statusPlaying.
+  ///
+  /// In en, this message translates to:
+  /// **'Playing'**
+  String get statusPlaying;
+
+  /// No description provided for @statusResting.
+  ///
+  /// In en, this message translates to:
+  /// **'Resting'**
+  String get statusResting;
+
+  /// No description provided for @statusLeft.
+  ///
+  /// In en, this message translates to:
+  /// **'Left early'**
+  String get statusLeft;
+
+  /// No description provided for @markResting.
+  ///
+  /// In en, this message translates to:
+  /// **'Rest'**
+  String get markResting;
+
+  /// No description provided for @markQueued.
+  ///
+  /// In en, this message translates to:
+  /// **'Back in queue'**
+  String get markQueued;
+
+  /// No description provided for @markLeft.
+  ///
+  /// In en, this message translates to:
+  /// **'Mark as left'**
+  String get markLeft;
+
+  /// No description provided for @removePlayer.
+  ///
+  /// In en, this message translates to:
+  /// **'Remove'**
+  String get removePlayer;
+
+  /// No description provided for @playerRemoved.
+  ///
+  /// In en, this message translates to:
+  /// **'{name} removed'**
+  String playerRemoved(String name);
+
+  /// No description provided for @undo.
+  ///
+  /// In en, this message translates to:
+  /// **'Undo'**
+  String get undo;
+
+  /// No description provided for @gamesPlayedShort.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} games'**
+  String gamesPlayedShort(int count);
+
+  /// No description provided for @saveButton.
+  ///
+  /// In en, this message translates to:
+  /// **'Save'**
+  String get saveButton;
+
+  /// No description provided for @rosterCountSummary.
+  ///
+  /// In en, this message translates to:
+  /// **'{total} players · {queued} in queue'**
+  String rosterCountSummary(int total, int queued);
 }
 
 class _AppLocalizationsDelegate

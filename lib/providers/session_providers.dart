@@ -2,8 +2,10 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../models/club_member.dart';
 import '../models/session.dart';
+import '../models/session_player.dart';
 import '../models/synced.dart';
 import '../repositories/club_repository.dart';
+import '../repositories/player_repository.dart';
 import '../repositories/session_repository.dart';
 import 'auth_providers.dart';
 import 'firebase_providers.dart';
@@ -61,4 +63,19 @@ final clubMembersProvider = StreamProvider<List<ClubMember>>((ref) {
   final clubId = ref.watch(defaultClubIdProvider).value;
   if (clubId == null) return Stream.value(const <ClubMember>[]);
   return ref.watch(clubRepositoryProvider).watchMembers(clubId);
+});
+
+// ---------------------------------------------------------------------------
+// Players
+// ---------------------------------------------------------------------------
+
+final playerRepositoryProvider = Provider<PlayerRepository>(
+  (ref) => PlayerRepository(ref.watch(firestoreProvider)),
+);
+
+/// Mga manlalaro ng isang session. Isang listener kada session, ibinabahagi
+/// ng roster screen, courts screen at cost-split screen.
+final playersProvider =
+    StreamProvider.family<Synced<List<SessionPlayer>>, String>((ref, sessionId) {
+  return ref.watch(playerRepositoryProvider).watchPlayers(sessionId);
 });
