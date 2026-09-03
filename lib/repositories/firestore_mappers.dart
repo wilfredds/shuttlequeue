@@ -8,6 +8,7 @@ library;
 
 import 'package:cloud_firestore/cloud_firestore.dart';
 
+import '../models/bill_line.dart';
 import '../models/club_member.dart';
 import '../models/court.dart';
 import '../models/enums.dart';
@@ -77,6 +78,7 @@ Session sessionFromDoc(DocumentSnapshot<Map<String, dynamic>> doc) {
     feeMode: FeeMode.fromValue(data['feeMode'] as String?),
     createdAt: created,
     updatedAt: _readDate(data['updatedAt'], fallback: created),
+    billFinalizedAt: _readNullableDate(data['billFinalizedAt']),
   );
 }
 
@@ -104,8 +106,32 @@ Map<String, Object?> sessionToCreateMap({
     'courtFeeCentavos': courtFeeCentavos,
     'shuttlePriceCentavos': shuttlePriceCentavos,
     'feeMode': feeMode.value,
+    'billFinalizedAt': null,
     'createdAt': FieldValue.serverTimestamp(),
     'updatedAt': FieldValue.serverTimestamp(),
+  };
+}
+
+// ---------------------------------------------------------------------------
+// BillLine — mga naka-freeze na halaga
+// ---------------------------------------------------------------------------
+
+BillLine billLineFromDoc(DocumentSnapshot<Map<String, dynamic>> doc) {
+  final data = doc.data() ?? const <String, dynamic>{};
+  return BillLine(
+    // Ang document ID ay ang player ID — isang linya kada manlalaro.
+    playerId: doc.id,
+    name: _readString(data['name']),
+    courtShareCentavos: _readInt(data['courtShareCentavos']),
+    shuttleShareCentavos: _readInt(data['shuttleShareCentavos']),
+  );
+}
+
+Map<String, Object?> billLineToMap(BillLine line) {
+  return {
+    'name': line.name,
+    'courtShareCentavos': line.courtShareCentavos,
+    'shuttleShareCentavos': line.shuttleShareCentavos,
   };
 }
 

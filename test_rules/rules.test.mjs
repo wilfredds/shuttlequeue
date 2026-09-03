@@ -55,6 +55,7 @@ const validSession = (ownerUid = OWNER) => ({
   courtFeeCentavos: 120000,
   shuttlePriceCentavos: 10000,
   feeMode: 'per_head',
+  billFinalizedAt: null,
   createdAt: ts(),
   updatedAt: ts(),
 });
@@ -169,6 +170,10 @@ async function main() {
       doc(intruderDb, 'sessions', SESSION, 'players', 'anything'))));
   await check('intruder cannot read the club members', () =>
     assertFails(getDoc(doc(intruderDb, 'clubs', CLUB, 'members', 'anyone'))));
+  await check('intruder cannot read or rewrite the bill', () =>
+    assertFails(setDoc(doc(intruderDb, 'sessions', SESSION, 'bill', 'p1'), {
+      name: 'Jun', courtShareCentavos: 1, shuttleShareCentavos: 0,
+    })));
   await check('nobody can create a session owned by someone else', () =>
     assertFails(addDoc(
       collection(intruderDb, 'sessions'), validSession(OWNER))));
@@ -232,6 +237,15 @@ async function main() {
       teamA: ['p1', 'p2', 'p3'],
       teamB: ['p4', 'p5', 'p6'],
       scoreA: null, scoreB: null, startedAt: ts(), endedAt: null,
+    })));
+  await check('a negative amount on a bill line is rejected', () =>
+    assertFails(setDoc(doc(ownerDb, 'sessions', SESSION, 'bill', 'p2'), {
+      name: 'Jun', courtShareCentavos: -30000, shuttleShareCentavos: 0,
+    })));
+  await check('an unknown field on a bill line is rejected', () =>
+    assertFails(setDoc(doc(ownerDb, 'sessions', SESSION, 'bill', 'p3'), {
+      name: 'Jun', courtShareCentavos: 100, shuttleShareCentavos: 0,
+      discount: true,
     })));
   await check('a role other than qm is rejected', () =>
     assertFails(setDoc(doc(ownerDb, 'users', OWNER), {

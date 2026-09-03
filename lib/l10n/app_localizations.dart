@@ -981,6 +981,54 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'brought forward: {amount}'**
   String carriedBalance(String amount);
+
+  /// No description provided for @finalizeBill.
+  ///
+  /// In en, this message translates to:
+  /// **'Lock the amounts'**
+  String get finalizeBill;
+
+  /// No description provided for @billLocked.
+  ///
+  /// In en, this message translates to:
+  /// **'Amounts locked — late arrivals won\'t change what anyone owes'**
+  String get billLocked;
+
+  /// No description provided for @billLockedAt.
+  ///
+  /// In en, this message translates to:
+  /// **'Locked {time}'**
+  String billLockedAt(String time);
+
+  /// No description provided for @reopenBill.
+  ///
+  /// In en, this message translates to:
+  /// **'Unlock'**
+  String get reopenBill;
+
+  /// No description provided for @reopenBillTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Unlock the amounts?'**
+  String get reopenBillTitle;
+
+  /// No description provided for @reopenBillWarning.
+  ///
+  /// In en, this message translates to:
+  /// **'Everyone\'s share will be recalculated. If you\'ve already collected money, the amounts on screen may no longer match what people paid.'**
+  String get reopenBillWarning;
+
+  /// No description provided for @reopenBillCta.
+  ///
+  /// In en, this message translates to:
+  /// **'Unlock anyway'**
+  String get reopenBillCta;
+
+  /// No description provided for @billNotLockedHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Amounts still update as players join or leave. Lock them before you start collecting.'**
+  String get billNotLockedHint;
 }
 
 class _AppLocalizationsDelegate

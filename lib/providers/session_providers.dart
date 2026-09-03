@@ -1,5 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../models/bill_line.dart';
 import '../models/club_member.dart';
 import '../models/court.dart';
 import '../models/match.dart';
@@ -122,4 +123,11 @@ final queueOrderProvider =
     Provider.family<List<SessionPlayer>, String>((ref, sessionId) {
   final players = ref.watch(playersProvider(sessionId)).value?.data ?? const [];
   return queueOrder(players);
+});
+
+/// Mga naka-freeze na halaga ng bayarin (R-09). Walang laman kapag hindi
+/// pa naka-lock — live pa ang kuwenta noon.
+final billProvider =
+    StreamProvider.family<List<BillLine>, String>((ref, sessionId) {
+  return ref.watch(sessionRepositoryProvider).watchBill(sessionId);
 });

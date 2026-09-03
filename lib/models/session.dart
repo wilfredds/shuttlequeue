@@ -20,6 +20,7 @@ class Session {
     required this.feeMode,
     required this.createdAt,
     required this.updatedAt,
+    this.billFinalizedAt,
   });
 
   final String id;
@@ -40,6 +41,12 @@ class Session {
   final DateTime createdAt;
   final DateTime updatedAt;
 
+  /// Kailan ni-freeze ang bayarin. Kapag hindi null, ang mga naka-imbak na
+  /// halaga sa sessions/{id}/bill ang totoo — hindi na ang live na kuwenta.
+  final DateTime? billFinalizedAt;
+
+  bool get isBillFinalized => billFinalizedAt != null;
+
   Session copyWith({
     String? title,
     String? venue,
@@ -50,6 +57,7 @@ class Session {
     int? shuttlePriceCentavos,
     FeeMode? feeMode,
     DateTime? updatedAt,
+    DateTime? billFinalizedAt,
   }) {
     return Session(
       id: id,
@@ -65,6 +73,7 @@ class Session {
       feeMode: feeMode ?? this.feeMode,
       createdAt: createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
+      billFinalizedAt: billFinalizedAt ?? this.billFinalizedAt,
     );
   }
 }

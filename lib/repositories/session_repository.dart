@@ -1,6 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/foundation.dart';
 
+import '../models/bill_line.dart';
 import '../models/enums.dart';
 import '../models/session.dart';
 import '../models/synced.dart';
@@ -161,6 +162,59 @@ class SessionRepository {
     await batch.commit();
   }
 
+  // -------------------------------------------------------------------------
+  // Bayarin — R-09
+  // -------------------------------------------------------------------------
+
+  Stream<List<BillLine>> watchBill(String sessionId) {
+    return _sessions
+        .doc(sessionId)
+        .collection('bill')
+        .snapshots()
+        .map((snapshot) => snapshot.docs.map(billLineFromDoc).toList());
+  }
+
+  /// Ini-freeze ang bayarin: isinusulat ang bawat halaga bilang datos.
+  ///
+  /// Pagkatapos nito, hindi na nagbabago ang singil kahit may dumating pang
+  /// late o magpalit ng fee mode. Ito ang pumipigil sa sitwasyong may hawak
+  /// nang pera ang QM na hindi tugma sa nasa screen (R-09).
+  Future<void> finalizeBill(String sessionId, List<BillLine> lines) async {
+    final sessionRef = _sessions.doc(sessionId);
+    final billRef = sessionRef.collection('bill');
+    final batch = _db.batch();
+
+    for (final line in lines) {
+      // Player ID ang document ID — isang linya lang kada manlalaro,
+      // at idempotent ang muling pag-finalize.
+      batch.set(billRef.doc(line.playerId), billLineToMap(line));
+    }
+
+    batch.update(sessionRef, {
+      'billFinalizedAt': FieldValue.serverTimestamp(),
+      'updatedAt': FieldValue.serverTimestamp(),
+    });
+
+    await batch.commit();
+  }
+
+  /// Binubuksan muli ang bayarin — sinasadyang may babala sa UI.
+  Future<void> reopenBill(String sessionId) async {
+    final sessionRef = _sessions.doc(sessionId);
+    final existing = await sessionRef.collection('bill').get();
+
+    final batch = _db.batch();
+    for (final doc in existing.docs) {
+      batch.delete(doc.reference);
+    }
+    batch.update(sessionRef, {
+      'billFinalizedAt': null,
+      'updatedAt': FieldValue.serverTimestamp(),
+    });
+
+    await batch.commit();
+  }
+
   /// Buong pagbura ng session at ng lahat ng laman nito.
   ///
   /// **Hindi cascade ang Firestore** — kapag binura ang parent doc, nananatili
@@ -171,7 +225,7 @@ class SessionRepository {
     final sessionRef = _sessions.doc(sessionId);
 
     final refsToDelete = <DocumentReference<Map<String, dynamic>>>[];
-    for (final name in const ['players', 'courts', 'matches']) {
+    for (final name in const ['players', 'courts', 'matches', 'bill']) {
       final snapshot = await sessionRef.collection(name).get();
       refsToDelete.addAll(snapshot.docs.map((doc) => doc.reference));
     }

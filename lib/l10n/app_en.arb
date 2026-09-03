@@ -306,5 +306,20 @@
         "type": "String"
       }
     }
-  }
+  },
+  "finalizeBill": "Lock the amounts",
+  "billLocked": "Amounts locked — late arrivals won't change what anyone owes",
+  "billLockedAt": "Locked {time}",
+  "@billLockedAt": {
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "reopenBill": "Unlock",
+  "reopenBillTitle": "Unlock the amounts?",
+  "reopenBillWarning": "Everyone's share will be recalculated. If you've already collected money, the amounts on screen may no longer match what people paid.",
+  "reopenBillCta": "Unlock anyway",
+  "billNotLockedHint": "Amounts still update as players join or leave. Lock them before you start collecting."
 }

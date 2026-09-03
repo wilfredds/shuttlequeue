@@ -5,6 +5,7 @@ import 'package:share_plus/share_plus.dart';
 
 import '../l10n/app_localizations.dart';
 import '../models/enums.dart';
+import '../models/bill_line.dart';
 import '../models/session.dart';
 import '../models/session_player.dart';
 import '../providers/session_providers.dart';
@@ -40,24 +41,34 @@ class CostSplitScreen extends ConsumerWidget {
       );
     }
 
-    final breakdown = const FeeCalculator().calculate(
-      players: players,
-      courtFeeCentavos: session.courtFeeCentavos,
-      shuttlePriceCentavos: session.shuttlePriceCentavos,
-      feeMode: session.feeMode,
-    );
+    final frozen = ref.watch(billProvider(sessionId)).value ?? const <BillLine>[];
+
+    // R-09: kapag naka-lock, ang naka-imbak na halaga ang totoo. Ang live
+    // na kuwenta ay ginagamit lang bago mag-lock.
+    final breakdown = session.isBillFinalized && frozen.isNotEmpty
+        ? _frozenBreakdown(frozen, players, session.feeMode)
+        : const FeeCalculator().calculate(
+            players: players,
+            courtFeeCentavos: session.courtFeeCentavos,
+            shuttlePriceCentavos: session.shuttlePriceCentavos,
+            feeMode: session.feeMode,
+          );
 
     return Scaffold(
       body: ListView(
         padding: const EdgeInsets.fromLTRB(12, 12, 12, 96),
         children: [
           _Summary(breakdown: breakdown),
-          const SizedBox(height: 12),
+          const SizedBox(height: 10),
+          _LockBanner(sessionId: sessionId, session: session,
+              breakdown: breakdown),
+          const SizedBox(height: 6),
           for (final line in breakdown.lines)
             _FeeTile(
               sessionId: sessionId,
               line: line,
               feeMode: session.feeMode,
+              isLocked: session.isBillFinalized,
             ),
         ],
       ),
@@ -83,6 +94,40 @@ class CostSplitScreen extends ConsumerWidget {
           ),
         ],
       ),
+    );
+  }
+
+  /// Binubuo muli ang breakdown mula sa mga naka-freeze na halaga.
+  /// Ang `hasPaid` ay kinukuha pa rin sa player doc — tuloy ang koleksyon,
+  /// ang presyo lang ang hindi na gumagalaw.
+  FeeBreakdown _frozenBreakdown(
+    List<BillLine> frozen,
+    List<SessionPlayer> players,
+    FeeMode mode,
+  ) {
+    final playersById = {for (final p in players) p.id: p};
+    final lines = <FeeLine>[];
+
+    for (final line in frozen) {
+      final player = playersById[line.playerId];
+      lines.add(
+        FeeLine(
+          playerId: line.playerId,
+          name: line.name,
+          courtShareCentavos: line.courtShareCentavos,
+          shuttleShareCentavos: line.shuttleShareCentavos,
+          hasPaid: player?.hasPaid ?? false,
+          hasLeft: player?.status == PlayerStatus.left,
+        ),
+      );
+    }
+    lines.sort((a, b) => a.name.toLowerCase().compareTo(b.name.toLowerCase()));
+
+    final total = lines.fold(0, (sum, l) => sum + l.totalCentavos);
+    return FeeBreakdown(
+      lines: lines,
+      mode: mode,
+      expectedTotalCentavos: total,
     );
   }
 
@@ -165,6 +210,134 @@ class CostSplitScreen extends ConsumerWidget {
     await SharePlus.instance.share(
       ShareParams(text: buffer.toString(), subject: session.title),
     );
+  }
+}
+
+/// Ang kontrol para sa pag-freeze ng bayarin (R-09).
+class _LockBanner extends ConsumerWidget {
+  const _LockBanner({
+    required this.sessionId,
+    required this.session,
+    required this.breakdown,
+  });
+
+  final String sessionId;
+  final Session session;
+  final FeeBreakdown breakdown;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final l10n = AppLocalizations.of(context)!;
+    final theme = Theme.of(context);
+
+    if (!session.isBillFinalized) {
+      return Card(
+        color: theme.colorScheme.surfaceContainerHighest,
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(14, 10, 10, 10),
+          child: Row(
+            children: [
+              Expanded(
+                child: Text(
+                  l10n.billNotLockedHint,
+                  style: theme.textTheme.bodySmall
+                      ?.copyWith(color: theme.colorScheme.onSurfaceVariant),
+                ),
+              ),
+              const SizedBox(width: 8),
+              FilledButton.tonalIcon(
+                onPressed: breakdown.lines.isEmpty
+                    ? null
+                    : () => _lock(ref),
+                icon: const Icon(Icons.lock_outline, size: 18),
+                label: Text(l10n.finalizeBill),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+
+    final lockedAt = DateFormat('h:mm a').format(session.billFinalizedAt!);
+    return Card(
+      color: theme.colorScheme.secondaryContainer,
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(14, 10, 10, 10),
+        child: Row(
+          children: [
+            Icon(Icons.lock, size: 18,
+                color: theme.colorScheme.onSecondaryContainer),
+            const SizedBox(width: 10),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    l10n.billLocked,
+                    style: theme.textTheme.bodyMedium?.copyWith(
+                      color: theme.colorScheme.onSecondaryContainer,
+                    ),
+                  ),
+                  Text(
+                    l10n.billLockedAt(lockedAt),
+                    style: theme.textTheme.labelSmall?.copyWith(
+                      color: theme.colorScheme.onSecondaryContainer,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            TextButton(
+              onPressed: () => _confirmReopen(context, ref, l10n),
+              child: Text(l10n.reopenBill),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Future<void> _lock(WidgetRef ref) async {
+    final lines = [
+      for (final line in breakdown.lines)
+        BillLine(
+          playerId: line.playerId,
+          name: line.name,
+          courtShareCentavos: line.courtShareCentavos,
+          shuttleShareCentavos: line.shuttleShareCentavos,
+        ),
+    ];
+    await ref.read(sessionRepositoryProvider).finalizeBill(sessionId, lines);
+  }
+
+  /// Ang pag-unlock ay may kumpirmasyon — hindi tulad ng mga aksyon sa
+  /// gitna ng laro. Dito, ang mali ay pera: baka may nabayaran na pala na
+  /// hindi na tugma sa bagong kuwenta.
+  Future<void> _confirmReopen(
+    BuildContext context,
+    WidgetRef ref,
+    AppLocalizations l10n,
+  ) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: Text(l10n.reopenBillTitle),
+        content: Text(l10n.reopenBillWarning),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop(false),
+            child: Text(l10n.cancel),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.of(dialogContext).pop(true),
+            child: Text(l10n.reopenBillCta),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed != true) return;
+    await ref.read(sessionRepositoryProvider).reopenBill(sessionId);
   }
 }
 
@@ -258,11 +431,16 @@ class _FeeTile extends ConsumerWidget {
     required this.sessionId,
     required this.line,
     required this.feeMode,
+    required this.isLocked,
   });
 
   final String sessionId;
   final FeeLine line;
   final FeeMode feeMode;
+
+  /// Naka-lock na ang halaga: itinatago ang shuttle stepper dahil hindi na
+  /// nito mababago ang singil, at nakakalito kung mukhang kaya pa.
+  final bool isLocked;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -315,7 +493,7 @@ class _FeeTile extends ConsumerWidget {
             ),
 
             // Bilang ng shuttle — stepper, para hindi mag-type ang QM.
-            if (feeMode == FeeMode.perHead) ...[
+            if (feeMode == FeeMode.perHead && !isLocked) ...[
               IconButton(
                 icon: const Icon(Icons.remove_circle_outline),
                 onPressed: () =>

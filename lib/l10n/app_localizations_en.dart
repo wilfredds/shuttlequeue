@@ -553,4 +553,33 @@ class AppLocalizationsEn extends AppLocalizations {
   String carriedBalance(String amount) {
     return 'brought forward: $amount';
   }
+
+  @override
+  String get finalizeBill => 'Lock the amounts';
+
+  @override
+  String get billLocked =>
+      'Amounts locked — late arrivals won\'t change what anyone owes';
+
+  @override
+  String billLockedAt(String time) {
+    return 'Locked $time';
+  }
+
+  @override
+  String get reopenBill => 'Unlock';
+
+  @override
+  String get reopenBillTitle => 'Unlock the amounts?';
+
+  @override
+  String get reopenBillWarning =>
+      'Everyone\'s share will be recalculated. If you\'ve already collected money, the amounts on screen may no longer match what people paid.';
+
+  @override
+  String get reopenBillCta => 'Unlock anyway';
+
+  @override
+  String get billNotLockedHint =>
+      'Amounts still update as players join or leave. Lock them before you start collecting.';
 }

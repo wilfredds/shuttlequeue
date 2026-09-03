@@ -173,7 +173,7 @@ service cloud.firestore {
       return data.keys().hasOnly([
           'ownerUid', 'clubId', 'title', 'venue', 'sessionDate', 'status',
           'courtCount', 'courtFeeCentavos', 'shuttlePriceCentavos',
-          'feeMode', 'createdAt', 'updatedAt'
+          'feeMode', 'billFinalizedAt', 'createdAt', 'updatedAt'
         ])
         && data.ownerUid is string
         && isOptionalText(data.clubId, 128)
@@ -189,6 +189,7 @@ service cloud.firestore {
         && isMoney(data.courtFeeCentavos)
         && isMoney(data.shuttlePriceCentavos)
         && data.feeMode in ['per_head', 'american']
+        && isNullOrTimestamp(data.billFinalizedAt)
         && data.createdAt is timestamp
         && data.updatedAt is timestamp;
     }
@@ -236,6 +237,28 @@ service cloud.firestore {
         allow update: if ownsSession(sessionId)
           && validPlayer(request.resource.data)
           && createdAtUnchanged();
+      }
+
+      // ---------------------------------------------------------------------
+      // bill — mga naka-freeze na halaga (R-09)
+      // ---------------------------------------------------------------------
+      //
+      // Kapag nagsimula nang mangolekta ang QM, hindi na dapat gumalaw ang
+      // singil. Naka-imbak dito ang halaga bilang datos; ang `hasPaid` ay
+      // nananatili sa player doc dahil tuloy pa rin ang koleksyon.
+      match /bill/{playerId} {
+        function validBillLine(data) {
+          return data.keys().hasOnly([
+              'name', 'courtShareCentavos', 'shuttleShareCentavos'
+            ])
+            && isText(data.name, 60)
+            && isMoney(data.courtShareCentavos)
+            && isMoney(data.shuttleShareCentavos);
+        }
+
+        allow read, delete: if ownsSession(sessionId);
+        allow create, update: if ownsSession(sessionId)
+          && validBillLine(request.resource.data);
       }
 
       // ---------------------------------------------------------------------
