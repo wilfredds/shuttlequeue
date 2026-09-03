@@ -3,6 +3,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 
 import '../models/club_member.dart';
 import '../models/enums.dart';
+import 'deferred_write.dart';
 import 'firestore_mappers.dart';
 
 /// Ang club at ang "regulars book" nito.
@@ -13,10 +14,11 @@ import 'firestore_mappers.dart';
 ///
 /// PRIVACY (RA 10173): pangalan at skill lang. Walang phone, walang email.
 class ClubRepository {
-  ClubRepository(this._db, this._auth);
+  ClubRepository(this._db, this._auth, {this.onWriteError});
 
   final FirebaseFirestore _db;
   final FirebaseAuth _auth;
+  final WriteErrorReporter? onWriteError;
 
   String get _uid => _auth.currentUser?.uid ?? '';
 
@@ -40,12 +42,17 @@ class ClubRepository {
 
     if (existing.docs.isNotEmpty) return existing.docs.first.id;
 
+    // Ang doc ID ay nabubuo nang lokal, kaya maibabalik natin agad kahit
+    // hindi pa naaabot ang server.
     final ref = _clubs.doc();
-    await ref.set({
-      'name': fallbackName,
-      'ownerUid': ownerUid,
-      'createdAt': FieldValue.serverTimestamp(),
-    });
+    fireAndForget(
+      ref.set({
+        'name': fallbackName,
+        'ownerUid': ownerUid,
+        'createdAt': FieldValue.serverTimestamp(),
+      }),
+      onWriteError,
+    );
     return ref.id;
   }
 
@@ -62,13 +69,16 @@ class ClubRepository {
     List<String> aliases = const [],
   }) async {
     final ref = membersOf(clubId).doc();
-    await ref.set(
-      memberToCreateMap(
-        ownerUid: _uid,
-        name: name,
-        skillTier: skillTier,
-        aliases: aliases,
+    fireAndForget(
+      ref.set(
+        memberToCreateMap(
+          ownerUid: _uid,
+          name: name,
+          skillTier: skillTier,
+          aliases: aliases,
+        ),
       ),
+      onWriteError,
     );
     return ref.id;
   }
@@ -90,19 +100,29 @@ class ClubRepository {
   }
 
   /// Nagdaragdag ng palayaw na natutunan sa import (hal. "Kuya Jun" → Jun).
-  Future<void> rememberAlias(String clubId, String memberId, String alias) {
-    return membersOf(clubId).doc(memberId).update({
-      'aliases': FieldValue.arrayUnion([alias]),
-    });
+  Future<void> rememberAlias(
+    String clubId,
+    String memberId,
+    String alias,
+  ) async {
+    fireAndForget(
+      membersOf(clubId).doc(memberId).update({
+        'aliases': FieldValue.arrayUnion([alias]),
+      }),
+      onWriteError,
+    );
   }
 
   /// Markahan na dumalo ngayong gabi. Ginagamit ang increment para tama
   /// pa rin kahit maraming pending write habang offline.
-  Future<void> recordAttendance(String clubId, String memberId) {
-    return membersOf(clubId).doc(memberId).update({
-      'sessionsAttended': FieldValue.increment(1),
-      'lastPlayedAt': FieldValue.serverTimestamp(),
-    });
+  Future<void> recordAttendance(String clubId, String memberId) async {
+    fireAndForget(
+      membersOf(clubId).doc(memberId).update({
+        'sessionsAttended': FieldValue.increment(1),
+        'lastPlayedAt': FieldValue.serverTimestamp(),
+      }),
+      onWriteError,
+    );
   }
 
   /// Utang o sobrang bayad na dala sa susunod na gabi. Positibo = may utang.
@@ -110,15 +130,21 @@ class ClubRepository {
     String clubId,
     String memberId,
     int deltaCentavos,
-  ) {
-    return membersOf(clubId).doc(memberId).update({
-      'balanceCentavos': FieldValue.increment(deltaCentavos),
-    });
+  ) async {
+    fireAndForget(
+      membersOf(clubId).doc(memberId).update({
+        'balanceCentavos': FieldValue.increment(deltaCentavos),
+      }),
+      onWriteError,
+    );
   }
 
   /// Tunay na pagbura — hindi archive. Kailangan ito ng RA 10173 kapag
   /// humiling ang isang manlalaro na alisin ang kanyang datos.
-  Future<void> deleteMember(String clubId, String memberId) {
-    return membersOf(clubId).doc(memberId).delete();
+  Future<void> deleteMember(String clubId, String memberId) async {
+    fireAndForget(
+      membersOf(clubId).doc(memberId).delete(),
+      onWriteError,
+    );
   }
 }

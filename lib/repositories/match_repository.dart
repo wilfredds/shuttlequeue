@@ -5,6 +5,7 @@ import '../models/court.dart';
 import '../models/enums.dart';
 import '../models/match.dart';
 import '../models/synced.dart';
+import 'deferred_write.dart';
 import 'firestore_mappers.dart';
 
 /// Courts at matches — ang mismong pag-ikot ng laro.
@@ -13,10 +14,11 @@ import 'firestore_mappers.dart';
 /// rotation (naka-playing ang court pero naka-queued pa rin ang mga tao)
 /// ang pinakamabilis na paraan para masira ang tiwala ng QM sa app.
 class MatchRepository {
-  MatchRepository(this._db, this._auth);
+  MatchRepository(this._db, this._auth, {this.onWriteError});
 
   final FirebaseFirestore _db;
   final FirebaseAuth _auth;
+  final WriteErrorReporter? onWriteError;
 
   String get _uid => _auth.currentUser?.uid ?? '';
 
@@ -26,7 +28,7 @@ class MatchRepository {
   Stream<Synced<List<Court>>> watchCourts(String sessionId) {
     return _session(sessionId).collection('courts').snapshots().map((snapshot) {
       final courts = snapshot.docs.map(courtFromDoc).toList()
-        ..sort((a, b) => _naturalCompare(a.label, b.label));
+        ..sort((a, b) => naturalCompare(a.label, b.label));
       return Synced(
         data: courts,
         hasPendingWrites: snapshot.metadata.hasPendingWrites,
@@ -78,7 +80,7 @@ class MatchRepository {
       });
     }
 
-    await batch.commit();
+    fireAndForget(batch.commit(), onWriteError);
     return matchRef.id;
   }
 
@@ -116,7 +118,7 @@ class MatchRepository {
       });
     }
 
-    await batch.commit();
+    fireAndForget(batch.commit(), onWriteError);
   }
 
   /// Ang eksaktong kabaligtaran ng [endMatch] — R-03.
@@ -150,7 +152,7 @@ class MatchRepository {
       });
     }
 
-    await batch.commit();
+    fireAndForget(batch.commit(), onWriteError);
   }
 
   /// Kanselahin ang laro na parang hindi ito nangyari — walang dagdag na
@@ -177,14 +179,6 @@ class MatchRepository {
       });
     }
 
-    await batch.commit();
+    fireAndForget(batch.commit(), onWriteError);
   }
-}
-
-/// "Court 2" bago ang "Court 10" — hindi tulad ng plain string sort.
-int _naturalCompare(String a, String b) {
-  final numA = int.tryParse(RegExp(r'\d+').firstMatch(a)?.group(0) ?? '');
-  final numB = int.tryParse(RegExp(r'\d+').firstMatch(b)?.group(0) ?? '');
-  if (numA != null && numB != null) return numA.compareTo(numB);
-  return a.compareTo(b);
 }

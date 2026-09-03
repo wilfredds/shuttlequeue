@@ -1,17 +1,17 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:flutter/foundation.dart';
 
 import '../models/bill_line.dart';
 import '../models/enums.dart';
 import '../models/session.dart';
 import '../models/synced.dart';
+import 'deferred_write.dart';
 import 'firestore_mappers.dart';
 
 /// Lahat ng Firestore access para sa sessions (at sa courts na kasama nila).
 /// Walang ibang layer na tumatawag ng FirebaseFirestore nang direkta.
 class SessionRepository {
-  SessionRepository(this._db, this._auth, {this.onDeferredWriteError});
+  SessionRepository(this._db, this._auth, {this.onWriteError});
 
   final FirebaseFirestore _db;
   final FirebaseAuth _auth;
@@ -19,7 +19,7 @@ class SessionRepository {
   /// Tinatawag kapag nabigo ang isang sulat na hindi hinintay ng UI.
   /// Kung wala nito, tahimik na nawawala ang datos — at iyon ang
   /// pinakamasamang uri ng bug (tingnan ang sync_error_provider.dart).
-  final void Function(Object error)? onDeferredWriteError;
+  final WriteErrorReporter? onWriteError;
 
   /// Isinusulat sa bawat child document para hindi na kailangang tanungin
   /// ng rules ang parent. Tingnan ang komento sa firestore_mappers.dart.
@@ -112,7 +112,7 @@ class SessionRepository {
 
     // Sadyang hindi ino-await: sa offline, hindi nagre-resolve ang commit
     // hangga't walang network. Naka-apply na ito agad sa local cache.
-    unawaited(batch.commit(), onDeferredWriteError);
+    fireAndForget(batch.commit(), onWriteError);
 
     return sessionRef.id;
   }
@@ -126,7 +126,7 @@ class SessionRepository {
     int? courtFeeCentavos,
     int? shuttlePriceCentavos,
     FeeMode? feeMode,
-  }) {
+  }) async {
     final updates = <String, Object?>{
       'updatedAt': FieldValue.serverTimestamp(),
       // `?value` = laktawan ang entry kapag null. Ang hindi binanggit na
@@ -140,14 +140,26 @@ class SessionRepository {
       if (feeMode != null) 'feeMode': feeMode.value,
     };
 
-    return _sessions.doc(sessionId).update(updates);
+    fireAndForget(_sessions.doc(sessionId).update(updates), onWriteError);
   }
 
   /// Nagdadagdag o nagbabawas ng court nang hindi ginagalaw ang iba.
   Future<void> setCourtCount(String sessionId, int desiredCount) async {
     final courtsRef = _courtsOf(sessionId);
-    final existing = await courtsRef.orderBy('label').get();
-    final current = existing.docs.length;
+    final existing = await courtsRef.get();
+
+    // HINDI pwedeng orderBy('label') dito: string ang paghahambing, kaya
+    // ang "Court 10" ay nauuna sa "Court 2". Kapag binawasan ang bilang,
+    // maling court ang mabubura. Sa client tayo nag-aayos, gamit ang
+    // parehong natural sort na ginagamit ng courts screen.
+    final sorted = [...existing.docs]..sort(
+        (a, b) => naturalCompare(
+          (a.data()['label'] as String?) ?? '',
+          (b.data()['label'] as String?) ?? '',
+        ),
+      );
+
+    final current = sorted.length;
     if (current == desiredCount) return;
 
     final batch = _db.batch();
@@ -160,10 +172,13 @@ class SessionRepository {
         );
       }
     } else {
-      // Tinatanggal ang mga huling court. Ang laro sa court na tinanggal
-      // ay hindi basta binubura — ang caller ang dapat sumuri muna
-      // (hahawakan ito nang buo sa M3 kasama ng rotation).
-      for (final doc in existing.docs.skip(desiredCount)) {
+      // Ang court na may kasalukuyang laro ay hindi binubura — mawawala
+      // ang laro at maiiwang "playing" ang apat na tao, na hindi na
+      // kailanman babalik sa pila. Nilalaktawan natin sila; kapag natapos
+      // ang laro, pwedeng ulitin ng QM.
+      for (final doc in sorted.skip(desiredCount)) {
+        final isPlaying = doc.data()['currentMatchId'] != null;
+        if (isPlaying) continue;
         batch.delete(doc.reference);
       }
     }
@@ -173,7 +188,7 @@ class SessionRepository {
       'updatedAt': FieldValue.serverTimestamp(),
     });
 
-    await batch.commit();
+    fireAndForget(batch.commit(), onWriteError);
   }
 
   // -------------------------------------------------------------------------
@@ -209,7 +224,7 @@ class SessionRepository {
       'updatedAt': FieldValue.serverTimestamp(),
     });
 
-    await batch.commit();
+    fireAndForget(batch.commit(), onWriteError);
   }
 
   /// Binubuksan muli ang bayarin — sinasadyang may babala sa UI.
@@ -226,7 +241,7 @@ class SessionRepository {
       'updatedAt': FieldValue.serverTimestamp(),
     });
 
-    await batch.commit();
+    fireAndForget(batch.commit(), onWriteError);
   }
 
   /// Buong pagbura ng session at ng lahat ng laman nito.
@@ -251,21 +266,7 @@ class SessionRepository {
       for (final ref in refsToDelete.sublist(i, end)) {
         batch.delete(ref);
       }
-      await batch.commit();
+      fireAndForget(batch.commit(), onWriteError);
     }
   }
-}
-
-/// Maliit na helper para linawin ang sinasadyang hindi pag-await.
-/// (Katulad ng `unawaited` ng package:async — hindi na natin idinagdag
-/// ang buong dependency para sa isang linya.)
-void unawaited(Future<void> future, [void Function(Object)? onError]) {
-  future.catchError((Object error) {
-    onError?.call(error);
-    // Ang mga pending write ay nire-retry ng Firestore mismo, kaya hindi
-    // ito dapat pumatay sa app. Pero mula M5, kayang tanggihan ng security
-    // rules ang isang sulat — at ang tahimik na pagkabigo ang pinakamasama
-    // sa lahat. Kaya iniiwan natin ito sa log para makita sa debugging.
-    debugPrint('ShuttleQueue: deferred write failed — $error');
-  });
 }

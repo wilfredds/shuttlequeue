@@ -32,6 +32,11 @@ class AuthRepository {
 
     await user.updateDisplayName(displayName);
 
+    // Ito lang ang sulat sa buong app na sinasadyang hinihintay. Kailangan
+    // ng network ang paggawa ng account, kaya online na tayo dito — at
+    // gusto nating tapos na ang profile bago pumasok ang QM sa app.
+    // Lahat ng iba pang sulat ay fire-and-forget (deferred_write.dart).
+    //
     // role: "qm" — naka-reserve para sa future roles (hal. player accounts sa v2).
     await _db.collection('users').doc(user.uid).set({
       'displayName': displayName,

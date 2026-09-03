@@ -20,7 +20,7 @@ final sessionRepositoryProvider = Provider<SessionRepository>(
   (ref) => SessionRepository(
     ref.watch(firestoreProvider),
     ref.watch(firebaseAuthProvider),
-    onDeferredWriteError: (error) =>
+    onWriteError: (error) =>
         ref.read(syncErrorProvider.notifier).report(error),
   ),
 );
@@ -29,6 +29,8 @@ final clubRepositoryProvider = Provider<ClubRepository>(
   (ref) => ClubRepository(
     ref.watch(firestoreProvider),
     ref.watch(firebaseAuthProvider),
+    onWriteError: (error) =>
+        ref.read(syncErrorProvider.notifier).report(error),
   ),
 );
 
@@ -87,6 +89,8 @@ final playerRepositoryProvider = Provider<PlayerRepository>(
   (ref) => PlayerRepository(
     ref.watch(firestoreProvider),
     ref.watch(firebaseAuthProvider),
+    onWriteError: (error) =>
+        ref.read(syncErrorProvider.notifier).report(error),
   ),
 );
 
@@ -105,6 +109,8 @@ final matchRepositoryProvider = Provider<MatchRepository>(
   (ref) => MatchRepository(
     ref.watch(firestoreProvider),
     ref.watch(firebaseAuthProvider),
+    onWriteError: (error) =>
+        ref.read(syncErrorProvider.notifier).report(error),
   ),
 );
 

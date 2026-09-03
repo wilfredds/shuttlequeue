@@ -4,6 +4,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import '../models/enums.dart';
 import '../models/session_player.dart';
 import '../models/synced.dart';
+import 'deferred_write.dart';
 import 'firestore_mappers.dart';
 
 /// Isang bagong manlalarong idadagdag — galing man sa paste o sa manual add.
@@ -20,10 +21,11 @@ class NewPlayer {
 }
 
 class PlayerRepository {
-  PlayerRepository(this._db, this._auth);
+  PlayerRepository(this._db, this._auth, {this.onWriteError});
 
   final FirebaseFirestore _db;
   final FirebaseAuth _auth;
+  final WriteErrorReporter? onWriteError;
 
   String get _uid => _auth.currentUser?.uid ?? '';
 
@@ -73,7 +75,7 @@ class PlayerRepository {
           ),
         );
       }
-      await batch.commit();
+      fireAndForget(batch.commit(), onWriteError);
     }
   }
 
@@ -87,7 +89,7 @@ class PlayerRepository {
     String sessionId,
     NewPlayer player,
     List<SessionPlayer> currentPlayers,
-  ) {
+  ) async {
     final active = currentPlayers
         .where((p) => p.status != PlayerStatus.left)
         .map((p) => p.gamesPlayed);
@@ -96,16 +98,19 @@ class PlayerRepository {
         ? 0
         : active.reduce((a, b) => a < b ? a : b);
 
-    return _playersOf(sessionId).doc().set(
-          playerToCreateMap(
+    fireAndForget(
+      _playersOf(sessionId).doc().set(
+        playerToCreateMap(
             ownerUid: _uid,
             name: player.name,
             skillTier: player.skillTier,
             gamesPlayed: baseline,
             waitingSince: DateTime.now(),
-            memberId: player.memberId,
-          ),
-        );
+          memberId: player.memberId,
+        ),
+      ),
+      onWriteError,
+    );
   }
 
   Future<void> updatePlayer(
@@ -115,8 +120,9 @@ class PlayerRepository {
     SkillTier? skillTier,
     PlayerStatus? status,
     bool? hasPaid,
-  }) {
-    return _playersOf(sessionId).doc(playerId).update({
+  }) async {
+    fireAndForget(
+      _playersOf(sessionId).doc(playerId).update({
       'name': ?name,
       if (skillTier != null) 'skillTier': skillTier.value,
       if (status != null) 'status': status.value,
@@ -124,25 +130,38 @@ class PlayerRepository {
       // Kapag bumalik sa pila, ngayon nagsisimula ang paghihintay niya.
       if (status == PlayerStatus.queued)
         'waitingSince': Timestamp.fromDate(DateTime.now()),
-    });
+      }),
+      onWriteError,
+    );
   }
 
   /// Bilang ng shuttle na nagamit. Increment para tama kahit offline.
-  Future<void> adjustShuttles(String sessionId, String playerId, int delta) {
-    return _playersOf(sessionId).doc(playerId).update({
-      'shuttlesUsed': FieldValue.increment(delta),
-    });
+  Future<void> adjustShuttles(
+    String sessionId,
+    String playerId,
+    int delta,
+  ) async {
+    fireAndForget(
+      _playersOf(sessionId).doc(playerId).update({
+        'shuttlesUsed': FieldValue.increment(delta),
+      }),
+      onWriteError,
+    );
   }
 
-  Future<void> removePlayer(String sessionId, String playerId) {
-    return _playersOf(sessionId).doc(playerId).delete();
+  Future<void> removePlayer(String sessionId, String playerId) async {
+    fireAndForget(
+      _playersOf(sessionId).doc(playerId).delete(),
+      onWriteError,
+    );
   }
 
   /// Para sa undo ng pagtanggal: ibinabalik ang buong laman ng player.
   /// Bagong document ID ito — hindi na kayang ibalik ang luma — pero
   /// nananatili ang lahat ng bilang, kaya buo pa rin ang fairness.
-  Future<void> restorePlayer(String sessionId, SessionPlayer player) {
-    return _playersOf(sessionId).doc().set({
+  Future<void> restorePlayer(String sessionId, SessionPlayer player) async {
+    fireAndForget(
+      _playersOf(sessionId).doc().set({
       'ownerUid': _uid,
       'name': player.name,
       'skillTier': player.skillTier.value,
@@ -152,7 +171,9 @@ class PlayerRepository {
       'shuttlesUsed': player.shuttlesUsed,
       'hasPaid': player.hasPaid,
       'memberId': player.memberId,
-      'createdAt': Timestamp.fromDate(player.createdAt),
-    });
+        'createdAt': Timestamp.fromDate(player.createdAt),
+      }),
+      onWriteError,
+    );
   }
 }
