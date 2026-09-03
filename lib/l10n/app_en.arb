@@ -321,5 +321,43 @@
   "reopenBillTitle": "Unlock the amounts?",
   "reopenBillWarning": "Everyone's share will be recalculated. If you've already collected money, the amounts on screen may no longer match what people paid.",
   "reopenBillCta": "Unlock anyway",
-  "billNotLockedHint": "Amounts still update as players join or leave. Lock them before you start collecting."
+  "billNotLockedHint": "Amounts still update as players join or leave. Lock them before you start collecting.",
+  "openBoard": "Show the board",
+  "boardUpNext": "Up next",
+  "boardNobodyWaiting": "Nobody waiting",
+  "boardCourtFree": "Free",
+  "boardWaitingFor": "{minutes}m",
+  "@boardWaitingFor": {
+    "placeholders": {
+      "minutes": {
+        "type": "int"
+      }
+    }
+  },
+  "boardGamesCount": "{count}",
+  "@boardGamesCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "boardGamesLabel": "games",
+  "boardPlayersWaiting": "{count} waiting",
+  "@boardPlayersWaiting": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "boardExit": "Close board",
+  "boardMoreWaiting": "+{count} more",
+  "@boardMoreWaiting": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  }
 }

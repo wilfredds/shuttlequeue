@@ -5,6 +5,7 @@ import 'package:share_plus/share_plus.dart';
 import '../l10n/app_localizations.dart';
 import '../providers/session_providers.dart';
 import '../services/session_snapshot.dart';
+import 'board_screen.dart';
 import 'cost_split_screen.dart';
 import 'courts_screen.dart';
 import 'roster_screen.dart';
@@ -54,6 +55,18 @@ class _SessionDetailScreenState extends ConsumerState<SessionDetailScreen> {
         title: Text(session?.title ?? l10n.appTitle),
         actions: [
           if (session != null) ...[
+            // Ang board ay para sa pangalawang screen — tablet, laptop, o
+            // TV na nakaharap sa lahat. Sinasagot nito ang "kailan ako?"
+            // nang hindi na kailangang magsalita ang QM.
+            IconButton(
+              tooltip: l10n.openBoard,
+              icon: const Icon(Icons.tv_outlined),
+              onPressed: () => Navigator.of(context).push(
+                MaterialPageRoute<void>(
+                  builder: (_) => BoardScreen(sessionId: widget.sessionId),
+                ),
+              ),
+            ),
             // R-01: ang telepono ng QM ang buong sistema. Isang tap dito at
             // may kopya na siya ng buong gabi na kaya niyang i-paste kahit
             // saan — gumagana kahit walang signal.

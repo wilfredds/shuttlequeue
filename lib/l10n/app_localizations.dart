@@ -1029,6 +1029,66 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Amounts still update as players join or leave. Lock them before you start collecting.'**
   String get billNotLockedHint;
+
+  /// No description provided for @openBoard.
+  ///
+  /// In en, this message translates to:
+  /// **'Show the board'**
+  String get openBoard;
+
+  /// No description provided for @boardUpNext.
+  ///
+  /// In en, this message translates to:
+  /// **'Up next'**
+  String get boardUpNext;
+
+  /// No description provided for @boardNobodyWaiting.
+  ///
+  /// In en, this message translates to:
+  /// **'Nobody waiting'**
+  String get boardNobodyWaiting;
+
+  /// No description provided for @boardCourtFree.
+  ///
+  /// In en, this message translates to:
+  /// **'Free'**
+  String get boardCourtFree;
+
+  /// No description provided for @boardWaitingFor.
+  ///
+  /// In en, this message translates to:
+  /// **'{minutes}m'**
+  String boardWaitingFor(int minutes);
+
+  /// No description provided for @boardGamesCount.
+  ///
+  /// In en, this message translates to:
+  /// **'{count}'**
+  String boardGamesCount(int count);
+
+  /// No description provided for @boardGamesLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'games'**
+  String get boardGamesLabel;
+
+  /// No description provided for @boardPlayersWaiting.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} waiting'**
+  String boardPlayersWaiting(int count);
+
+  /// No description provided for @boardExit.
+  ///
+  /// In en, this message translates to:
+  /// **'Close board'**
+  String get boardExit;
+
+  /// No description provided for @boardMoreWaiting.
+  ///
+  /// In en, this message translates to:
+  /// **'+{count} more'**
+  String boardMoreWaiting(int count);
 }
 
 class _AppLocalizationsDelegate

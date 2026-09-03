@@ -582,4 +582,42 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get billNotLockedHint =>
       'Amounts still update as players join or leave. Lock them before you start collecting.';
+
+  @override
+  String get openBoard => 'Show the board';
+
+  @override
+  String get boardUpNext => 'Up next';
+
+  @override
+  String get boardNobodyWaiting => 'Nobody waiting';
+
+  @override
+  String get boardCourtFree => 'Free';
+
+  @override
+  String boardWaitingFor(int minutes) {
+    return '${minutes}m';
+  }
+
+  @override
+  String boardGamesCount(int count) {
+    return '$count';
+  }
+
+  @override
+  String get boardGamesLabel => 'games';
+
+  @override
+  String boardPlayersWaiting(int count) {
+    return '$count waiting';
+  }
+
+  @override
+  String get boardExit => 'Close board';
+
+  @override
+  String boardMoreWaiting(int count) {
+    return '+$count more';
+  }
 }
