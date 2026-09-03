@@ -1,4 +1,5 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
 import '../models/club_member.dart';
 import '../models/enums.dart';
@@ -12,9 +13,12 @@ import 'firestore_mappers.dart';
 ///
 /// PRIVACY (RA 10173): pangalan at skill lang. Walang phone, walang email.
 class ClubRepository {
-  ClubRepository(this._db);
+  ClubRepository(this._db, this._auth);
 
   final FirebaseFirestore _db;
+  final FirebaseAuth _auth;
+
+  String get _uid => _auth.currentUser?.uid ?? '';
 
   CollectionReference<Map<String, dynamic>> get _clubs => _db.collection('clubs');
 
@@ -59,7 +63,12 @@ class ClubRepository {
   }) async {
     final ref = membersOf(clubId).doc();
     await ref.set(
-      memberToCreateMap(name: name, skillTier: skillTier, aliases: aliases),
+      memberToCreateMap(
+        ownerUid: _uid,
+        name: name,
+        skillTier: skillTier,
+        aliases: aliases,
+      ),
     );
     return ref.id;
   }

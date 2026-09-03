@@ -14,13 +14,22 @@ import '../repositories/session_repository.dart';
 import '../services/matchmaking_service.dart';
 import 'auth_providers.dart';
 import 'firebase_providers.dart';
+import 'sync_error_provider.dart';
 
 final sessionRepositoryProvider = Provider<SessionRepository>(
-  (ref) => SessionRepository(ref.watch(firestoreProvider)),
+  (ref) => SessionRepository(
+    ref.watch(firestoreProvider),
+    ref.watch(firebaseAuthProvider),
+    onDeferredWriteError: (error) =>
+        ref.read(syncErrorProvider.notifier).report(error),
+  ),
 );
 
 final clubRepositoryProvider = Provider<ClubRepository>(
-  (ref) => ClubRepository(ref.watch(firestoreProvider)),
+  (ref) => ClubRepository(
+    ref.watch(firestoreProvider),
+    ref.watch(firebaseAuthProvider),
+  ),
 );
 
 /// Ang uid ng naka-login na QM, o null. Maliit na provider pero mahalaga:
@@ -75,7 +84,10 @@ final clubMembersProvider = StreamProvider<List<ClubMember>>((ref) {
 // ---------------------------------------------------------------------------
 
 final playerRepositoryProvider = Provider<PlayerRepository>(
-  (ref) => PlayerRepository(ref.watch(firestoreProvider)),
+  (ref) => PlayerRepository(
+    ref.watch(firestoreProvider),
+    ref.watch(firebaseAuthProvider),
+  ),
 );
 
 /// Mga manlalaro ng isang session. Isang listener kada session, ibinabahagi
@@ -90,7 +102,10 @@ final playersProvider =
 // ---------------------------------------------------------------------------
 
 final matchRepositoryProvider = Provider<MatchRepository>(
-  (ref) => MatchRepository(ref.watch(firestoreProvider)),
+  (ref) => MatchRepository(
+    ref.watch(firestoreProvider),
+    ref.watch(firebaseAuthProvider),
+  ),
 );
 
 final courtsProvider =

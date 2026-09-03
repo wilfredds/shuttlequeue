@@ -127,8 +127,9 @@ BillLine billLineFromDoc(DocumentSnapshot<Map<String, dynamic>> doc) {
   );
 }
 
-Map<String, Object?> billLineToMap(BillLine line) {
+Map<String, Object?> billLineToMap(BillLine line, {required String ownerUid}) {
   return {
+    'ownerUid': ownerUid,
     'name': line.name,
     'courtShareCentavos': line.courtShareCentavos,
     'shuttleShareCentavos': line.shuttleShareCentavos,
@@ -158,6 +159,7 @@ SessionPlayer playerFromDoc(DocumentSnapshot<Map<String, dynamic>> doc) {
 }
 
 Map<String, Object?> playerToCreateMap({
+  required String ownerUid,
   required String name,
   required SkillTier skillTier,
   required int gamesPlayed,
@@ -165,6 +167,11 @@ Map<String, Object?> playerToCreateMap({
   String? memberId,
 }) {
   return {
+    // Naka-stamp ang may-ari sa mismong dokumento. Dati, tinitingnan ng
+    // rules ang parent session sa pamamagitan ng get() — pero sa loob ng
+    // isang batch, wala pa ang parent na iyon, kaya tinatanggihan ang
+    // BUONG batch at nawawala ang bagong session sa harap ng QM.
+    'ownerUid': ownerUid,
     'name': name,
     'skillTier': skillTier.value,
     'gamesPlayed': gamesPlayed,
@@ -191,8 +198,12 @@ Court courtFromDoc(DocumentSnapshot<Map<String, dynamic>> doc) {
   );
 }
 
-Map<String, Object?> courtToCreateMap({required String label}) {
+Map<String, Object?> courtToCreateMap({
+  required String ownerUid,
+  required String label,
+}) {
   return {
+    'ownerUid': ownerUid,
     'label': label,
     'status': CourtStatus.free.value,
     'currentMatchId': null,
@@ -232,11 +243,13 @@ ClubMember memberFromDoc(DocumentSnapshot<Map<String, dynamic>> doc) {
 }
 
 Map<String, Object?> memberToCreateMap({
+  required String ownerUid,
   required String name,
   required SkillTier skillTier,
   List<String> aliases = const [],
 }) {
   return {
+    'ownerUid': ownerUid,
     'name': name,
     'skillTier': skillTier.value,
     'aliases': aliases,

@@ -620,4 +620,11 @@ class AppLocalizationsEn extends AppLocalizations {
   String boardMoreWaiting(int count) {
     return '+$count more';
   }
+
+  @override
+  String get syncFailed =>
+      'That didn\'t save. Check your connection — if it keeps happening, tell France.';
+
+  @override
+  String get syncFailedDismiss => 'Dismiss';
 }

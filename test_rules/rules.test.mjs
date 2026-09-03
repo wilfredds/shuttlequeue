@@ -15,7 +15,7 @@ import {
   assertSucceeds,
   assertFails,
 } from '@firebase/rules-unit-testing';
-import { doc, setDoc, getDoc, updateDoc, deleteDoc, collection, addDoc } from 'firebase/firestore';
+import { doc, setDoc, getDoc, updateDoc, deleteDoc, collection, addDoc, writeBatch } from 'firebase/firestore';
 import { readFileSync } from 'node:fs';
 
 const OWNER = 'qm-alice';
@@ -61,6 +61,7 @@ const validSession = (ownerUid = OWNER) => ({
 });
 
 const validPlayer = (overrides = {}) => ({
+  ownerUid: OWNER,
   name: 'Jun',
   skillTier: 'intermediate',
   gamesPlayed: 0,
@@ -123,12 +124,14 @@ async function main() {
       collection(ownerDb, 'sessions', SESSION, 'players'), validPlayer())));
   await check('owner adds a court', () =>
     assertSucceeds(addDoc(collection(ownerDb, 'sessions', SESSION, 'courts'), {
+      ownerUid: OWNER,
       label: 'Court 1',
       status: 'free',
       currentMatchId: null,
     })));
   await check('owner starts a match', () =>
     assertSucceeds(addDoc(collection(ownerDb, 'sessions', SESSION, 'matches'), {
+      ownerUid: OWNER,
       courtId: 'court-1',
       teamA: ['p1', 'p2'],
       teamB: ['p3', 'p4'],
@@ -139,6 +142,7 @@ async function main() {
     })));
   await check('owner adds a club member', () =>
     assertSucceeds(addDoc(collection(ownerDb, 'clubs', CLUB, 'members'), {
+      ownerUid: OWNER,
       name: 'Jun',
       skillTier: 'advanced',
       aliases: ['Kuya Jun'],
@@ -151,6 +155,23 @@ async function main() {
     assertSucceeds(addDoc(
       collection(ownerDb, 'sessions', SESSION, 'players'),
       validPlayer({ name: 'Rica +1', memberId: null }))));
+
+  // THE REGRESSION TEST. The app creates a session and its courts in ONE
+  // batch, so the court rule's get() on the parent session runs against
+  // state where that parent does not exist yet. This is exactly what made
+  // a brand new session vanish a second after the QM tapped Create.
+  await check('owner creates a session AND its courts in one batch', () => {
+    const batch = writeBatch(ownerDb);
+    const newSession = doc(collection(ownerDb, 'sessions'));
+    batch.set(newSession, validSession());
+    batch.set(doc(collection(newSession, 'courts')), {
+      ownerUid: OWNER, label: 'Court 1', status: 'free', currentMatchId: null,
+    });
+    batch.set(doc(collection(newSession, 'courts')), {
+      ownerUid: OWNER, label: 'Court 2', status: 'free', currentMatchId: null,
+    });
+    return assertSucceeds(batch.commit());
+  });
 
   console.log('\n3. Another QM cannot touch this data');
   await check('intruder cannot read the session', () =>
@@ -172,11 +193,17 @@ async function main() {
     assertFails(getDoc(doc(intruderDb, 'clubs', CLUB, 'members', 'anyone'))));
   await check('intruder cannot read or rewrite the bill', () =>
     assertFails(setDoc(doc(intruderDb, 'sessions', SESSION, 'bill', 'p1'), {
-      name: 'Jun', courtShareCentavos: 1, shuttleShareCentavos: 0,
+      ownerUid: OWNER, name: 'Jun',
+      courtShareCentavos: 1, shuttleShareCentavos: 0,
     })));
   await check('nobody can create a session owned by someone else', () =>
     assertFails(addDoc(
       collection(intruderDb, 'sessions'), validSession(OWNER))));
+  // Ownership now lives on the child itself, so it must be forgery-proof.
+  await check('a child document cannot be stamped with another QM uid', () =>
+    assertFails(addDoc(
+      collection(ownerDb, 'sessions', SESSION, 'players'),
+      validPlayer({ ownerUid: INTRUDER }))));
 
   console.log('\n4. Immutable fields stay immutable');
   await check('ownerUid cannot be reassigned', () =>
@@ -240,12 +267,13 @@ async function main() {
     })));
   await check('a negative amount on a bill line is rejected', () =>
     assertFails(setDoc(doc(ownerDb, 'sessions', SESSION, 'bill', 'p2'), {
-      name: 'Jun', courtShareCentavos: -30000, shuttleShareCentavos: 0,
+      ownerUid: OWNER, name: 'Jun',
+      courtShareCentavos: -30000, shuttleShareCentavos: 0,
     })));
   await check('an unknown field on a bill line is rejected', () =>
     assertFails(setDoc(doc(ownerDb, 'sessions', SESSION, 'bill', 'p3'), {
-      name: 'Jun', courtShareCentavos: 100, shuttleShareCentavos: 0,
-      discount: true,
+      ownerUid: OWNER, name: 'Jun',
+      courtShareCentavos: 100, shuttleShareCentavos: 0, discount: true,
     })));
   await check('a role other than qm is rejected', () =>
     assertFails(setDoc(doc(ownerDb, 'users', OWNER), {
@@ -255,7 +283,7 @@ async function main() {
   console.log('\n6. Money can go negative only where it should');
   await check('a member carry-over balance may be negative (overpaid)', () =>
     assertSucceeds(addDoc(collection(ownerDb, 'clubs', CLUB, 'members'), {
-      name: 'Ana', skillTier: 'beginner', aliases: [],
+      ownerUid: OWNER, name: 'Ana', skillTier: 'beginner', aliases: [],
       balanceCentavos: -5000, sessionsAttended: 3,
       lastPlayedAt: null, createdAt: ts(),
     })));

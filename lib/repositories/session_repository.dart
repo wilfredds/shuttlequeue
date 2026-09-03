@@ -1,4 +1,5 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/foundation.dart';
 
 import '../models/bill_line.dart';
@@ -10,9 +11,19 @@ import 'firestore_mappers.dart';
 /// Lahat ng Firestore access para sa sessions (at sa courts na kasama nila).
 /// Walang ibang layer na tumatawag ng FirebaseFirestore nang direkta.
 class SessionRepository {
-  SessionRepository(this._db);
+  SessionRepository(this._db, this._auth, {this.onDeferredWriteError});
 
   final FirebaseFirestore _db;
+  final FirebaseAuth _auth;
+
+  /// Tinatawag kapag nabigo ang isang sulat na hindi hinintay ng UI.
+  /// Kung wala nito, tahimik na nawawala ang datos — at iyon ang
+  /// pinakamasamang uri ng bug (tingnan ang sync_error_provider.dart).
+  final void Function(Object error)? onDeferredWriteError;
+
+  /// Isinusulat sa bawat child document para hindi na kailangang tanungin
+  /// ng rules ang parent. Tingnan ang komento sa firestore_mappers.dart.
+  String get _uid => _auth.currentUser?.uid ?? '';
 
   /// Firestore batch limit ay 500 writes. Nag-iiwan tayo ng allowance
   /// para sa parent doc at sa anumang madagdag mamaya.
@@ -95,13 +106,13 @@ class SessionRepository {
     for (var i = 1; i <= courtCount; i++) {
       batch.set(
         sessionRef.collection('courts').doc(),
-        courtToCreateMap(label: 'Court $i'),
+        courtToCreateMap(ownerUid: ownerUid, label: 'Court $i'),
       );
     }
 
     // Sadyang hindi ino-await: sa offline, hindi nagre-resolve ang commit
     // hangga't walang network. Naka-apply na ito agad sa local cache.
-    unawaited(batch.commit());
+    unawaited(batch.commit(), onDeferredWriteError);
 
     return sessionRef.id;
   }
@@ -143,7 +154,10 @@ class SessionRepository {
 
     if (desiredCount > current) {
       for (var i = current + 1; i <= desiredCount; i++) {
-        batch.set(courtsRef.doc(), courtToCreateMap(label: 'Court $i'));
+        batch.set(
+          courtsRef.doc(),
+          courtToCreateMap(ownerUid: _uid, label: 'Court $i'),
+        );
       }
     } else {
       // Tinatanggal ang mga huling court. Ang laro sa court na tinanggal
@@ -187,7 +201,7 @@ class SessionRepository {
     for (final line in lines) {
       // Player ID ang document ID — isang linya lang kada manlalaro,
       // at idempotent ang muling pag-finalize.
-      batch.set(billRef.doc(line.playerId), billLineToMap(line));
+      batch.set(billRef.doc(line.playerId), billLineToMap(line, ownerUid: _uid));
     }
 
     batch.update(sessionRef, {
@@ -245,8 +259,9 @@ class SessionRepository {
 /// Maliit na helper para linawin ang sinasadyang hindi pag-await.
 /// (Katulad ng `unawaited` ng package:async — hindi na natin idinagdag
 /// ang buong dependency para sa isang linya.)
-void unawaited(Future<void> future) {
+void unawaited(Future<void> future, [void Function(Object)? onError]) {
   future.catchError((Object error) {
+    onError?.call(error);
     // Ang mga pending write ay nire-retry ng Firestore mismo, kaya hindi
     // ito dapat pumatay sa app. Pero mula M5, kayang tanggihan ng security
     // rules ang isang sulat — at ang tahimik na pagkabigo ang pinakamasama

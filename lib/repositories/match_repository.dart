@@ -1,4 +1,5 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
 import '../models/court.dart';
 import '../models/enums.dart';
@@ -12,9 +13,12 @@ import 'firestore_mappers.dart';
 /// rotation (naka-playing ang court pero naka-queued pa rin ang mga tao)
 /// ang pinakamabilis na paraan para masira ang tiwala ng QM sa app.
 class MatchRepository {
-  MatchRepository(this._db);
+  MatchRepository(this._db, this._auth);
 
   final FirebaseFirestore _db;
+  final FirebaseAuth _auth;
+
+  String get _uid => _auth.currentUser?.uid ?? '';
 
   DocumentReference<Map<String, dynamic>> _session(String sessionId) =>
       _db.collection('sessions').doc(sessionId);
@@ -53,6 +57,7 @@ class MatchRepository {
     final batch = _db.batch();
 
     batch.set(matchRef, {
+      'ownerUid': _uid,
       'courtId': courtId,
       'teamA': teamA,
       'teamB': teamB,

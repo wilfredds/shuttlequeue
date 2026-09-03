@@ -359,5 +359,7 @@
         "type": "int"
       }
     }
-  }
+  },
+  "syncFailed": "That didn't save. Check your connection — if it keeps happening, tell France.",
+  "syncFailedDismiss": "Dismiss"
 }

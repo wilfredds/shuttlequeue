@@ -1,4 +1,5 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
 import '../models/enums.dart';
 import '../models/session_player.dart';
@@ -19,9 +20,12 @@ class NewPlayer {
 }
 
 class PlayerRepository {
-  PlayerRepository(this._db);
+  PlayerRepository(this._db, this._auth);
 
   final FirebaseFirestore _db;
+  final FirebaseAuth _auth;
+
+  String get _uid => _auth.currentUser?.uid ?? '';
 
   static const _batchLimit = 400;
 
@@ -60,6 +64,7 @@ class PlayerRepository {
         batch.set(
           ref.doc(),
           playerToCreateMap(
+            ownerUid: _uid,
             name: player.name,
             skillTier: player.skillTier,
             gamesPlayed: 0,
@@ -93,6 +98,7 @@ class PlayerRepository {
 
     return _playersOf(sessionId).doc().set(
           playerToCreateMap(
+            ownerUid: _uid,
             name: player.name,
             skillTier: player.skillTier,
             gamesPlayed: baseline,
@@ -137,6 +143,7 @@ class PlayerRepository {
   /// nananatili ang lahat ng bilang, kaya buo pa rin ang fairness.
   Future<void> restorePlayer(String sessionId, SessionPlayer player) {
     return _playersOf(sessionId).doc().set({
+      'ownerUid': _uid,
       'name': player.name,
       'skillTier': player.skillTier.value,
       'gamesPlayed': player.gamesPlayed,

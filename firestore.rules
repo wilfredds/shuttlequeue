@@ -124,9 +124,10 @@ service cloud.firestore {
 
     function validMember(data) {
       return data.keys().hasOnly([
-          'name', 'skillTier', 'aliases', 'balanceCentavos',
+          'ownerUid', 'name', 'skillTier', 'aliases', 'balanceCentavos',
           'sessionsAttended', 'lastPlayedAt', 'createdAt'
         ])
+        && data.ownerUid is string
         && isText(data.name, 60)
         && isSkillTier(data.skillTier)
         && data.aliases is list
@@ -140,10 +141,7 @@ service cloud.firestore {
         && data.createdAt is timestamp;
     }
 
-    function ownsClub(clubId) {
-      return isSignedIn()
-        && get(/databases/$(database)/documents/clubs/$(clubId)).data.ownerUid == request.auth.uid;
-    }
+
 
     match /clubs/{clubId} {
       allow read, delete: if ownsExisting();
@@ -157,9 +155,11 @@ service cloud.firestore {
       // chine-check. May halagang 1 dagdag na read kada operasyon — tanggap
       // ito sa laki ng datos ng isang club.
       match /members/{memberId} {
-        allow read, delete: if ownsClub(clubId);
-        allow create: if ownsClub(clubId) && validMember(request.resource.data);
-        allow update: if ownsClub(clubId)
+        allow read, delete: if ownsChildExisting();
+        allow create: if ownsChildIncoming()
+          && validMember(request.resource.data);
+        allow update: if ownsChildExisting()
+          && ownsChildIncoming()
           && validMember(request.resource.data)
           && createdAtUnchanged();
       }
@@ -194,9 +194,26 @@ service cloud.firestore {
         && data.updatedAt is timestamp;
     }
 
-    function ownsSession(sessionId) {
+    // BAKIT WALA NANG get() DITO:
+    //
+    // Dati, tinatanong ng bawat child document ang parent session sa
+    // pamamagitan ng get(). Mukhang tama — pero sa loob ng isang batch,
+    // sinusuri ang rules laban sa estado BAGO ang batch. Kapag ginawa ang
+    // session at ang mga court nito nang sabay (gaya ng ginagawa natin,
+    // para hindi magkaroon ng session na walang court), wala pang parent
+    // na makikita ang get(). "Null value error" → tinatanggihan ang BUONG
+    // batch → biglang nawawala ang bagong session sa harap ng QM.
+    //
+    // Ang solusyon ay ang karaniwang pattern sa Firestore: nakasulat na ang
+    // ownerUid sa mismong child document. Wala nang lookup, kaya gumagana
+    // ang batch — at nababawasan pa ng isang read bawat operasyon.
+    function ownsChildIncoming() {
       return isSignedIn()
-        && get(/databases/$(database)/documents/sessions/$(sessionId)).data.ownerUid == request.auth.uid;
+        && request.resource.data.ownerUid == request.auth.uid;
+    }
+
+    function ownsChildExisting() {
+      return isSignedIn() && resource.data.ownerUid == request.auth.uid;
     }
 
     match /sessions/{sessionId} {
@@ -217,9 +234,10 @@ service cloud.firestore {
       match /players/{playerId} {
         function validPlayer(data) {
           return data.keys().hasOnly([
-              'name', 'skillTier', 'gamesPlayed', 'waitingSince', 'status',
-              'shuttlesUsed', 'hasPaid', 'memberId', 'createdAt'
+              'ownerUid', 'name', 'skillTier', 'gamesPlayed', 'waitingSince',
+              'status', 'shuttlesUsed', 'hasPaid', 'memberId', 'createdAt'
             ])
+            && data.ownerUid is string
             && isText(data.name, 60)
             && isSkillTier(data.skillTier)
             && isCount(data.gamesPlayed, 500)
@@ -231,10 +249,11 @@ service cloud.firestore {
             && data.createdAt is timestamp;
         }
 
-        allow read, delete: if ownsSession(sessionId);
-        allow create: if ownsSession(sessionId)
+        allow read, delete: if ownsChildExisting();
+        allow create: if ownsChildIncoming()
           && validPlayer(request.resource.data);
-        allow update: if ownsSession(sessionId)
+        allow update: if ownsChildExisting()
+          && ownsChildIncoming()
           && validPlayer(request.resource.data)
           && createdAtUnchanged();
       }
@@ -249,15 +268,16 @@ service cloud.firestore {
       match /bill/{playerId} {
         function validBillLine(data) {
           return data.keys().hasOnly([
-              'name', 'courtShareCentavos', 'shuttleShareCentavos'
+              'ownerUid', 'name', 'courtShareCentavos', 'shuttleShareCentavos'
             ])
+            && data.ownerUid is string
             && isText(data.name, 60)
             && isMoney(data.courtShareCentavos)
             && isMoney(data.shuttleShareCentavos);
         }
 
-        allow read, delete: if ownsSession(sessionId);
-        allow create, update: if ownsSession(sessionId)
+        allow read, delete: if ownsChildExisting();
+        allow create, update: if ownsChildIncoming()
           && validBillLine(request.resource.data);
       }
 
@@ -266,14 +286,17 @@ service cloud.firestore {
       // ---------------------------------------------------------------------
       match /courts/{courtId} {
         function validCourt(data) {
-          return data.keys().hasOnly(['label', 'status', 'currentMatchId'])
+          return data.keys().hasOnly([
+              'ownerUid', 'label', 'status', 'currentMatchId'
+            ])
+            && data.ownerUid is string
             && isText(data.label, 40)
             && data.status in ['free', 'playing']
             && isNullOrString(data.currentMatchId);
         }
 
-        allow read, delete: if ownsSession(sessionId);
-        allow create, update: if ownsSession(sessionId)
+        allow read, delete: if ownsChildExisting();
+        allow create, update: if ownsChildIncoming()
           && validCourt(request.resource.data);
       }
 
@@ -283,9 +306,10 @@ service cloud.firestore {
       match /matches/{matchId} {
         function validMatch(data) {
           return data.keys().hasOnly([
-              'courtId', 'teamA', 'teamB', 'scoreA', 'scoreB',
+              'ownerUid', 'courtId', 'teamA', 'teamB', 'scoreA', 'scoreB',
               'startedAt', 'endedAt'
             ])
+            && data.ownerUid is string
             && data.courtId is string
             // Doubles: eksaktong dalawa kada panig. Ang laro ng badminton
             // ang tumatakda nito, hindi ang UI.
@@ -297,8 +321,8 @@ service cloud.firestore {
             && isNullOrTimestamp(data.endedAt);
         }
 
-        allow read, delete: if ownsSession(sessionId);
-        allow create, update: if ownsSession(sessionId)
+        allow read, delete: if ownsChildExisting();
+        allow create, update: if ownsChildIncoming()
           && validMatch(request.resource.data);
       }
     }

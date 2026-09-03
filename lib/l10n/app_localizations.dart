@@ -1089,6 +1089,18 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'+{count} more'**
   String boardMoreWaiting(int count);
+
+  /// No description provided for @syncFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'That didn\'t save. Check your connection — if it keeps happening, tell France.'**
+  String get syncFailed;
+
+  /// No description provided for @syncFailedDismiss.
+  ///
+  /// In en, this message translates to:
+  /// **'Dismiss'**
+  String get syncFailedDismiss;
 }
 
 class _AppLocalizationsDelegate
