@@ -524,4 +524,33 @@ class AppLocalizationsEn extends AppLocalizations {
   String balanceCredit(String amount) {
     return 'credit $amount';
   }
+
+  @override
+  String get saveSnapshot => 'Save a copy of tonight';
+
+  @override
+  String get snapshotHint =>
+      'Share it to yourself — works with no signal, and survives a dead battery.';
+
+  @override
+  String get carryUnpaid => 'Carry unpaid to regulars';
+
+  @override
+  String carryUnpaidDone(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count balances carried forward',
+      one: '1 balance carried forward',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get carryUnpaidNone => 'Nobody unpaid, or they aren\'t regulars yet';
+
+  @override
+  String carriedBalance(String amount) {
+    return 'brought forward: $amount';
+  }
 }

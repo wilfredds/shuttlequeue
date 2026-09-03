@@ -945,6 +945,42 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'credit {amount}'**
   String balanceCredit(String amount);
+
+  /// No description provided for @saveSnapshot.
+  ///
+  /// In en, this message translates to:
+  /// **'Save a copy of tonight'**
+  String get saveSnapshot;
+
+  /// No description provided for @snapshotHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Share it to yourself — works with no signal, and survives a dead battery.'**
+  String get snapshotHint;
+
+  /// No description provided for @carryUnpaid.
+  ///
+  /// In en, this message translates to:
+  /// **'Carry unpaid to regulars'**
+  String get carryUnpaid;
+
+  /// No description provided for @carryUnpaidDone.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{1 balance carried forward} other{{count} balances carried forward}}'**
+  String carryUnpaidDone(int count);
+
+  /// No description provided for @carryUnpaidNone.
+  ///
+  /// In en, this message translates to:
+  /// **'Nobody unpaid, or they aren\'t regulars yet'**
+  String get carryUnpaidNone;
+
+  /// No description provided for @carriedBalance.
+  ///
+  /// In en, this message translates to:
+  /// **'brought forward: {amount}'**
+  String carriedBalance(String amount);
 }
 
 class _AppLocalizationsDelegate

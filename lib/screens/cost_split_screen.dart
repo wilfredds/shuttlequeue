@@ -6,6 +6,7 @@ import 'package:share_plus/share_plus.dart';
 import '../l10n/app_localizations.dart';
 import '../models/enums.dart';
 import '../models/session.dart';
+import '../models/session_player.dart';
 import '../providers/session_providers.dart';
 import '../services/fee_calculator.dart';
 import '../services/money.dart';
@@ -60,10 +61,71 @@ class CostSplitScreen extends ConsumerWidget {
             ),
         ],
       ),
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: () => _share(context, session, breakdown),
-        icon: const Icon(Icons.share_outlined),
-        label: Text(l10n.shareSummary),
+      floatingActionButton: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.end,
+        children: [
+          // Utang: dinadala sa susunod na gabi ang hindi nabayaran.
+          // Ganito talaga tumatakbo ang mga club — nasa memorya ng QM at
+          // sa notebook ang listahang ito ngayon.
+          FloatingActionButton.small(
+            heroTag: 'carry',
+            tooltip: l10n.carryUnpaid,
+            onPressed: () => _carryUnpaid(context, ref, breakdown, players),
+            child: const Icon(Icons.receipt_long_outlined),
+          ),
+          const SizedBox(height: 10),
+          FloatingActionButton.extended(
+            heroTag: 'shareFees',
+            onPressed: () => _share(context, session, breakdown),
+            icon: const Icon(Icons.share_outlined),
+            label: Text(l10n.shareSummary),
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// Dinadala ang hindi nabayaran sa regulars book, para lumabas ito sa
+  /// susunod na gabi. Ang mga bisita (walang memberId) ay hindi kasama —
+  /// walang record na babalikan para sa kanila.
+  Future<void> _carryUnpaid(
+    BuildContext context,
+    WidgetRef ref,
+    FeeBreakdown breakdown,
+    List<SessionPlayer> players,
+  ) async {
+    final l10n = AppLocalizations.of(context)!;
+    final messenger = ScaffoldMessenger.of(context);
+    final clubId = ref.read(defaultClubIdProvider).value;
+    if (clubId == null) return;
+
+    final memberIdOf = {
+      for (final p in players)
+        if (p.memberId != null) p.id: p.memberId!,
+    };
+
+    final clubRepo = ref.read(clubRepositoryProvider);
+    final playerRepo = ref.read(playerRepositoryProvider);
+    var carried = 0;
+
+    for (final line in breakdown.lines) {
+      if (line.hasPaid) continue;
+      final memberId = memberIdOf[line.playerId];
+      if (memberId == null) continue;
+
+      await clubRepo.adjustBalance(clubId, memberId, line.totalCentavos);
+      // Markahang bayad na sa gabing ito: nailipat na ang utang sa
+      // regulars book, kaya hindi na ito dapat bilangin nang dalawang beses.
+      await playerRepo.updatePlayer(sessionId, line.playerId, hasPaid: true);
+      carried++;
+    }
+
+    messenger.showSnackBar(
+      SnackBar(
+        content: Text(
+          carried == 0 ? l10n.carryUnpaidNone : l10n.carryUnpaidDone(carried),
+        ),
       ),
     );
   }

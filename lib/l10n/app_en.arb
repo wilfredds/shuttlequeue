@@ -286,5 +286,25 @@
         "type": "String"
       }
     }
+  },
+  "saveSnapshot": "Save a copy of tonight",
+  "snapshotHint": "Share it to yourself — works with no signal, and survives a dead battery.",
+  "carryUnpaid": "Carry unpaid to regulars",
+  "carryUnpaidDone": "{count, plural, =1{1 balance carried forward} other{{count} balances carried forward}}",
+  "@carryUnpaidDone": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "carryUnpaidNone": "Nobody unpaid, or they aren't regulars yet",
+  "carriedBalance": "brought forward: {amount}",
+  "@carriedBalance": {
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      }
+    }
   }
 }
