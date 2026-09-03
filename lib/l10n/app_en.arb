@@ -227,5 +227,64 @@
         "type": "int"
       }
     }
+  },
+  "importKnownPlayer": "regular",
+  "importNewPlayer": "new",
+  "importAmbiguous": "which one?",
+  "importMatchedCount": "{count, plural, =0{} =1{1 regular recognised — skill remembered} other{{count} regulars recognised — skills remembered}}",
+  "@importMatchedCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "importPickMember": "Which player is this?",
+  "importNotThisPerson": "None of these — add as new",
+  "importSessionsAttended": "{count, plural, =1{1 session} other{{count} sessions}}",
+  "@importSessionsAttended": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "regularsTitle": "Regulars",
+  "regularsEmpty": "Players you import are remembered here, with their skill tier ready for next time.",
+  "regularsSubtitle": "{sessions} · {tier}",
+  "@regularsSubtitle": {
+    "placeholders": {
+      "sessions": {
+        "type": "String"
+      },
+      "tier": {
+        "type": "String"
+      }
+    }
+  },
+  "deleteMember": "Remove from regulars",
+  "memberDeleted": "{name} removed from regulars",
+  "@memberDeleted": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "balanceOwed": "owes {amount}",
+  "@balanceOwed": {
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "balanceCredit": "credit {amount}",
+  "@balanceCredit": {
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      }
+    }
   }
 }

@@ -456,4 +456,72 @@ class AppLocalizationsEn extends AppLocalizations {
   String shuttleCountShort(int count) {
     return '${count}x';
   }
+
+  @override
+  String get importKnownPlayer => 'regular';
+
+  @override
+  String get importNewPlayer => 'new';
+
+  @override
+  String get importAmbiguous => 'which one?';
+
+  @override
+  String importMatchedCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count regulars recognised — skills remembered',
+      one: '1 regular recognised — skill remembered',
+      zero: '',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get importPickMember => 'Which player is this?';
+
+  @override
+  String get importNotThisPerson => 'None of these — add as new';
+
+  @override
+  String importSessionsAttended(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count sessions',
+      one: '1 session',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get regularsTitle => 'Regulars';
+
+  @override
+  String get regularsEmpty =>
+      'Players you import are remembered here, with their skill tier ready for next time.';
+
+  @override
+  String regularsSubtitle(String sessions, String tier) {
+    return '$sessions · $tier';
+  }
+
+  @override
+  String get deleteMember => 'Remove from regulars';
+
+  @override
+  String memberDeleted(String name) {
+    return '$name removed from regulars';
+  }
+
+  @override
+  String balanceOwed(String amount) {
+    return 'owes $amount';
+  }
+
+  @override
+  String balanceCredit(String amount) {
+    return 'credit $amount';
+  }
 }

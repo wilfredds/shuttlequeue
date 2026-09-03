@@ -9,6 +9,7 @@ import '../providers/auth_providers.dart';
 import '../providers/session_providers.dart';
 import '../services/money.dart';
 import '../widgets/sync_indicator.dart';
+import 'regulars_screen.dart';
 import 'session_detail_screen.dart';
 import 'session_form_screen.dart';
 
@@ -25,6 +26,13 @@ class SessionsListScreen extends ConsumerWidget {
       appBar: AppBar(
         title: Text(l10n.sessionsTitle),
         actions: [
+          IconButton(
+            tooltip: l10n.regularsTitle,
+            icon: const Icon(Icons.badge_outlined),
+            onPressed: () => Navigator.of(context).push(
+              MaterialPageRoute<void>(builder: (_) => const RegularsScreen()),
+            ),
+          ),
           IconButton(
             tooltip: l10n.signOut,
             icon: const Icon(Icons.logout),

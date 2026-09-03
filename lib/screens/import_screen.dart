@@ -2,17 +2,21 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../l10n/app_localizations.dart';
+import '../models/club_member.dart';
 import '../models/enums.dart';
 import '../providers/session_providers.dart';
 import '../repositories/player_repository.dart';
+import '../services/name_matcher.dart';
 import '../services/roster_parser.dart';
 import '../widgets/skill_badge.dart';
 
 /// Ang pinakamalaking time-saver: paste ng Messenger list papuntang roster.
 ///
-/// Dinisenyo sa paligid ng isang katotohanan — **pwedeng magkamali ang
-/// parser, basta hindi tahimik.** Lahat ng hula ay nakikita at nababago
-/// bago mag-save.
+/// Dinisenyo sa paligid ng dalawang katotohanan:
+///  1. **Pwedeng magkamali ang parser, basta hindi tahimik** — lahat ng hula
+///     ay nakikita at nababago bago mag-save.
+///  2. **Naaalala ang mga regular** — kapag nakilala si "Kuya Jun", kasama
+///     na ang skill tier niya mula noong nakaraang gabi.
 class ImportScreen extends ConsumerStatefulWidget {
   const ImportScreen({super.key, required this.sessionId});
 
@@ -27,10 +31,13 @@ class _ImportScreenState extends ConsumerState<ImportScreen> {
 
   ParsedRoster _parsed = const ParsedRoster(entries: [], skippedLines: []);
 
-  /// Nabagong pangalan at tier bago i-save — hawak dito, hindi sa parser.
+  /// Mga binago ng QM bago mag-save.
   final _names = <int, String>{};
   final _tiers = <int, SkillTier>{};
   final _dropped = <int>{};
+
+  /// Manu-manong pinili ng QM nang ambiguous ang tugma.
+  final _resolved = <int, ClubMember?>{};
 
   /// Mga linyang nilaktawan pero ibinalik ng QM bilang manlalaro.
   final _rescued = <String>[];
@@ -49,48 +56,121 @@ class _ImportScreenState extends ConsumerState<ImportScreen> {
       _names.clear();
       _tiers.clear();
       _dropped.clear();
+      _resolved.clear();
       _rescued.clear();
     });
   }
 
-  List<NewPlayer> _buildPlayers() {
-    final players = <NewPlayer>[];
-    for (var i = 0; i < _parsed.entries.length; i++) {
-      if (_dropped.contains(i)) continue;
-      final name = (_names[i] ?? _parsed.entries[i].name).trim();
-      if (name.isEmpty) continue;
-      players.add(
-        NewPlayer(
-          name: name,
-          skillTier: _tiers[i] ?? SkillTier.intermediate,
-        ),
-      );
+  /// Itinutugma ang bawat linya sa regulars book. Ang manu-manong pinili ng
+  /// QM ang laging nananaig sa hula ng matcher.
+  NameMatch _matchFor(int index, List<ClubMember> members) {
+    if (_resolved.containsKey(index)) {
+      final chosen = _resolved[index];
+      return chosen == null
+          ? const NameMatch(confidence: MatchConfidence.none)
+          : NameMatch(confidence: MatchConfidence.exact, member: chosen);
     }
-    for (final name in _rescued) {
-      players.add(NewPlayer(name: name));
+    final entry = _parsed.entries[index];
+    if (entry.isGuest) {
+      // Ang bisita ay hindi regular — huwag idagdag sa club book.
+      return const NameMatch(confidence: MatchConfidence.none);
     }
-    return players;
+    return matchMember(_names[index] ?? entry.name, members);
   }
 
-  Future<void> _save() async {
-    final players = _buildPlayers();
-    if (players.isEmpty) return;
+  SkillTier _tierFor(int index, NameMatch match) {
+    final override = _tiers[index];
+    if (override != null) return override;
+    // Ito ang buong punto ng regulars book: naaalalang tier.
+    if (match.isConfident) return match.member!.skillTier;
+    return SkillTier.intermediate;
+  }
 
+  Future<void> _save(List<ClubMember> members) async {
     setState(() => _isSaving = true);
-    final navigator = Navigator.of(context);
 
-    await ref
-        .read(playerRepositoryProvider)
-        .addPlayers(widget.sessionId, players);
+    final navigator = Navigator.of(context);
+    final clubId = ref.read(defaultClubIdProvider).value;
+    final clubRepo = ref.read(clubRepositoryProvider);
+    final playerRepo = ref.read(playerRepositoryProvider);
+
+    final toAdd = <NewPlayer>[];
+
+    for (var i = 0; i < _parsed.entries.length; i++) {
+      if (_dropped.contains(i)) continue;
+
+      final entry = _parsed.entries[i];
+      final name = (_names[i] ?? entry.name).trim();
+      if (name.isEmpty) continue;
+
+      final match = _matchFor(i, members);
+      final tier = _tierFor(i, match);
+
+      String? memberId;
+
+      if (match.isConfident) {
+        memberId = match.member!.id;
+
+        // Binago ng QM ang tier ng isang kilalang regular — tandaan ito,
+        // para sa susunod na gabi tama na agad.
+        if (match.member!.skillTier != tier && clubId != null) {
+          await clubRepo.updateMember(clubId, memberId, skillTier: tier);
+        }
+        // Bagong baybay ng pangalan (hal. "Kuya Jun") — tandaan bilang alias.
+        if (clubId != null &&
+            !match.member!.allNames
+                .any((n) => normalizeName(n) == normalizeName(name))) {
+          await clubRepo.rememberAlias(clubId, memberId, name);
+        }
+        if (clubId != null) {
+          await clubRepo.recordAttendance(clubId, memberId);
+        }
+      } else if (!entry.isGuest && clubId != null) {
+        // Bagong mukha: isulat sa regulars book para kilala na sa susunod.
+        memberId = await clubRepo.addMember(
+          clubId: clubId,
+          name: name,
+          skillTier: tier,
+        );
+        await clubRepo.recordAttendance(clubId, memberId);
+      }
+
+      toAdd.add(NewPlayer(name: name, skillTier: tier, memberId: memberId));
+    }
+
+    for (final name in _rescued) {
+      toAdd.add(NewPlayer(name: name));
+    }
+
+    if (toAdd.isNotEmpty) {
+      await playerRepo.addPlayers(widget.sessionId, toAdd);
+    }
 
     navigator.pop();
+  }
+
+  int _keptCount() {
+    var count = _rescued.length;
+    for (var i = 0; i < _parsed.entries.length; i++) {
+      if (_dropped.contains(i)) continue;
+      if ((_names[i] ?? _parsed.entries[i].name).trim().isEmpty) continue;
+      count++;
+    }
+    return count;
   }
 
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
     final theme = Theme.of(context);
-    final keptCount = _buildPlayers().length;
+    final members = ref.watch(clubMembersProvider).value ?? const <ClubMember>[];
+
+    final keptCount = _keptCount();
+    var recognised = 0;
+    for (var i = 0; i < _parsed.entries.length; i++) {
+      if (_dropped.contains(i)) continue;
+      if (_matchFor(i, members).isConfident) recognised++;
+    }
 
     return Scaffold(
       appBar: AppBar(title: Text(l10n.importTitle)),
@@ -141,8 +221,16 @@ class _ImportScreenState extends ConsumerState<ImportScreen> {
               ),
               const SizedBox(height: 8),
 
-              // R-07: hindi kailanman awtomatikong pinagsasama ang magkaparehong
-              // pangalan — ipinapaalam lang sa QM na siya ang magpasya.
+              if (recognised > 0)
+                _Banner(
+                  icon: Icons.badge_outlined,
+                  text: l10n.importMatchedCount(recognised),
+                  color: theme.colorScheme.primaryContainer,
+                  onColor: theme.colorScheme.onPrimaryContainer,
+                ),
+
+              // R-07: hindi kailanman awtomatikong pinagsasama ang
+              // magkaparehong pangalan — ipinapaalam lang sa QM.
               if (_parsed.duplicateCount > 0)
                 _Banner(
                   icon: Icons.people_outline,
@@ -155,13 +243,15 @@ class _ImportScreenState extends ConsumerState<ImportScreen> {
                 _EntryTile(
                   entry: _parsed.entries[i],
                   name: _names[i] ?? _parsed.entries[i].name,
-                  tier: _tiers[i] ?? SkillTier.intermediate,
+                  match: _matchFor(i, members),
+                  tier: _tierFor(i, _matchFor(i, members)),
                   isDropped: _dropped.contains(i),
                   onNameChanged: (value) => setState(() => _names[i] = value),
                   onTierChanged: (value) => setState(() => _tiers[i] = value),
                   onToggleDropped: () => setState(() {
                     if (!_dropped.remove(i)) _dropped.add(i);
                   }),
+                  onResolve: () => _resolveAmbiguity(i, members),
                 ),
 
               for (final name in _rescued)
@@ -238,7 +328,7 @@ class _ImportScreenState extends ConsumerState<ImportScreen> {
           16 + MediaQuery.of(context).viewInsets.bottom,
         ),
         child: FilledButton(
-          onPressed: (keptCount == 0 || _isSaving) ? null : _save,
+          onPressed: (keptCount == 0 || _isSaving) ? null : () => _save(members),
           child: _isSaving
               ? const SizedBox(
                   width: 24,
@@ -250,31 +340,81 @@ class _ImportScreenState extends ConsumerState<ImportScreen> {
       ),
     );
   }
+
+  /// Dalawang regular na pareho ang pangalan — ang QM ang pipili.
+  Future<void> _resolveAmbiguity(int index, List<ClubMember> members) async {
+    final match = _matchFor(index, members);
+    final options = match.alternatives.isNotEmpty ? match.alternatives : members;
+    if (options.isEmpty) return;
+
+    final l10n = AppLocalizations.of(context)!;
+    final chosen = await showModalBottomSheet<Object?>(
+      context: context,
+      builder: (sheetContext) => SafeArea(
+        child: ListView(
+          shrinkWrap: true,
+          children: [
+            Padding(
+              padding: const EdgeInsets.all(16),
+              child: Text(
+                l10n.importPickMember,
+                style: Theme.of(sheetContext).textTheme.titleMedium,
+              ),
+            ),
+            for (final option in options)
+              ListTile(
+                leading: SkillBadge(tier: option.skillTier),
+                title: Text(option.name),
+                subtitle:
+                    Text(l10n.importSessionsAttended(option.sessionsAttended)),
+                onTap: () => Navigator.of(sheetContext).pop(option),
+              ),
+            const Divider(),
+            ListTile(
+              leading: const Icon(Icons.person_add_alt),
+              title: Text(l10n.importNotThisPerson),
+              onTap: () => Navigator.of(sheetContext).pop('new'),
+            ),
+          ],
+        ),
+      ),
+    );
+
+    if (chosen == null) return;
+    setState(() {
+      _resolved[index] = chosen is ClubMember ? chosen : null;
+    });
+  }
 }
 
 class _EntryTile extends StatelessWidget {
   const _EntryTile({
     required this.entry,
     required this.name,
+    required this.match,
     required this.tier,
     required this.isDropped,
     required this.onNameChanged,
     required this.onTierChanged,
     required this.onToggleDropped,
+    required this.onResolve,
   });
 
   final ParsedEntry entry;
   final String name;
+  final NameMatch match;
   final SkillTier tier;
   final bool isDropped;
   final ValueChanged<String> onNameChanged;
   final ValueChanged<SkillTier> onTierChanged;
   final VoidCallback onToggleDropped;
+  final VoidCallback onResolve;
 
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
     final theme = Theme.of(context);
+    final isAmbiguous = match.confidence == MatchConfidence.ambiguous;
 
     return Opacity(
       opacity: isDropped ? 0.4 : 1,
@@ -307,6 +447,18 @@ class _EntryTile extends StatelessWidget {
                           _MiniTag(
                             label: l10n.importGuestBadge,
                             color: theme.colorScheme.secondary,
+                          )
+                        else if (match.isConfident)
+                          _MiniTag(
+                            label: l10n.importKnownPlayer,
+                            color: theme.colorScheme.primary,
+                          )
+                        else if (isAmbiguous)
+                          ActionChip(
+                            visualDensity: VisualDensity.compact,
+                            labelPadding: EdgeInsets.zero,
+                            label: Text(l10n.importAmbiguous),
+                            onPressed: onResolve,
                           ),
                         if (entry.isDuplicate)
                           _MiniTag(

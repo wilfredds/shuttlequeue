@@ -256,13 +256,7 @@ class _PlayerTile extends ConsumerWidget {
               children: [
                 SkillTierSelector(
                   value: player.skillTier,
-                  onChanged: hasLeft
-                      ? null
-                      : (tier) => repo.updatePlayer(
-                            sessionId,
-                            player.id,
-                            skillTier: tier,
-                          ),
+                  onChanged: hasLeft ? null : (tier) => _changeTier(ref, tier),
                 ),
                 const SizedBox(width: 4),
                 Expanded(
@@ -323,6 +317,26 @@ class _PlayerTile extends ConsumerWidget {
         ),
       ),
     );
+  }
+
+  /// Ang pagpalit ng tier ay tumatama sa dalawang lugar kapag regular ang
+  /// manlalaro: ngayong gabi, **at** sa regulars book. Kung ngayong gabi lang,
+  /// mali ulit ang tier sa susunod na linggo — at mawawala ang buong bentahe
+  /// ng pag-alala.
+  Future<void> _changeTier(WidgetRef ref, SkillTier tier) async {
+    await ref.read(playerRepositoryProvider).updatePlayer(
+          sessionId,
+          player.id,
+          skillTier: tier,
+        );
+
+    final memberId = player.memberId;
+    final clubId = ref.read(defaultClubIdProvider).value;
+    if (memberId != null && clubId != null) {
+      await ref
+          .read(clubRepositoryProvider)
+          .updateMember(clubId, memberId, skillTier: tier);
+    }
   }
 
   String _statusLabel(AppLocalizations l10n, PlayerStatus status) {

@@ -861,6 +861,90 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'{count}x'**
   String shuttleCountShort(int count);
+
+  /// No description provided for @importKnownPlayer.
+  ///
+  /// In en, this message translates to:
+  /// **'regular'**
+  String get importKnownPlayer;
+
+  /// No description provided for @importNewPlayer.
+  ///
+  /// In en, this message translates to:
+  /// **'new'**
+  String get importNewPlayer;
+
+  /// No description provided for @importAmbiguous.
+  ///
+  /// In en, this message translates to:
+  /// **'which one?'**
+  String get importAmbiguous;
+
+  /// No description provided for @importMatchedCount.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =0{} =1{1 regular recognised — skill remembered} other{{count} regulars recognised — skills remembered}}'**
+  String importMatchedCount(int count);
+
+  /// No description provided for @importPickMember.
+  ///
+  /// In en, this message translates to:
+  /// **'Which player is this?'**
+  String get importPickMember;
+
+  /// No description provided for @importNotThisPerson.
+  ///
+  /// In en, this message translates to:
+  /// **'None of these — add as new'**
+  String get importNotThisPerson;
+
+  /// No description provided for @importSessionsAttended.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{1 session} other{{count} sessions}}'**
+  String importSessionsAttended(int count);
+
+  /// No description provided for @regularsTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Regulars'**
+  String get regularsTitle;
+
+  /// No description provided for @regularsEmpty.
+  ///
+  /// In en, this message translates to:
+  /// **'Players you import are remembered here, with their skill tier ready for next time.'**
+  String get regularsEmpty;
+
+  /// No description provided for @regularsSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'{sessions} · {tier}'**
+  String regularsSubtitle(String sessions, String tier);
+
+  /// No description provided for @deleteMember.
+  ///
+  /// In en, this message translates to:
+  /// **'Remove from regulars'**
+  String get deleteMember;
+
+  /// No description provided for @memberDeleted.
+  ///
+  /// In en, this message translates to:
+  /// **'{name} removed from regulars'**
+  String memberDeleted(String name);
+
+  /// No description provided for @balanceOwed.
+  ///
+  /// In en, this message translates to:
+  /// **'owes {amount}'**
+  String balanceOwed(String amount);
+
+  /// No description provided for @balanceCredit.
+  ///
+  /// In en, this message translates to:
+  /// **'credit {amount}'**
+  String balanceCredit(String amount);
 }
 
 class _AppLocalizationsDelegate
