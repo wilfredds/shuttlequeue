@@ -65,11 +65,22 @@ appears in the Firestore console and the pending-sync banner clears.
 | Sessions | Every night this Queue Master has run |
 | Roster | Paste-import from Messenger, skill tiers, late arrivals, leavers |
 | Courts | The court grid, the queue, and one big **Next match** button |
-| Money | Per-player breakdown, paid toggles, share back to the group chat |
+| Money | Per-player breakdown, lockable amounts, paid toggles, share to the group chat |
+| Board | A read-only second screen: courts and the queue, visible across the hall |
+| Regulars | Remembered skill tiers, nicknames and carry-over balances |
 
-Two pure services carry the correctness burden and are covered by tests:
-`MatchmakingService` (who plays next) and `FeeCalculator` (who owes what).
-See [docs/architecture.md](docs/architecture.md).
+Pure, tested services carry the correctness burden: `MatchmakingService`
+(who plays next), `FeeCalculator` (who owes what), `RosterParser` (the
+Messenger paste), `NameMatcher` (recognising regulars) and
+`SessionSnapshot` (the offline backup). See
+[docs/architecture.md](docs/architecture.md).
+
+**Two safety nets worth knowing about.** *Save a copy of tonight* (the save
+icon) exports the whole session as plain text — it works with no signal and
+survives a dead battery, which is the single worst way this app could fail
+its user. And *Lock the amounts* on the Money tab freezes everyone's share
+before collection starts, so a late arrival can never silently change what
+someone already paid.
 
 ## Privacy (RA 10173)
 
