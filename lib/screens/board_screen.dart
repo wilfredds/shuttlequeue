@@ -44,7 +44,13 @@ class _BoardScreenState extends ConsumerState<BoardScreen> {
     super.initState();
 
     // Walang saysay ang board na namamatay pagkalipas ng 30 segundo.
-    WakelockPlus.enable();
+    //
+    // Hindi natin ino-await ang Future na ito, kaya kung tanggihan ito ng
+    // browser (hal. Wake Lock API na hindi suportado, o naka-battery saver),
+    // magiging unhandled Zone error ito kung walang catchError. Walang
+    // epekto sa datos kung mabigo ito — nananatili lang ang normal na
+    // pag-timeout ng screen — kaya tahimik lang itong nilulunok.
+    WakelockPlus.enable().catchError((Object _) {});
     SystemChrome.setEnabledSystemUIMode(SystemUiMode.immersiveSticky);
 
     // Ang oras ng paghihintay ay gumagalaw kahit walang bagong datos,
@@ -59,7 +65,7 @@ class _BoardScreenState extends ConsumerState<BoardScreen> {
   @override
   void dispose() {
     _ticker?.cancel();
-    WakelockPlus.disable();
+    WakelockPlus.disable().catchError((Object _) {});
     SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
     super.dispose();
   }
