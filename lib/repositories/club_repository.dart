@@ -35,10 +35,13 @@ class ClubRepository {
     required String ownerUid,
     required String fallbackName,
   }) async {
+    // Cache-only: v1 ay single-device pa rin, kaya ang lokal na cache ang
+    // tanging katotohanang mahalaga. Ito rin ang unang read sa buong
+    // "create session" flow — kritikal na hindi ito maghintay ng server.
     final existing = await _clubs
         .where('ownerUid', isEqualTo: ownerUid)
         .limit(1)
-        .get();
+        .get(cacheOnly);
 
     if (existing.docs.isNotEmpty) return existing.docs.first.id;
 

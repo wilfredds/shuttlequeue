@@ -18,7 +18,23 @@
 /// hanapin ng bug na "naglalaho ang bagong session".
 library;
 
+import 'package:cloud_firestore/cloud_firestore.dart';
+
 typedef WriteErrorReporter = void Function(Object error);
+
+/// Para sa mga read na kailangan bago magpatuloy (hal. "may club na ba
+/// tayo?" bago gumawa ng session).
+///
+/// Ang default ng Firestore ay `Source.serverAndCache`: sinusubukan muna
+/// ang server, at "fumafall back sa cache kung hindi maabot ang server" —
+/// pero walang garantiya sa dokumentasyon kung gaano katagal bago
+/// mapagdesisyunan iyon. Dalawang beses na tayong nadamay sa ganitong
+/// klaseng kalabuan sa offline behavior ng Firestore (tingnan ang git
+/// history — ang batch na `get()` sa rules, at ang naka-await na sulat).
+/// Sinasadyang cache-only na lang ito: agad-agad, walang pag-asa sa
+/// network — at dahil single-device pa rin ang v1 (R-02), ang lokal na
+/// cache mismo ang tanging katotohanang mahalaga.
+const cacheOnly = GetOptions(source: Source.cache);
 
 /// Isinusulat nang hindi hinihintay ang server. Ang anumang pagkabigo ay
 /// iniuulat, hindi nilulunok.

@@ -146,7 +146,7 @@ class SessionRepository {
   /// Nagdadagdag o nagbabawas ng court nang hindi ginagalaw ang iba.
   Future<void> setCourtCount(String sessionId, int desiredCount) async {
     final courtsRef = _courtsOf(sessionId);
-    final existing = await courtsRef.get();
+    final existing = await courtsRef.get(cacheOnly);
 
     // HINDI pwedeng orderBy('label') dito: string ang paghahambing, kaya
     // ang "Court 10" ay nauuna sa "Court 2". Kapag binawasan ang bilang,
@@ -230,7 +230,7 @@ class SessionRepository {
   /// Binubuksan muli ang bayarin — sinasadyang may babala sa UI.
   Future<void> reopenBill(String sessionId) async {
     final sessionRef = _sessions.doc(sessionId);
-    final existing = await sessionRef.collection('bill').get();
+    final existing = await sessionRef.collection('bill').get(cacheOnly);
 
     final batch = _db.batch();
     for (final doc in existing.docs) {
@@ -255,7 +255,7 @@ class SessionRepository {
 
     final refsToDelete = <DocumentReference<Map<String, dynamic>>>[];
     for (final name in const ['players', 'courts', 'matches', 'bill']) {
-      final snapshot = await sessionRef.collection(name).get();
+      final snapshot = await sessionRef.collection(name).get(cacheOnly);
       refsToDelete.addAll(snapshot.docs.map((doc) => doc.reference));
     }
     refsToDelete.add(sessionRef);
