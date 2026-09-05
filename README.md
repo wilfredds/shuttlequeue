@@ -67,6 +67,7 @@ appears in the Firestore console and the pending-sync banner clears.
 | Courts | The court grid, the queue, and one big **Next match** button |
 | Money | Per-player breakdown, lockable amounts, paid toggles, share to the group chat |
 | Board | A read-only second screen: courts and the queue, visible across the hall |
+| Recap | Per-player night summary — games, partners, longest wait — shareable to the group chat |
 | Regulars | Remembered skill tiers, nicknames and carry-over balances |
 
 Pure, tested services carry the correctness burden: `MatchmakingService`
