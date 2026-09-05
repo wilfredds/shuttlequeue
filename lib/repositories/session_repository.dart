@@ -219,8 +219,11 @@ class SessionRepository {
       batch.set(billRef.doc(line.playerId), billLineToMap(line, ownerUid: _uid));
     }
 
+    // Ang pag-lock ng bayarin ang tunay na hudyat na tapos na ang gabi —
+    // iyon ang ginagawa ng QM bago mangolekta. Walang dagdag na pindot.
     batch.update(sessionRef, {
       'billFinalizedAt': FieldValue.serverTimestamp(),
+      'status': SessionStatus.ended.value,
       'updatedAt': FieldValue.serverTimestamp(),
     });
 
@@ -236,8 +239,10 @@ class SessionRepository {
     for (final doc in existing.docs) {
       batch.delete(doc.reference);
     }
+    // Binuksan muli ang bayarin, kaya hindi pa pala tapos ang gabi.
     batch.update(sessionRef, {
       'billFinalizedAt': null,
+      'status': SessionStatus.live.value,
       'updatedAt': FieldValue.serverTimestamp(),
     });
 

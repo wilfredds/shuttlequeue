@@ -173,6 +173,24 @@ async function main() {
     return assertSucceeds(batch.commit());
   });
 
+  // startMatch writes the match, the court, the players AND flips the
+  // session to live — all in one batch. The session doc already exists
+  // here so this is safe, but it is a new combination, and the last batch
+  // regression cost real debugging time, so it gets a test.
+  await check('owner starts a match and flips the session live in one batch',
+    () => {
+      const batch = writeBatch(ownerDb);
+      batch.set(doc(collection(ownerDb, 'sessions', SESSION, 'matches')), {
+        ownerUid: OWNER, courtId: 'court-1',
+        teamA: ['p1', 'p2'], teamB: ['p3', 'p4'],
+        scoreA: null, scoreB: null, startedAt: ts(), endedAt: null,
+      });
+      batch.update(doc(ownerDb, 'sessions', SESSION), {
+        status: 'live', updatedAt: ts(),
+      });
+      return assertSucceeds(batch.commit());
+    });
+
   console.log('\n3. Another QM cannot touch this data');
   await check('intruder cannot read the session', () =>
     assertFails(getDoc(doc(intruderDb, 'sessions', SESSION))));

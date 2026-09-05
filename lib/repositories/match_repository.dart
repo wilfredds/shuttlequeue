@@ -80,6 +80,14 @@ class MatchRepository {
       });
     }
 
+    // Nagsimula na ang gabi. Awtomatiko ito — walang dagdag na pindot para
+    // sa QM, at ang paglalaro mismo ang pinakamalinaw na senyales na buhay
+    // na ang session. Idempotent: kung "live" na, walang nagbabago.
+    batch.update(sessionRef, {
+      'status': SessionStatus.live.value,
+      'updatedAt': FieldValue.serverTimestamp(),
+    });
+
     fireAndForget(batch.commit(), onWriteError);
     return matchRef.id;
   }
