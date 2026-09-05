@@ -8,11 +8,13 @@ import '../services/session_snapshot.dart';
 import 'board_screen.dart';
 import 'cost_split_screen.dart';
 import 'courts_screen.dart';
+import 'recap_screen.dart';
 import 'roster_screen.dart';
 import 'session_form_screen.dart';
 
-/// Ang bahay ng QM sa loob ng isang gabi. Tatlong tab lang — sinasadya:
-/// sino ang nandito, sino ang naglalaro, magkano ang bayad.
+/// Ang bahay ng QM sa loob ng isang gabi, sunod-sunod ang mga yugto:
+/// sino ang nandito, sino ang naglalaro, magkano ang bayad, at kumusta
+/// ang gabi.
 class SessionDetailScreen extends ConsumerStatefulWidget {
   const SessionDetailScreen({super.key, required this.sessionId});
 
@@ -90,7 +92,8 @@ class _SessionDetailScreenState extends ConsumerState<SessionDetailScreen> {
       body: switch (_tabIndex) {
         0 => RosterScreen(sessionId: widget.sessionId),
         1 => CourtsScreen(sessionId: widget.sessionId),
-        _ => CostSplitScreen(sessionId: widget.sessionId),
+        2 => CostSplitScreen(sessionId: widget.sessionId),
+        _ => RecapScreen(sessionId: widget.sessionId),
       },
       bottomNavigationBar: NavigationBar(
         selectedIndex: _tabIndex,
@@ -110,6 +113,11 @@ class _SessionDetailScreenState extends ConsumerState<SessionDetailScreen> {
             icon: const Icon(Icons.payments_outlined),
             selectedIcon: const Icon(Icons.payments),
             label: l10n.tabMoney,
+          ),
+          NavigationDestination(
+            icon: const Icon(Icons.auto_awesome_outlined),
+            selectedIcon: const Icon(Icons.auto_awesome),
+            label: l10n.tabRecap,
           ),
         ],
       ),

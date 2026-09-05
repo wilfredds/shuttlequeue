@@ -1101,6 +1101,102 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Dismiss'**
   String get syncFailedDismiss;
+
+  /// No description provided for @tabRecap.
+  ///
+  /// In en, this message translates to:
+  /// **'Recap'**
+  String get tabRecap;
+
+  /// No description provided for @recapEmptyTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Nothing to recap yet'**
+  String get recapEmptyTitle;
+
+  /// No description provided for @recapEmptyBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Finish a few games and the night\'s summary appears here.'**
+  String get recapEmptyBody;
+
+  /// No description provided for @recapNightSummary.
+  ///
+  /// In en, this message translates to:
+  /// **'Tonight'**
+  String get recapNightSummary;
+
+  /// No description provided for @recapTotalGames.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{1 game} other{{count} games}}'**
+  String recapTotalGames(int count);
+
+  /// No description provided for @recapTotalShuttles.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{1 shuttle} other{{count} shuttles}}'**
+  String recapTotalShuttles(int count);
+
+  /// No description provided for @recapPlayersPlayed.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{1 player} other{{count} players}}'**
+  String recapPlayersPlayed(int count);
+
+  /// No description provided for @recapDuration.
+  ///
+  /// In en, this message translates to:
+  /// **'{hours}h {minutes}m on court'**
+  String recapDuration(int hours, int minutes);
+
+  /// No description provided for @recapPartners.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =0{no partners yet} =1{1 different partner} other{{count} different partners}}'**
+  String recapPartners(int count);
+
+  /// No description provided for @recapOpponents.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{1 opponent faced} other{{count} opponents faced}}'**
+  String recapOpponents(int count);
+
+  /// No description provided for @recapMostWith.
+  ///
+  /// In en, this message translates to:
+  /// **'most with {name}'**
+  String recapMostWith(String name);
+
+  /// No description provided for @recapLongestWait.
+  ///
+  /// In en, this message translates to:
+  /// **'longest wait {minutes}m'**
+  String recapLongestWait(int minutes);
+
+  /// No description provided for @recapDidNotPlay.
+  ///
+  /// In en, this message translates to:
+  /// **'didn\'t get on court'**
+  String get recapDidNotPlay;
+
+  /// No description provided for @recapShareAll.
+  ///
+  /// In en, this message translates to:
+  /// **'Share the night'**
+  String get recapShareAll;
+
+  /// No description provided for @recapSharePlayer.
+  ///
+  /// In en, this message translates to:
+  /// **'Share {name}\'s card'**
+  String recapSharePlayer(String name);
+
+  /// No description provided for @recapGamesLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{1 game} other{{count} games}}'**
+  String recapGamesLabel(int count);
 }
 
 class _AppLocalizationsDelegate

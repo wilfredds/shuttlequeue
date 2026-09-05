@@ -361,5 +361,94 @@
     }
   },
   "syncFailed": "That didn't save. Check your connection — if it keeps happening, tell France.",
-  "syncFailedDismiss": "Dismiss"
+  "syncFailedDismiss": "Dismiss",
+  "tabRecap": "Recap",
+  "recapEmptyTitle": "Nothing to recap yet",
+  "recapEmptyBody": "Finish a few games and the night's summary appears here.",
+  "recapNightSummary": "Tonight",
+  "recapTotalGames": "{count, plural, =1{1 game} other{{count} games}}",
+  "@recapTotalGames": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "recapTotalShuttles": "{count, plural, =1{1 shuttle} other{{count} shuttles}}",
+  "@recapTotalShuttles": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "recapPlayersPlayed": "{count, plural, =1{1 player} other{{count} players}}",
+  "@recapPlayersPlayed": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "recapDuration": "{hours}h {minutes}m on court",
+  "@recapDuration": {
+    "placeholders": {
+      "hours": {
+        "type": "int"
+      },
+      "minutes": {
+        "type": "int"
+      }
+    }
+  },
+  "recapPartners": "{count, plural, =0{no partners yet} =1{1 different partner} other{{count} different partners}}",
+  "@recapPartners": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "recapOpponents": "{count, plural, =1{1 opponent faced} other{{count} opponents faced}}",
+  "@recapOpponents": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "recapMostWith": "most with {name}",
+  "@recapMostWith": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "recapLongestWait": "longest wait {minutes}m",
+  "@recapLongestWait": {
+    "placeholders": {
+      "minutes": {
+        "type": "int"
+      }
+    }
+  },
+  "recapDidNotPlay": "didn't get on court",
+  "recapShareAll": "Share the night",
+  "recapSharePlayer": "Share {name}'s card",
+  "@recapSharePlayer": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "recapGamesLabel": "{count, plural, =1{1 game} other{{count} games}}",
+  "@recapGamesLabel": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  }
 }

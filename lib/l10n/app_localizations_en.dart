@@ -627,4 +627,110 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get syncFailedDismiss => 'Dismiss';
+
+  @override
+  String get tabRecap => 'Recap';
+
+  @override
+  String get recapEmptyTitle => 'Nothing to recap yet';
+
+  @override
+  String get recapEmptyBody =>
+      'Finish a few games and the night\'s summary appears here.';
+
+  @override
+  String get recapNightSummary => 'Tonight';
+
+  @override
+  String recapTotalGames(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count games',
+      one: '1 game',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String recapTotalShuttles(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count shuttles',
+      one: '1 shuttle',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String recapPlayersPlayed(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count players',
+      one: '1 player',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String recapDuration(int hours, int minutes) {
+    return '${hours}h ${minutes}m on court';
+  }
+
+  @override
+  String recapPartners(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count different partners',
+      one: '1 different partner',
+      zero: 'no partners yet',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String recapOpponents(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count opponents faced',
+      one: '1 opponent faced',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String recapMostWith(String name) {
+    return 'most with $name';
+  }
+
+  @override
+  String recapLongestWait(int minutes) {
+    return 'longest wait ${minutes}m';
+  }
+
+  @override
+  String get recapDidNotPlay => 'didn\'t get on court';
+
+  @override
+  String get recapShareAll => 'Share the night';
+
+  @override
+  String recapSharePlayer(String name) {
+    return 'Share $name\'s card';
+  }
+
+  @override
+  String recapGamesLabel(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count games',
+      one: '1 game',
+    );
+    return '$_temp0';
+  }
 }
