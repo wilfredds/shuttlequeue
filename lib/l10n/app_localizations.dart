@@ -1197,6 +1197,24 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'{count, plural, =1{1 game} other{{count} games}}'**
   String recapGamesLabel(int count);
+
+  /// No description provided for @repeatSession.
+  ///
+  /// In en, this message translates to:
+  /// **'Repeat this night'**
+  String get repeatSession;
+
+  /// No description provided for @repeatSessionTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Repeat night'**
+  String get repeatSessionTitle;
+
+  /// No description provided for @repeatSessionHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Same venue, courts and fees. Check the date before you create it.'**
+  String get repeatSessionHint;
 }
 
 class _AppLocalizationsDelegate

@@ -7,13 +7,29 @@ import '../models/enums.dart';
 import '../models/session.dart';
 import '../providers/session_providers.dart';
 import '../services/money.dart';
+import '../services/session_schedule.dart';
 
 /// Gumawa o mag-edit ng session. Piso ang ipinapakita; centavos ang
 /// iniimbak — sa boundary na ito nangyayari ang conversion, isang beses lang.
+///
+/// Tatlong gamit ng screen na ito:
+///  - bagong session (parehong null)
+///  - pag-edit ng meron na (`existing`)
+///  - pag-uulit ng nakaraang gabi (`template`) — bagong session pa rin,
+///    pero puno na ang lahat ng detalye maliban sa petsa
 class SessionFormScreen extends ConsumerStatefulWidget {
-  const SessionFormScreen({super.key, this.existing});
+  const SessionFormScreen({super.key, this.existing, this.template})
+      : assert(
+          existing == null || template == null,
+          'edit a session or repeat one, never both',
+        );
 
   final Session? existing;
+
+  /// Kinokopya ang mga detalye pero **bagong session pa rin** ang ginagawa.
+  /// Lingguhan ang club, kaya halos lahat ng field ay pareho na sa
+  /// nakaraang linggo — ang petsa lang ang talagang nagbabago.
+  final Session? template;
 
   @override
   ConsumerState<SessionFormScreen> createState() => _SessionFormScreenState();
@@ -37,23 +53,34 @@ class _SessionFormScreenState extends ConsumerState<SessionFormScreen> {
   @override
   void initState() {
     super.initState();
-    final existing = widget.existing;
 
-    _titleController = TextEditingController(text: existing?.title ?? '');
-    _venueController = TextEditingController(text: existing?.venue ?? '');
+    // Pareho ang pinagkukunan ng laman ng form kung ini-edit o inuulit;
+    // ang pinagkaiba ay kung ano ang mangyayari sa Save at kung anong
+    // petsa ang mungkahi.
+    final source = widget.existing ?? widget.template;
+
+    _titleController = TextEditingController(text: source?.title ?? '');
+    _venueController = TextEditingController(text: source?.venue ?? '');
     _courtFeeController = TextEditingController(
-      text: existing == null ? '' : _pesoText(existing.courtFeeCentavos),
+      text: source == null ? '' : _pesoText(source.courtFeeCentavos),
     );
     _shuttlePriceController = TextEditingController(
-      text: existing == null ? '' : _pesoText(existing.shuttlePriceCentavos),
+      text: source == null ? '' : _pesoText(source.shuttlePriceCentavos),
     );
 
-    // Default: ngayong gabi, alas-8 — ang pinakakaraniwang oras ng palo.
     final now = DateTime.now();
-    _sessionDate =
-        existing?.sessionDate ?? DateTime(now.year, now.month, now.day, 20);
-    _courtCount = existing?.courtCount ?? 2;
-    _feeMode = existing?.feeMode ?? FeeMode.perHead;
+    _sessionDate = switch ((widget.existing, widget.template)) {
+      // Pag-edit: huwag galawin ang petsa.
+      (final Session existing, _) => existing.sessionDate,
+      // Pag-uulit: ang susunod na katulad na araw ng linggo.
+      (_, final Session template) =>
+        nextOccurrence(template.sessionDate, now),
+      // Bago: ngayong gabi, alas-8 — ang pinakakaraniwang oras ng palo.
+      _ => DateTime(now.year, now.month, now.day, 20),
+    };
+
+    _courtCount = source?.courtCount ?? 2;
+    _feeMode = source?.feeMode ?? FeeMode.perHead;
   }
 
   /// Walang trailing ".00" kung buong piso — mas madaling i-edit.
@@ -191,12 +218,47 @@ class _SessionFormScreenState extends ConsumerState<SessionFormScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: Text(_isEditing ? l10n.editSessionTitle : l10n.newSessionTitle),
+        title: Text(
+          switch ((widget.existing, widget.template)) {
+            (final Session _, _) => l10n.editSessionTitle,
+            (_, final Session _) => l10n.repeatSessionTitle,
+            _ => l10n.newSessionTitle,
+          },
+        ),
       ),
       body: SafeArea(
         child: ListView(
           padding: const EdgeInsets.fromLTRB(16, 16, 16, 32),
           children: [
+            // Ang petsa ang tanging hulang ginagawa natin dito, kaya
+            // sinasabi natin nang tahasan na tingnan iyon.
+            if (widget.template != null) ...[
+              Card(
+                color: theme.colorScheme.secondaryContainer,
+                child: Padding(
+                  padding: const EdgeInsets.all(12),
+                  child: Row(
+                    children: [
+                      Icon(
+                        Icons.event_repeat_outlined,
+                        size: 20,
+                        color: theme.colorScheme.onSecondaryContainer,
+                      ),
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: Text(
+                          l10n.repeatSessionHint,
+                          style: theme.textTheme.bodyMedium?.copyWith(
+                            color: theme.colorScheme.onSecondaryContainer,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+              const SizedBox(height: 16),
+            ],
             TextField(
               controller: _titleController,
               decoration: InputDecoration(

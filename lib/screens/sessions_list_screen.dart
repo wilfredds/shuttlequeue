@@ -182,6 +182,14 @@ class _SessionCard extends ConsumerWidget {
                     label: formatCentavos(session.courtFeeCentavos),
                   ),
                   const Spacer(),
+                  // Lingguhan ang club — halos pareho na ang lahat ng
+                  // detalye ng susunod na gabi, kaya isang tap at petsa
+                  // na lang ang kailangan.
+                  IconButton(
+                    tooltip: l10n.repeatSession,
+                    icon: const Icon(Icons.event_repeat_outlined),
+                    onPressed: () => _repeat(context),
+                  ),
                   IconButton(
                     tooltip: l10n.deleteSession,
                     icon: const Icon(Icons.delete_outline),
@@ -200,6 +208,17 @@ class _SessionCard extends ConsumerWidget {
     Navigator.of(context).push(
       MaterialPageRoute<void>(
         builder: (_) => SessionDetailScreen(sessionId: session.id),
+      ),
+    );
+  }
+
+  /// Bagong gabi, kopya ng mga detalye nito. Hindi kasama ang roster —
+  /// hindi lahat ng dumalo noong isang linggo ay darating ulit, at ang
+  /// paste-import kasama ang regulars book ay mabilis na naman.
+  void _repeat(BuildContext context) {
+    Navigator.of(context).push(
+      MaterialPageRoute<void>(
+        builder: (_) => SessionFormScreen(template: session),
       ),
     );
   }

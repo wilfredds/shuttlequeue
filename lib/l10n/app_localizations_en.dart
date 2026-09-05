@@ -733,4 +733,14 @@ class AppLocalizationsEn extends AppLocalizations {
     );
     return '$_temp0';
   }
+
+  @override
+  String get repeatSession => 'Repeat this night';
+
+  @override
+  String get repeatSessionTitle => 'Repeat night';
+
+  @override
+  String get repeatSessionHint =>
+      'Same venue, courts and fees. Check the date before you create it.';
 }

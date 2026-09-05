@@ -450,5 +450,8 @@
         "type": "int"
       }
     }
-  }
+  },
+  "repeatSession": "Repeat this night",
+  "repeatSessionTitle": "Repeat night",
+  "repeatSessionHint": "Same venue, courts and fees. Check the date before you create it."
 }
