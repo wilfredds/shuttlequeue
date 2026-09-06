@@ -116,9 +116,15 @@ service cloud.firestore {
     // =======================================================================
 
     function validClub(data) {
-      return data.keys().hasOnly(['name', 'ownerUid', 'createdAt'])
+      return data.keys().hasOnly([
+          'name', 'ownerUid', 'gcashNumber', 'createdAt'
+        ])
         && isText(data.name, 100)
         && data.ownerUid is string
+        // Numero ng QM para sa bayad. Maikli lang ang cap — numero ito ng
+        // telepono, hindi lagusan para magtago ng ibang datos.
+        && (data.gcashNumber == null
+            || (data.gcashNumber is string && data.gcashNumber.size() <= 20))
         && data.createdAt is timestamp;
     }
 

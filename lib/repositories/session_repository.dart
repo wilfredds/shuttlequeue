@@ -25,6 +25,13 @@ class SessionRepository {
   /// ng rules ang parent. Tingnan ang komento sa firestore_mappers.dart.
   String get _uid => _auth.currentUser?.uid ?? '';
 
+  /// Tingnan ang ownedQuery sa deferred_write.dart — kailangan ng bawat
+  /// collection query ang salaang ito para hindi tanggihan ng rules.
+  Query<Map<String, dynamic>> _ownedQuery(
+    Query<Map<String, dynamic>> collection,
+  ) =>
+      ownedQuery(collection, _uid);
+
   /// Firestore batch limit ay 500 writes. Nag-iiwan tayo ng allowance
   /// para sa parent doc at sa anumang madagdag mamaya.
   static const _batchLimit = 400;
@@ -146,7 +153,7 @@ class SessionRepository {
   /// Nagdadagdag o nagbabawas ng court nang hindi ginagalaw ang iba.
   Future<void> setCourtCount(String sessionId, int desiredCount) async {
     final courtsRef = _courtsOf(sessionId);
-    final existing = await courtsRef.get(cacheOnly);
+    final existing = await _ownedQuery(courtsRef).get(cacheOnly);
 
     // HINDI pwedeng orderBy('label') dito: string ang paghahambing, kaya
     // ang "Court 10" ay nauuna sa "Court 2". Kapag binawasan ang bilang,
@@ -196,9 +203,7 @@ class SessionRepository {
   // -------------------------------------------------------------------------
 
   Stream<List<BillLine>> watchBill(String sessionId) {
-    return _sessions
-        .doc(sessionId)
-        .collection('bill')
+    return _ownedQuery(_sessions.doc(sessionId).collection('bill'))
         .snapshots()
         .map((snapshot) => snapshot.docs.map(billLineFromDoc).toList());
   }
@@ -233,7 +238,8 @@ class SessionRepository {
   /// Binubuksan muli ang bayarin — sinasadyang may babala sa UI.
   Future<void> reopenBill(String sessionId) async {
     final sessionRef = _sessions.doc(sessionId);
-    final existing = await sessionRef.collection('bill').get(cacheOnly);
+    final existing =
+        await _ownedQuery(sessionRef.collection('bill')).get(cacheOnly);
 
     final batch = _db.batch();
     for (final doc in existing.docs) {
@@ -260,7 +266,8 @@ class SessionRepository {
 
     final refsToDelete = <DocumentReference<Map<String, dynamic>>>[];
     for (final name in const ['players', 'courts', 'matches', 'bill']) {
-      final snapshot = await sessionRef.collection(name).get(cacheOnly);
+      final snapshot =
+          await _ownedQuery(sessionRef.collection(name)).get(cacheOnly);
       refsToDelete.addAll(snapshot.docs.map((doc) => doc.reference));
     }
     refsToDelete.add(sessionRef);

@@ -453,5 +453,32 @@
   },
   "repeatSession": "Repeat this night",
   "repeatSessionTitle": "Repeat night",
-  "repeatSessionHint": "Same venue, courts and fees. Check the date before you create it."
+  "repeatSessionHint": "Same venue, courts and fees. Check the date before you create it.",
+  "substituteTitle": "Who comes in for {name}?",
+  "@substituteTitle": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "substituteNobody": "Nobody is waiting in the queue",
+  "substituteDone": "{outgoing} swapped out for {incoming}",
+  "@substituteDone": {
+    "placeholders": {
+      "outgoing": {
+        "type": "String"
+      },
+      "incoming": {
+        "type": "String"
+      }
+    }
+  },
+  "substituteHint": "Tap a player to swap them out",
+  "gcashTitle": "GCash",
+  "gcashAdd": "Add your GCash number",
+  "gcashEdit": "Edit GCash number",
+  "gcashNumberLabel": "GCash mobile number",
+  "gcashHint": "Players can send payments here",
+  "gcashInvalid": "Enter an 11-digit mobile number starting 09"
 }

@@ -15,7 +15,7 @@ import {
   assertSucceeds,
   assertFails,
 } from '@firebase/rules-unit-testing';
-import { doc, setDoc, getDoc, updateDoc, deleteDoc, collection, addDoc, writeBatch } from 'firebase/firestore';
+import { doc, setDoc, getDoc, getDocs, updateDoc, deleteDoc, collection, addDoc, writeBatch, query, where } from 'firebase/firestore';
 import { readFileSync } from 'node:fs';
 
 const OWNER = 'qm-alice';
@@ -191,6 +191,42 @@ async function main() {
       return assertSucceeds(batch.commit());
     });
 
+  // LIST QUERIES — the blind spot that shipped a broken app.
+  //
+  // Every check above reads a single document. But the app reads
+  // COLLECTIONS, and rules behave differently there: a rule resting on
+  // resource.data.ownerUid cannot be proven for a whole collection, so
+  // Firestore rejects the entire query rather than filtering it. The
+  // query must therefore repeat the rule's condition itself.
+  //
+  // Unfiltered = denied. Filtered = allowed. Both are asserted, because
+  // only testing the happy path is what let this through the first time.
+  for (const sub of ['players', 'courts', 'matches', 'bill']) {
+    await check(`listing ${sub} WITHOUT an ownerUid filter is denied`, () =>
+      assertFails(getDocs(collection(ownerDb, 'sessions', SESSION, sub))));
+
+    await check(`listing ${sub} WITH an ownerUid filter is allowed`, () =>
+      assertSucceeds(getDocs(query(
+        collection(ownerDb, 'sessions', SESSION, sub),
+        where('ownerUid', '==', OWNER),
+      ))));
+  }
+
+  await check('listing club members WITHOUT a filter is denied', () =>
+    assertFails(getDocs(collection(ownerDb, 'clubs', CLUB, 'members'))));
+  await check('listing club members WITH an ownerUid filter is allowed', () =>
+    assertSucceeds(getDocs(query(
+      collection(ownerDb, 'clubs', CLUB, 'members'),
+      where('ownerUid', '==', OWNER),
+    ))));
+
+  // Filtering by someone else's uid must not become a loophole.
+  await check('filtering a list by another QM uid is denied', () =>
+    assertFails(getDocs(query(
+      collection(ownerDb, 'sessions', SESSION, 'players'),
+      where('ownerUid', '==', INTRUDER),
+    ))));
+
   console.log('\n3. Another QM cannot touch this data');
   await check('intruder cannot read the session', () =>
     assertFails(getDoc(doc(intruderDb, 'sessions', SESSION))));
@@ -222,6 +258,19 @@ async function main() {
     assertFails(addDoc(
       collection(ownerDb, 'sessions', SESSION, 'players'),
       validPlayer({ ownerUid: INTRUDER }))));
+
+  await check('owner can set a GCash number on their club', () =>
+    assertSucceeds(updateDoc(doc(ownerDb, 'clubs', CLUB), {
+      gcashNumber: '09293656299',
+    })));
+  await check('an over-long GCash value is rejected', () =>
+    assertFails(updateDoc(doc(ownerDb, 'clubs', CLUB), {
+      gcashNumber: '0'.repeat(200),
+    })));
+  await check('another QM cannot set your GCash number', () =>
+    assertFails(updateDoc(doc(intruderDb, 'clubs', CLUB), {
+      gcashNumber: '09999999999',
+    })));
 
   console.log('\n4. Immutable fields stay immutable');
   await check('ownerUid cannot be reassigned', () =>

@@ -743,4 +743,38 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get repeatSessionHint =>
       'Same venue, courts and fees. Check the date before you create it.';
+
+  @override
+  String substituteTitle(String name) {
+    return 'Who comes in for $name?';
+  }
+
+  @override
+  String get substituteNobody => 'Nobody is waiting in the queue';
+
+  @override
+  String substituteDone(String outgoing, String incoming) {
+    return '$outgoing swapped out for $incoming';
+  }
+
+  @override
+  String get substituteHint => 'Tap a player to swap them out';
+
+  @override
+  String get gcashTitle => 'GCash';
+
+  @override
+  String get gcashAdd => 'Add your GCash number';
+
+  @override
+  String get gcashEdit => 'Edit GCash number';
+
+  @override
+  String get gcashNumberLabel => 'GCash mobile number';
+
+  @override
+  String get gcashHint => 'Players can send payments here';
+
+  @override
+  String get gcashInvalid => 'Enter an 11-digit mobile number starting 09';
 }

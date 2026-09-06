@@ -1,6 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
+import '../models/club.dart';
 import '../models/club_member.dart';
 import '../models/enums.dart';
 import 'deferred_write.dart';
@@ -21,6 +22,13 @@ class ClubRepository {
   final WriteErrorReporter? onWriteError;
 
   String get _uid => _auth.currentUser?.uid ?? '';
+
+  /// Tingnan ang ownedQuery sa deferred_write.dart — kailangan ng bawat
+  /// collection query ang salaang ito para hindi tanggihan ng rules.
+  Query<Map<String, dynamic>> _ownedQuery(
+    Query<Map<String, dynamic>> collection,
+  ) =>
+      ownedQuery(collection, _uid);
 
   CollectionReference<Map<String, dynamic>> get _clubs => _db.collection('clubs');
 
@@ -59,10 +67,35 @@ class ClubRepository {
     return ref.id;
   }
 
-  Stream<List<ClubMember>> watchMembers(String clubId) {
-    return membersOf(clubId).orderBy('name').snapshots().map(
-          (snapshot) => snapshot.docs.map(memberFromDoc).toList(growable: false),
+  Stream<Club?> watchClub(String clubId) {
+    return _clubs.doc(clubId).snapshots().map(
+          (doc) => doc.exists ? clubFromDoc(doc) : null,
         );
+  }
+
+  /// Ang numerong padadalhan ng bayad ng mga manlalaro.
+  ///
+  /// Nakatago ito sa club, hindi naka-hardcode sa app: iba ang numero ng
+  /// bawat QM, at kapag ang coach na ang gumamit nito, sa kanya dapat
+  /// mapunta ang pera.
+  Future<void> setGcashNumber(String clubId, String? number) async {
+    fireAndForget(
+      _clubs.doc(clubId).update({'gcashNumber': number}),
+      onWriteError,
+    );
+  }
+
+  /// Walang `orderBy` dito nang sinasadya. Ang query ay kailangang
+  /// may `where(ownerUid)` para papasa sa rules; ang pagsasama ng where
+  /// at orderBy sa magkaibang field ay mangangailangan ng composite index.
+  /// Maliit lang ang listahan ng regulars, kaya sa client na lang tayo
+  /// mag-aayos — pareho ang resulta, at walang dagdag na index.
+  Stream<List<ClubMember>> watchMembers(String clubId) {
+    return _ownedQuery(membersOf(clubId)).snapshots().map((snapshot) {
+      final members = snapshot.docs.map(memberFromDoc).toList()
+        ..sort((a, b) => a.name.toLowerCase().compareTo(b.name.toLowerCase()));
+      return members;
+    });
   }
 
   Future<String> addMember({

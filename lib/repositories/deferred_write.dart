@@ -44,6 +44,28 @@ void fireAndForget(Future<void> write, WriteErrorReporter? onError) {
   });
 }
 
+/// Sinasalaan ang isang collection query sa may-ari nito.
+///
+/// **BAKIT KAILANGAN ITO SA BAWAT QUERY — huwag itong tanggalin.**
+///
+/// Ang security rules ay HINDI filter. Kapag ang rule ay nakasalalay sa
+/// `resource.data.ownerUid`, kaya iyong suriin ng Firestore para sa
+/// **isang** dokumento — pero para sa isang buong collection, hindi nito
+/// kayang patunayan na lahat ng dokumento ay papasa, kaya tinatanggihan
+/// nito ang BUONG query. Hindi ito nagsasala; nagtataboy ito.
+///
+/// Kaya kailangang isulat ng query mismo ang parehong kondisyon ng rule.
+/// Kapag nawala ito: PERMISSION_DENIED ang listahan, at dahil stream ang
+/// karamihan dito, ang nakikita ng QM ay walang katapusang spinner —
+/// walang error, walang mensahe. Ganito eksakto nasira ang roster, courts,
+/// matches, bill at regulars nang tanggalin natin ang get() sa rules.
+Query<Map<String, dynamic>> ownedQuery(
+  Query<Map<String, dynamic>> collection,
+  String ownerUid,
+) {
+  return collection.where('ownerUid', isEqualTo: ownerUid);
+}
+
 /// "Court 2" bago ang "Court 10".
 ///
 /// Ang plain string sort ay naglalagay ng "Court 10" bago ang "Court 2",

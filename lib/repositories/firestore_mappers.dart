@@ -9,6 +9,7 @@ library;
 import 'package:cloud_firestore/cloud_firestore.dart';
 
 import '../models/bill_line.dart';
+import '../models/club.dart';
 import '../models/club_member.dart';
 import '../models/court.dart';
 import '../models/enums.dart';
@@ -221,6 +222,20 @@ GameMatch matchFromDoc(DocumentSnapshot<Map<String, dynamic>> doc) {
     scoreB: _readNullableInt(data['scoreB']),
     startedAt: _readDate(data['startedAt']),
     endedAt: _readNullableDate(data['endedAt']),
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Club
+// ---------------------------------------------------------------------------
+
+Club clubFromDoc(DocumentSnapshot<Map<String, dynamic>> doc) {
+  final data = doc.data() ?? const <String, dynamic>{};
+  return Club(
+    id: doc.id,
+    name: _readString(data['name']),
+    ownerUid: _readString(data['ownerUid']),
+    gcashNumber: data['gcashNumber'] as String?,
   );
 }
 

@@ -1215,6 +1215,66 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Same venue, courts and fees. Check the date before you create it.'**
   String get repeatSessionHint;
+
+  /// No description provided for @substituteTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Who comes in for {name}?'**
+  String substituteTitle(String name);
+
+  /// No description provided for @substituteNobody.
+  ///
+  /// In en, this message translates to:
+  /// **'Nobody is waiting in the queue'**
+  String get substituteNobody;
+
+  /// No description provided for @substituteDone.
+  ///
+  /// In en, this message translates to:
+  /// **'{outgoing} swapped out for {incoming}'**
+  String substituteDone(String outgoing, String incoming);
+
+  /// No description provided for @substituteHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Tap a player to swap them out'**
+  String get substituteHint;
+
+  /// No description provided for @gcashTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'GCash'**
+  String get gcashTitle;
+
+  /// No description provided for @gcashAdd.
+  ///
+  /// In en, this message translates to:
+  /// **'Add your GCash number'**
+  String get gcashAdd;
+
+  /// No description provided for @gcashEdit.
+  ///
+  /// In en, this message translates to:
+  /// **'Edit GCash number'**
+  String get gcashEdit;
+
+  /// No description provided for @gcashNumberLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'GCash mobile number'**
+  String get gcashNumberLabel;
+
+  /// No description provided for @gcashHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Players can send payments here'**
+  String get gcashHint;
+
+  /// No description provided for @gcashInvalid.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter an 11-digit mobile number starting 09'**
+  String get gcashInvalid;
 }
 
 class _AppLocalizationsDelegate

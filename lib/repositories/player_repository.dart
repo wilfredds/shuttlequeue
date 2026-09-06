@@ -29,13 +29,28 @@ class PlayerRepository {
 
   String get _uid => _auth.currentUser?.uid ?? '';
 
+  /// Tingnan ang ownedQuery sa deferred_write.dart — kailangan ng bawat
+  /// collection query ang salaang ito para hindi tanggihan ng rules.
+  Query<Map<String, dynamic>> _ownedQuery(
+    Query<Map<String, dynamic>> collection,
+  ) =>
+      ownedQuery(collection, _uid);
+
   static const _batchLimit = 400;
 
   CollectionReference<Map<String, dynamic>> _playersOf(String sessionId) =>
       _db.collection('sessions').doc(sessionId).collection('players');
 
+  /// MAHALAGA ang `where(ownerUid)` dito, at hindi ito palamuti.
+  ///
+  /// Ang security rules ay HINDI filter para sa mga query. Kapag ang rule
+  /// ay tumitingin sa `resource.data.ownerUid`, hindi ito masusuri ng
+  /// Firestore para sa isang buong collection maliban kung ang query mismo
+  /// ay may parehong salaan. Kung wala ito: PERMISSION_DENIED ang buong
+  /// listahan — at dahil stream ito, walang lalabas sa screen kundi
+  /// walang katapusang spinner.
   Stream<Synced<List<SessionPlayer>>> watchPlayers(String sessionId) {
-    return _playersOf(sessionId).snapshots().map((snapshot) {
+    return _ownedQuery(_playersOf(sessionId)).snapshots().map((snapshot) {
       final players =
           snapshot.docs.map(playerFromDoc).toList(growable: false);
       // Inaayos sa client, hindi sa query: iniiwasan ang dagdag na index at

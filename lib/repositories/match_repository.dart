@@ -22,11 +22,20 @@ class MatchRepository {
 
   String get _uid => _auth.currentUser?.uid ?? '';
 
+  /// Tingnan ang ownedQuery sa deferred_write.dart — kailangan ng bawat
+  /// collection query ang salaang ito para hindi tanggihan ng rules.
+  Query<Map<String, dynamic>> _ownedQuery(
+    Query<Map<String, dynamic>> collection,
+  ) =>
+      ownedQuery(collection, _uid);
+
   DocumentReference<Map<String, dynamic>> _session(String sessionId) =>
       _db.collection('sessions').doc(sessionId);
 
   Stream<Synced<List<Court>>> watchCourts(String sessionId) {
-    return _session(sessionId).collection('courts').snapshots().map((snapshot) {
+    return _ownedQuery(_session(sessionId).collection('courts'))
+        .snapshots()
+        .map((snapshot) {
       final courts = snapshot.docs.map(courtFromDoc).toList()
         ..sort((a, b) => naturalCompare(a.label, b.label));
       return Synced(
@@ -40,8 +49,7 @@ class MatchRepository {
   /// Lahat ng laro ngayong gabi. Ginagamit ng no-repeat rotation at,
   /// mamaya, ng night recap cards.
   Stream<List<GameMatch>> watchMatches(String sessionId) {
-    return _session(sessionId)
-        .collection('matches')
+    return _ownedQuery(_session(sessionId).collection('matches'))
         .snapshots()
         .map((snapshot) => snapshot.docs.map(matchFromDoc).toList());
   }
@@ -90,6 +98,50 @@ class MatchRepository {
 
     fireAndForget(batch.commit(), onWriteError);
     return matchRef.id;
+  }
+
+  /// Pinapalitan ang isang manlalarong nasa court na ngayon.
+  ///
+  /// Nangyayari ito talaga sa gabi: napilay, may tumawag, o kailangang
+  /// umuwi sa kalagitnaan ng laro. Dati, ang tanging magagawa ng QM ay
+  /// kanselahin ang buong laro at simulan muli.
+  ///
+  /// FAIRNESS: ang PUMASOK ang makakakuha ng +1 kapag natapos ang laro,
+  /// hindi ang lumabas. Kung sino ang nagtapos, siya ang binibilang —
+  /// iyon ang pinakasimpleng patakaran, at ito ang madaling ipaliwanag
+  /// sa mga naghihintay.
+  Future<void> substitutePlayer({
+    required String sessionId,
+    required GameMatch match,
+    required String outgoingPlayerId,
+    required String incomingPlayerId,
+  }) async {
+    final sessionRef = _session(sessionId);
+    final now = DateTime.now();
+
+    List<String> swap(List<String> team) => team
+        .map((id) => id == outgoingPlayerId ? incomingPlayerId : id)
+        .toList();
+
+    final batch = _db.batch();
+
+    batch.update(sessionRef.collection('matches').doc(match.id), {
+      'teamA': swap(match.teamA),
+      'teamB': swap(match.teamB),
+    });
+
+    // Ang lumabas ay bumabalik sa pila, at ngayon nagsisimula ang
+    // paghihintay niya — hindi noong huli siyang natapos ng laro.
+    batch.update(sessionRef.collection('players').doc(outgoingPlayerId), {
+      'status': PlayerStatus.queued.value,
+      'waitingSince': Timestamp.fromDate(now),
+    });
+
+    batch.update(sessionRef.collection('players').doc(incomingPlayerId), {
+      'status': PlayerStatus.playing.value,
+    });
+
+    fireAndForget(batch.commit(), onWriteError);
   }
 
   /// Tapos na ang laro: +1 ang bilang ng bawat isa, muling nagsisimula ang

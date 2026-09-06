@@ -196,6 +196,8 @@ class _CourtCard extends ConsumerWidget {
             if (isPlaying) ...[
               const SizedBox(height: 10),
               _TeamRow(
+                sessionId: sessionId,
+                match: match!,
                 players: match!.teamA
                     .map((id) => playersById[id])
                     .nonNulls
@@ -210,12 +212,23 @@ class _CourtCard extends ConsumerWidget {
                 ),
               ),
               _TeamRow(
+                sessionId: sessionId,
+                match: match!,
                 players: match!.teamB
                     .map((id) => playersById[id])
                     .nonNulls
                     .toList(),
               ),
-              const SizedBox(height: 10),
+              const SizedBox(height: 6),
+              Text(
+                l10n.substituteHint,
+                style: theme.textTheme.labelSmall?.copyWith(
+                  color: theme.colorScheme.onPrimaryContainer.withValues(
+                    alpha: 0.7,
+                  ),
+                ),
+              ),
+              const SizedBox(height: 6),
               Row(
                 children: [
                   TextButton(
@@ -262,34 +275,109 @@ class _CourtCard extends ConsumerWidget {
   }
 }
 
-class _TeamRow extends StatelessWidget {
-  const _TeamRow({required this.players});
+/// Isang koponan sa court. Ang bawat pangalan ay napipindot para palitan
+/// ang taong iyon nang hindi kinakansela ang buong laro.
+class _TeamRow extends ConsumerWidget {
+  const _TeamRow({
+    required this.sessionId,
+    required this.match,
+    required this.players,
+  });
 
+  final String sessionId;
+  final GameMatch match;
   final List<SessionPlayer> players;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
     return Row(
       children: [
         for (final player in players)
           Padding(
             padding: const EdgeInsets.only(right: 10),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                SkillBadge(tier: player.skillTier, size: 22),
-                const SizedBox(width: 5),
-                Text(
-                  player.name,
-                  style: theme.textTheme.titleSmall?.copyWith(
-                    color: theme.colorScheme.onPrimaryContainer,
-                  ),
+            child: InkWell(
+              onTap: () => _substitute(context, ref, player),
+              borderRadius: BorderRadius.circular(6),
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 3),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    SkillBadge(tier: player.skillTier, size: 22),
+                    const SizedBox(width: 5),
+                    Text(
+                      player.name,
+                      style: theme.textTheme.titleSmall?.copyWith(
+                        color: theme.colorScheme.onPrimaryContainer,
+                      ),
+                    ),
+                  ],
                 ),
-              ],
+              ),
             ),
           ),
       ],
+    );
+  }
+
+  /// Pinipili ng QM kung sino ang papasok mula sa pila.
+  Future<void> _substitute(
+    BuildContext context,
+    WidgetRef ref,
+    SessionPlayer outgoing,
+  ) async {
+    final l10n = AppLocalizations.of(context)!;
+    final messenger = ScaffoldMessenger.of(context);
+    final queue = ref.read(queueOrderProvider(sessionId));
+
+    if (queue.isEmpty) {
+      messenger.showSnackBar(
+        SnackBar(content: Text(l10n.substituteNobody)),
+      );
+      return;
+    }
+
+    final incoming = await showModalBottomSheet<SessionPlayer>(
+      context: context,
+      builder: (sheetContext) => SafeArea(
+        child: ListView(
+          shrinkWrap: true,
+          children: [
+            Padding(
+              padding: const EdgeInsets.all(16),
+              child: Text(
+                l10n.substituteTitle(outgoing.name),
+                style: Theme.of(sheetContext).textTheme.titleMedium,
+              ),
+            ),
+            // Nasa pagkakasunod-sunod ng pila — kaya ang mungkahi ay
+            // ang parehong taong susunod na maglalaro.
+            for (final candidate in queue)
+              ListTile(
+                leading: SkillBadge(tier: candidate.skillTier),
+                title: Text(candidate.name),
+                subtitle: Text(l10n.gamesPlayedShort(candidate.gamesPlayed)),
+                onTap: () => Navigator.of(sheetContext).pop(candidate),
+              ),
+          ],
+        ),
+      ),
+    );
+
+    if (incoming == null) return;
+
+    await ref.read(matchRepositoryProvider).substitutePlayer(
+          sessionId: sessionId,
+          match: match,
+          outgoingPlayerId: outgoing.id,
+          incomingPlayerId: incoming.id,
+        );
+
+    messenger.showSnackBar(
+      SnackBar(
+        content: Text(l10n.substituteDone(outgoing.name, incoming.name)),
+      ),
     );
   }
 }

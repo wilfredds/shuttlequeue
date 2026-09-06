@@ -1,6 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../models/bill_line.dart';
+import '../models/club.dart';
 import '../models/club_member.dart';
 import '../models/court.dart';
 import '../models/match.dart';
@@ -72,6 +73,13 @@ final sessionsProvider = StreamProvider<Synced<List<Session>>>((ref) {
 /// Isang partikular na session, sinusubaybayan nang live.
 final sessionProvider = StreamProvider.family<Session?, String>((ref, id) {
   return ref.watch(sessionRepositoryProvider).watchSession(id);
+});
+
+/// Ang club mismo — kailangan para sa GCash number sa bayarin.
+final clubProvider = StreamProvider<Club?>((ref) {
+  final clubId = ref.watch(defaultClubIdProvider).value;
+  if (clubId == null) return Stream.value(null);
+  return ref.watch(clubRepositoryProvider).watchClub(clubId);
 });
 
 /// Ang regulars book ng default club.

@@ -6,6 +6,7 @@ import 'package:share_plus/share_plus.dart';
 import '../l10n/app_localizations.dart';
 import '../models/enums.dart';
 import '../models/bill_line.dart';
+import '../models/club.dart';
 import '../models/session.dart';
 import '../models/session_player.dart';
 import '../providers/session_providers.dart';
@@ -63,6 +64,8 @@ class CostSplitScreen extends ConsumerWidget {
           _LockBanner(sessionId: sessionId, session: session,
               breakdown: breakdown),
           const SizedBox(height: 6),
+          const _GcashCard(),
+          const SizedBox(height: 6),
           for (final line in breakdown.lines)
             _FeeTile(
               sessionId: sessionId,
@@ -88,7 +91,8 @@ class CostSplitScreen extends ConsumerWidget {
           const SizedBox(height: 10),
           FloatingActionButton.extended(
             heroTag: 'shareFees',
-            onPressed: () => _share(context, session, breakdown),
+            onPressed: () =>
+                _share(context, session, breakdown, ref.read(clubProvider).value),
             icon: const Icon(Icons.share_outlined),
             label: Text(l10n.shareSummary),
           ),
@@ -181,6 +185,7 @@ class CostSplitScreen extends ConsumerWidget {
     BuildContext context,
     Session session,
     FeeBreakdown breakdown,
+    Club? gcash,
   ) async {
     final l10n = AppLocalizations.of(context)!;
     final date = DateFormat('EEE, MMM d, y').format(session.sessionDate);
@@ -198,6 +203,12 @@ class CostSplitScreen extends ConsumerWidget {
       );
     }
 
+    if (gcash != null && gcash.hasGcash) {
+      buffer
+        ..writeln()
+        ..writeln('${l10n.gcashTitle}: ${gcash.formattedGcash}');
+    }
+
     buffer
       ..writeln()
       ..writeln('${l10n.totalCost}: '
@@ -210,6 +221,143 @@ class CostSplitScreen extends ConsumerWidget {
     await SharePlus.instance.share(
       ShareParams(text: buffer.toString(), subject: session.title),
     );
+  }
+}
+
+/// Saan ipapadala ng mga manlalaro ang bayad.
+///
+/// Sinasadyang hindi naka-hardcode ang numero: iba ang numero ng bawat QM,
+/// at kapag ang coach na ang humawak ng app, sa KANYA dapat mapunta ang
+/// pera — hindi sa gumawa ng app. Isang beses lang itong ita-type.
+class _GcashCard extends ConsumerWidget {
+  const _GcashCard();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final l10n = AppLocalizations.of(context)!;
+    final theme = Theme.of(context);
+    final club = ref.watch(clubProvider).value;
+
+    return Card(
+      color: theme.colorScheme.surfaceContainerHighest,
+      child: InkWell(
+        onTap: () => _edit(context, ref, club),
+        borderRadius: BorderRadius.circular(12),
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(14, 12, 12, 12),
+          child: Row(
+            children: [
+              Icon(
+                Icons.account_balance_wallet_outlined,
+                size: 20,
+                color: theme.colorScheme.onSurfaceVariant,
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      l10n.gcashTitle,
+                      style: theme.textTheme.labelMedium?.copyWith(
+                        color: theme.colorScheme.outline,
+                      ),
+                    ),
+                    Text(
+                      club != null && club.hasGcash
+                          ? club.formattedGcash
+                          : l10n.gcashAdd,
+                      style: theme.textTheme.titleMedium?.copyWith(
+                        // Malaki at madaling basahin — babasahin ito ng
+                        // manlalaro mula sa kabilang dulo ng mesa.
+                        fontWeight: FontWeight.w700,
+                        color: club != null && club.hasGcash
+                            ? theme.colorScheme.onSurface
+                            : theme.colorScheme.outline,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              Icon(
+                Icons.edit_outlined,
+                size: 18,
+                color: theme.colorScheme.outline,
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Future<void> _edit(BuildContext context, WidgetRef ref, Club? club) async {
+    final l10n = AppLocalizations.of(context)!;
+    final clubId = ref.read(defaultClubIdProvider).value;
+    if (clubId == null) return;
+
+    final controller = TextEditingController(text: club?.gcashNumber ?? '');
+    String? errorText;
+
+    final saved = await showDialog<String?>(
+      context: context,
+      builder: (dialogContext) => StatefulBuilder(
+        builder: (dialogContext, setState) => AlertDialog(
+          title: Text(l10n.gcashEdit),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              TextField(
+                controller: controller,
+                autofocus: true,
+                keyboardType: TextInputType.phone,
+                decoration: InputDecoration(
+                  labelText: l10n.gcashNumberLabel,
+                  hintText: '0929 365 6299',
+                  border: const OutlineInputBorder(),
+                  errorText: errorText,
+                ),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                l10n.gcashHint,
+                style: Theme.of(dialogContext).textTheme.bodySmall,
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(dialogContext).pop(),
+              child: Text(l10n.cancel),
+            ),
+            FilledButton(
+              onPressed: () {
+                final raw = controller.text.trim();
+                // Blangko = tanggalin ang numero.
+                if (raw.isEmpty) {
+                  Navigator.of(dialogContext).pop('');
+                  return;
+                }
+                final normalized = normalizeGcashNumber(raw);
+                if (normalized == null) {
+                  setState(() => errorText = l10n.gcashInvalid);
+                  return;
+                }
+                Navigator.of(dialogContext).pop(normalized);
+              },
+              child: Text(l10n.saveButton),
+            ),
+          ],
+        ),
+      ),
+    );
+
+    controller.dispose();
+    if (saved == null) return;
+
+    await ref
+        .read(clubRepositoryProvider)
+        .setGcashNumber(clubId, saved.isEmpty ? null : saved);
   }
 }
 
