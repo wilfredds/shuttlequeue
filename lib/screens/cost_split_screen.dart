@@ -311,6 +311,11 @@ class _GcashCard extends ConsumerWidget {
                 controller: controller,
                 autofocus: true,
                 keyboardType: TextInputType.phone,
+                // Inaalis ang pulang error sa sandaling magsimulang itama
+                // ng QM — nakakalito ang babalang nakadikit sa tamang input.
+                onChanged: (_) {
+                  if (errorText != null) setState(() => errorText = null);
+                },
                 decoration: InputDecoration(
                   labelText: l10n.gcashNumberLabel,
                   hintText: '0929 365 6299',

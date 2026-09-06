@@ -123,8 +123,14 @@ service cloud.firestore {
         && data.ownerUid is string
         // Numero ng QM para sa bayad. Maikli lang ang cap — numero ito ng
         // telepono, hindi lagusan para magtago ng ibang datos.
-        && (data.gcashNumber == null
-            || (data.gcashNumber is string && data.gcashNumber.size() <= 20))
+        //
+        // MAHALAGA ang data.get(..., null) at HINDI data.gcashNumber:
+        // ang pagbasa ng field na WALA sa dokumento ay ERROR sa rules,
+        // hindi null. Dahil walang gcashNumber ang bagong club, ang
+        // direktang pagbasa ay sumisira sa paggawa ng club mismo.
+        && (data.get('gcashNumber', null) == null
+            || (data.get('gcashNumber', null) is string
+                && data.get('gcashNumber', null).size() <= 20))
         && data.createdAt is timestamp;
     }
 

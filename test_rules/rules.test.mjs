@@ -259,6 +259,24 @@ async function main() {
       collection(ownerDb, 'sessions', SESSION, 'players'),
       validPlayer({ ownerUid: INTRUDER }))));
 
+  // The blind spot that broke club creation: every club check assumed a
+  // club already existed (the seed writes one with rules disabled). The app
+  // CREATES a club on the QM's first session, and that document has no
+  // gcashNumber — reading a missing field in rules is an error, not null,
+  // so the create was denied and every later club write failed with it.
+  await check('owner creates a club with NO gcashNumber field', () =>
+    assertSucceeds(addDoc(collection(ownerDb, 'clubs'), {
+      name: "Alice's club",
+      ownerUid: OWNER,
+      createdAt: ts(),
+    })));
+  await check('owner creates a club WITH a gcashNumber', () =>
+    assertSucceeds(addDoc(collection(ownerDb, 'clubs'), {
+      name: "Alice's second club",
+      ownerUid: OWNER,
+      gcashNumber: '09293656299',
+      createdAt: ts(),
+    })));
   await check('owner can set a GCash number on their club', () =>
     assertSucceeds(updateDoc(doc(ownerDb, 'clubs', CLUB), {
       gcashNumber: '09293656299',
