@@ -112,6 +112,17 @@ final _separatorOnly = RegExp(r'^[\s\-–—=_*~•·.]+$');
 /// Trailing na marka pagkatapos ng pangalan: "Jun - paid", "Ana ✓".
 final _trailingMarks = RegExp(r'[\s\-–—:,;/|]+$');
 
+/// Estado na isinusulat sa dulo ng pangalan: "Jun - paid", "Ana ok".
+///
+/// SADYANG MAIKLI ANG LISTAHAN. Ang "go", "sure" at "in" ay tinanggal ko:
+/// Go, Uy, Sy, Ong — mga tunay na apelyido sa Pilipinas. Mas mabuting
+/// maiwang marumi ang isang pangalan kaysa mabura ang apelyido ng tao.
+final _statusSuffix = RegExp(
+  r'[\s\-–—:,]+\b(paid|bayad|ok|okay|confirmed|confirm|present|done)\b'
+  r'[\s.!]*$',
+  caseSensitive: false,
+);
+
 // ---------------------------------------------------------------------------
 
 /// Ang pangunahing entry point.
@@ -182,6 +193,31 @@ ParsedRoster parseRoster(String raw) {
   return ParsedRoster(entries: entries, skippedLines: skipped);
 }
 
+/// Ang natitira sa linya kapag inalis ang lahat ng palamuti: numero,
+/// emoji, panaklong, "+1", at estado tulad ng "paid".
+///
+/// ITO ANG AYOS NA MAHALAGA. Dati ay hinuhusgahan natin ang HILAW na linya
+/// kung header ba ito — kaya nawawala ang mga tunay na manlalaro:
+///
+///   "Mark Anthony (late, might come after work)"  → 41 titik, kaya
+///        "masyadong mahaba, pangungusap ito" — nabura si Mark.
+///   "Jun - paid"  → may salitang "paid", kaya "header" — nabura si Jun.
+///
+/// Puno ng ganitong markang "confirmed/bayad na" ang tunay na group chat.
+/// Ang pagsukat sa UBOD ng linya ang nag-aayos ng dalawa nang sabay.
+String _core(String line) {
+  var s = line.trim();
+  s = s.replaceAll(_emoji, ' ');
+  s = s.replaceFirst(_numbering, '');
+  s = s.replaceFirst(_numberingLoose, '');
+  s = s.replaceAll(_parenthetical, ' ');
+  s = s.replaceFirst(_guestSuffix, '');
+  s = s.replaceAll(RegExp(r'\s+'), ' ').trim();
+  s = s.replaceFirst(_statusSuffix, '').trim();
+  s = s.replaceFirst(_trailingMarks, '').trim();
+  return s;
+}
+
 bool _looksLikeHeader(String line) {
   if (_separatorOnly.hasMatch(line)) return true;
 
@@ -190,13 +226,18 @@ bool _looksLikeHeader(String line) {
   // magkamali paboran ang tao kaysa tanggalin siya sa listahan.
   if (_numbering.hasMatch(line) || _numberingLoose.hasMatch(line)) return false;
 
-  if (line.endsWith(':')) return true;
-  if (_dateish.hasMatch(line)) return true;
-  if (_timeish.hasMatch(line)) return true;
-  if (_headerWords.hasMatch(line)) return true;
+  if (line.trim().endsWith(':')) return true;
+
+  // Mula rito, ang UBOD na ang hinuhusgahan — hindi ang palamuti.
+  final core = _core(line);
+  if (core.isEmpty) return true;
+
+  if (_dateish.hasMatch(core)) return true;
+  if (_timeish.hasMatch(core)) return true;
+  if (_headerWords.hasMatch(core)) return true;
 
   // Napakahabang linya = pangungusap, hindi pangalan.
-  if (line.length > 40) return true;
+  if (core.length > 40) return true;
 
   return false;
 }
@@ -212,32 +253,22 @@ int _guestCount(String rawLine) {
 
 /// Nililinis ang isang linya papuntang pangalan. Null kung walang natira.
 ParsedEntry? _parseLine(String rawLine) {
-  var working = rawLine.trim();
-
-  working = working.replaceAll(_emoji, ' ');
-  working = working.replaceFirst(_numbering, '');
-  working = working.replaceFirst(_numberingLoose, '');
-
-  // Kunin muna ang note bago tanggalin ang panaklong.
+  // Kunin muna ang note bago mawala ang panaklong.
   String? note;
-  final noteMatch = _parenthetical.firstMatch(working);
+  final noteMatch = _parenthetical.firstMatch(rawLine);
   if (noteMatch != null) {
     final captured = noteMatch.group(1)?.trim();
     if (captured != null && captured.isNotEmpty) note = captured;
-    working = working.replaceAll(_parenthetical, ' ');
   }
 
-  working = working.replaceFirst(_guestSuffix, '');
-  working = working.replaceAll(RegExp(r'\s+'), ' ').trim();
-  working = working.replaceFirst(_trailingMarks, '').trim();
-
-  if (working.isEmpty) return null;
+  final name = _core(rawLine);
+  if (name.isEmpty) return null;
 
   // Puro numero o bantas = hindi pangalan.
-  if (!RegExp(r'[A-Za-zÀ-ÿÑñ]').hasMatch(working)) return null;
+  if (!RegExp(r'[A-Za-zÀ-ÿÑñ]').hasMatch(name)) return null;
 
   return ParsedEntry(
-    name: working,
+    name: name,
     rawLine: rawLine.trim(),
     note: note,
     isGuest: false,

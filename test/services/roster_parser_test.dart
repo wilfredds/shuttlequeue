@@ -155,4 +155,75 @@ sana all
       expect(roster.skippedLines, isNotEmpty);
     });
   });
+
+  group('mga markang "confirmed/bayad na" — R-08', () {
+    // Ang tunay na group chat ay puno ng ganito. Nadiskubre ko lang ito
+    // nang subukan kong hulaan ang hitsura ng listahan ng club ni France:
+    // NAWAWALA ang mga taong ito bago pa man magsimula ang gabi.
+    test('ang estado sa dulo ay hindi bumubura ng manlalaro', () {
+      final roster = parseRoster([
+        'Jun - paid',
+        'Ana paid',
+        'Rica — bayad',
+        'Niña ok',
+        'Paolo confirmed',
+      ].join('\n'));
+
+      expect(
+        roster.entries.map((e) => e.name).toList(),
+        ['Jun', 'Ana', 'Rica', 'Niña', 'Paolo'],
+      );
+      expect(roster.skippedLines, isEmpty);
+    });
+
+    test('ang mahabang note ay hindi ginagawang header ang linya', () {
+      // 41 titik ito, at ang lumang panuntunang "mahaba = pangungusap"
+      // ay sinusukat ang HILAW na linya — kaya nabubura si Mark.
+      final roster = parseRoster('Mark Anthony (late, might come after work)');
+
+      expect(roster.entries.single.name, 'Mark Anthony');
+      expect(roster.entries.single.note, 'late, might come after work');
+    });
+
+    test('hindi rin nawawala ang bisita sa likod ng mahabang note', () {
+      final roster =
+          parseRoster('Kuya Jun (bringing a friend later tonight) +1');
+
+      expect(
+        roster.entries.map((e) => e.name).toList(),
+        ['Kuya Jun', 'Kuya Jun +1'],
+      );
+    });
+  });
+
+  group('mga apelyidong Pilipino na halos mabura', () {
+    // Ang listahan ng estado ay may word boundary. Kung wala iyon,
+    // ang "ok" sa dulo ng Diok at Jomok ay puputol sa pangalan — at
+    // ang "Go" ay tunay na apelyido rito.
+    test('hindi kinakain ang dulo ng tunay na pangalan', () {
+      final roster = parseRoster(
+        ['Mark Go', 'Diok', 'Jomok', 'Kevin', 'Ana Uy'].join('\n'),
+      );
+
+      expect(
+        roster.entries.map((e) => e.name).toList(),
+        ['Mark Go', 'Diok', 'Jomok', 'Kevin', 'Ana Uy'],
+      );
+    });
+  });
+
+  group('ang mga header ay header pa rin', () {
+    test('hindi napapasok ng bagong panuntunan ang tunay na ingay', () {
+      final roster = parseRoster([
+        'Confirmed players:',
+        'Paid: Mark, Ana, Jun',
+        'Thursday July 06 8pm Yspacio',
+        'sino ba sasama bukas',
+        '---',
+      ].join('\n'));
+
+      expect(roster.entries, isEmpty);
+      expect(roster.skippedLines.length, 5);
+    });
+  });
 }
