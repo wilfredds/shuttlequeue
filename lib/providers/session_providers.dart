@@ -9,6 +9,7 @@ import '../models/session.dart';
 import '../models/session_player.dart';
 import '../models/synced.dart';
 import '../repositories/club_repository.dart';
+import '../repositories/export_repository.dart';
 import '../repositories/match_repository.dart';
 import '../repositories/player_repository.dart';
 import '../repositories/session_repository.dart';
@@ -33,6 +34,13 @@ final clubRepositoryProvider = Provider<ClubRepository>(
     onWriteError: (error) =>
         ref.read(syncErrorProvider.notifier).report(error),
   ),
+);
+
+/// Nangongolekta ng buong datos ng QM para sa backup file.
+///
+/// Walang onWriteError — puro basa ito, walang isinusulat.
+final exportRepositoryProvider = Provider<ExportRepository>(
+  (ref) => ExportRepository(ref.watch(firestoreProvider)),
 );
 
 /// Ang uid ng naka-login na QM, o null. Maliit na provider pero mahalaga:
