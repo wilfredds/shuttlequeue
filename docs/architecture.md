@@ -203,3 +203,160 @@ preferred over extra composite indexes where the collection is small.
   offline resolve last-write-wins today. The honest fix is an append-only
   event log where live state is derived, which merges correctly by
   construction. v1 is single-device by declaration.
+
+---
+
+## 9. Field notes: the bugs that cost real data
+
+Every entry here was found in the deployed app, not in review. They are
+recorded because each one has a general lesson, and because the symptom in
+each case looked nothing like the cause.
+
+### Firestore rules evaluate against *pre-batch* state
+
+**Symptom.** Creating a session appeared to work, then the session vanished a
+second later.
+
+**Cause.** The rules proved a child document's ownership by calling `get()` on
+its parent session. Inside a `WriteBatch`, rules see the state *before* the
+batch, so the parent did not exist yet. The read returned null, the rule threw,
+the whole batch was rejected — and Firestore rolled back the optimistic local
+write. The disappearing card was the rollback.
+
+**Fix.** `ownerUid` is denormalised onto every child document, and the rules
+contain zero `get()` calls. It also removes one document read per operation.
+
+**Lesson.** A rule that reads another document cannot be trusted inside a
+batch. Denormalise the field you need to check.
+
+### Rules are not filters
+
+**Symptom.** Taps did nothing. Roster, courts, matches, money and regulars all
+spun forever.
+
+**Cause.** Removing those `get()` calls left rules resting on
+`resource.data.ownerUid`. Firestore cannot prove that predicate for an
+unconstrained collection query, so it rejects the query outright rather than
+returning the subset that matches.
+
+**Fix.** Every collection query repeats the rule's condition —
+`where('ownerUid', isEqualTo: uid)` — via `ownedQuery` in
+`repositories/deferred_write.dart`.
+
+**Lesson.** A query must restate what its rule requires. And the test gap that
+hid this for weeks: every rules test used `getDoc`, never `getDocs`. There are
+now eleven list-query checks asserting that the unfiltered query is denied
+*and* the filtered one is allowed.
+
+### Reading a missing field in rules is an error, not null
+
+**Symptom.** Club creation silently denied, which later broke saving the GCash
+number.
+
+**Cause.** `validClub` read `data.gcashNumber` directly. A brand-new club has
+no such field, and in the rules language that read is an error rather than
+null.
+
+**Fix.** `data.get('gcashNumber', null)` for every optional field.
+
+**Lesson.** The blind spot was the fixture: club tests all seeded a club with
+rules disabled, so `create` was never exercised. Test the path that runs on a
+user's very first day.
+
+### Firestore write futures never resolve while offline
+
+**Symptom.** None yet — found by audit before it reached the gym.
+
+**Cause.** Twenty-two mid-session writes did a bare `await` on the Firestore
+future. Offline, that future does not complete until the write reaches the
+server, so end-match, undo, add-player and the rest would have hung forever at
+a gym with no signal. The one write that was correct was `createSession`,
+because it had been written first and copied wrong afterwards.
+
+**Fix.** `fireAndForget(write, onError)` everywhere, plus a `syncErrorProvider`
+snackbar so a rejected deferred write is never silent again. That invisibility
+was the real defect.
+
+**Lesson.** In an offline-first app, `await` on a write is a bug. The local
+cache is the source of truth; the network is an eventual detail.
+
+### The duplicate club: cache-only lookups of server state
+
+**Symptom.** The GCash number disappeared from the Money tab.
+
+**Cause.** `ensureDefaultClub` looked for the existing club **cache-only**.
+Cache-first is right when the cache is the truth — but this was a lookup of
+*server state we might never have seen*. On a fresh browser the cache is empty,
+so the app concluded "new Queue Master" and created a second club, abandoning
+the regulars book, the carry-over balances and the GCash number. A REST query
+found three clubs on one account, with eight regulars on one and the phone
+number on another: the history was genuinely **split**.
+
+**Fix, in two halves.** *Prevention* — every launch reconciles cache against
+the server on a bounded timeout, falling back to cache so the QM is never
+blocked. *Repair* — `pickPrimaryClub` chooses most-members, then oldest, then
+id, and adopts an orphaned GCash number from a duplicate. If duplicates
+disagree on the number it stays empty; that field is where players send money,
+so a wrong number is worse than none.
+
+**Lesson.** "Cache is the truth" is a claim about *ownership of the data*, not
+a blanket policy. And `limit(1)` without an `orderBy` is not deterministic —
+two devices can disagree about which document they found.
+
+### A lazy field initialised inside dispose()
+
+**Symptom.** Caught by a widget test the same day the code was written.
+
+**Cause.** The pulsing LIVE dot held its controller in
+`late final _controller = AnimationController(...)`. With reduce-motion
+enabled, `build` returned early and never touched it — so `dispose()` became
+the first access, constructing a ticker on an already-deactivated element.
+
+**Fix.** Build it in `initState`, start and stop it in
+`didChangeDependencies`.
+
+**Lesson.** `late final` with an initialiser is lazy. If the only access is
+conditional, the first access can be teardown. Also: an infinite `repeat()`
+makes `pumpAndSettle` hang forever, so widget tests wrap the tree in
+`MediaQuery(disableAnimations: true)`.
+
+### Flutter web does not content-hash main.dart.js
+
+**Symptom.** Fixes were deployed and verified, and the user still saw the old
+app.
+
+**Cause.** Hosting served `main.dart.js` as `immutable, max-age=31536000`, but
+Flutter does not fingerprint that filename. Browsers will not even revalidate
+an immutable resource.
+
+**Fix.** `Cache-Control: no-cache` for everything; ETags still make repeat
+loads cheap.
+
+**Lesson.** Immutable caching requires content-addressed filenames. If a user
+ever reports that a fix did not appear, the first question is what the browser
+was allowed to cache.
+
+---
+
+## 10. What the tests are actually for
+
+205 Dart tests and 56 rules checks, and the split is deliberate.
+
+The **pure services** carry the correctness burden and are tested hardest,
+because they decide who plays and who pays: matchmaking, fee calculation,
+roster parsing, name matching, night recap, session grouping, account
+security. No Firestore import appears in any of them.
+
+The **widget tests** exist because of one repeated lesson: a tested service
+behind a broken screen still shows the user nothing. The recap tab, the bill
+lock, the dashboard and the sign-in form are all pumped for real. The bill-lock
+test is the one worth keeping honest — with the bill locked and a fifth player
+arriving, the four who already paid must still read the same amount.
+
+The **rules tests** run against the emulator and assert denial as carefully as
+success, including the batch-create shape that caused the vanishing sessions
+and the list queries that caused the dead taps.
+
+What is *not* covered, and should be said plainly: `fake_cloud_firestore`
+ignores `GetOptions`, so the cache-versus-server behaviour of the club lookup
+is reasoned about and observed in production, but not unit-tested.

@@ -1,0 +1,83 @@
+name: CI
+
+# Bawat push at bawat PR. Ang punto ay simple: hindi dapat makarating sa
+# gabi ng laro ang isang pagbabagong hindi man lang pumasa sa analyzer.
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  flutter:
+    name: analyze + test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.44.5'
+          channel: stable
+          cache: true
+
+      - run: flutter pub get
+
+      # Naka-gitignore ang lib/firebase_options.dart — tama iyon, hindi
+      # dapat nakatali ang repo sa isang Firebase project. Pero kailangan
+      # ito ng analyzer dahil ini-import ito ng main.dart, kaya gumagawa
+      # tayo ng pekeng bersyon dito.
+      #
+      # Ligtas ito: walang totoong Firebase ang tests — pinapalitan ng
+      # fake_cloud_firestore at firebase_auth_mocks ang mga provider.
+      - name: Stub the Firebase config
+        run: |
+          cat > lib/firebase_options.dart <<'DART'
+          // GAWA NG CI. Hindi ito ang totoong config.
+          import 'package:firebase_core/firebase_core.dart'
+              show FirebaseOptions;
+
+          class DefaultFirebaseOptions {
+            static FirebaseOptions get currentPlatform => web;
+
+            static const FirebaseOptions android = FirebaseOptions(
+              apiKey: 'ci',
+              appId: 'ci',
+              messagingSenderId: 'ci',
+              projectId: 'ci',
+            );
+
+            static const FirebaseOptions web = FirebaseOptions(
+              apiKey: 'ci',
+              appId: 'ci',
+              messagingSenderId: 'ci',
+              projectId: 'ci',
+            );
+          }
+          DART
+
+      - run: flutter analyze
+
+      - run: flutter test
+
+  rules:
+    name: firestore rules
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      # Java ang tumatakbong Firestore emulator. Ito ang katumbas ng
+      # JAVA_HOME na itinuturo sa jbr ng Android Studio sa laptop.
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - run: npm install
+        working-directory: test_rules
+
+      - run: npm test
+        working-directory: test_rules

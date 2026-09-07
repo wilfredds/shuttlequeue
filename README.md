@@ -20,6 +20,16 @@ State management: Riverpod. **One codebase, two targets: Android and web.**
 | M3 | Courts + fair rotation (MatchmakingService) | ✅ |
 | M4 | Cost split (FeeCalculator, per-head / american) | ✅ |
 | M5 | Rules hardening (field validation) + polish + docs | ✅ |
+| M6 | Up Next board — read-only second screen for the hall | ✅ |
+| M7 | Night recap — per-player summary, shareable | ✅ |
+| — | Regulars book, carry-over balances, bill locking, snapshot export | ✅ |
+| — | On-court substitution, session templates, GCash number | ✅ |
+| — | Own brand mark, hardened sign-in, Queue Master dashboard | ✅ |
+
+Deliberately **not** built: winner-stays / king-of-court rotation, and a GCash
+QR on the bill. Both need the coach's answer first — which format her club
+actually plays, and whether she wants her QR shown. Guessing would be worse
+than waiting.
 
 ## Setup
 
@@ -44,14 +54,24 @@ State management: Riverpod. **One codebase, two targets: Android and web.**
 
 ```bash
 flutter analyze                       # static analysis, must be clean
-flutter test                          # 55 unit + widget tests
-cd test_rules && npm install && npm test   # 34 security-rules checks
+flutter test                          # 205 unit + widget tests
+cd test_rules && npm install && npm test   # 56 security-rules checks
 ```
 
 The rules tests run against the local Firestore emulator (needs Java — the
 JDK bundled with Android Studio works: set `JAVA_HOME` to
 `C:\Program Files\Android\Android Studio\jbr`). They never touch the real
 project.
+
+Before a real night, drive [docs/trial-night.md](docs/trial-night.md) end to
+end — a 20-minute scripted dry run through one imaginary session, including a
+deliberately awful roster paste.
+
+CI runs `flutter analyze`, the Dart tests and the rules tests on every push —
+see [.github/workflows/ci.yml](.github/workflows/ci.yml). For which
+production concerns apply to a client-only Firebase app and which genuinely
+don't, see
+[docs/production-readiness.md](docs/production-readiness.md).
 
 **The acceptance test that actually matters** is the offline drill:
 airplane mode on → create a session → paste a roster → run three rotations
@@ -75,6 +95,12 @@ Pure, tested services carry the correctness burden: `MatchmakingService`
 Messenger paste), `NameMatcher` (recognising regulars) and
 `SessionSnapshot` (the offline backup). See
 [docs/architecture.md](docs/architecture.md).
+
+**Export all my data** (dashboard overflow menu) writes the club, the regulars
+book with its balances, and every session with its players, matches and bill to
+a single JSON file. Firestore's scheduled backups are a paid-tier feature, so on
+the free tier this is the only copy of that data outside Firebase — and it
+doubles as RA 10173 data portability.
 
 **Two safety nets worth knowing about.** *Save a copy of tonight* (the save
 icon) exports the whole session as plain text — it works with no signal and
@@ -103,6 +129,57 @@ the app removes each document explicitly.
 mode will not persist there. Browsers may evict site storage under heavy disk
 pressure. Both are why the Android build stays the recommendation for the
 Queue Master's live session.
+
+### Building the Android app
+
+```bash
+flutter build apk --release
+```
+
+The APK lands in `build/app/outputs/flutter-apk/app-release.apk` (~55 MB).
+Copy it to the phone and open it; Android will ask permission to install from
+an unknown source, because **this build is signed with the debug key** — see
+the TODO in `android/app/build.gradle.kts`. That is fine for sideloading onto
+the Queue Master's own phone and *not* fine for the Play Store, which needs a
+real upload keystore.
+
+## Brand
+
+The shuttlecock mark is drawn once, in two places that must agree:
+
+- `tool/generate_icons.py` — run `python tool/generate_icons.py` to regenerate
+  the favicon, the PWA icons (including maskable), and every Android launcher
+  density from a single definition.
+- `lib/widgets/shuttle_mark.dart` — the same geometry as a `CustomPainter`, so
+  the in-app logo and the installed icon cannot drift apart.
+
+## Sign-in
+
+Built against [web.dev's sign-in form best practices](https://web.dev/articles/sign-in-form-best-practices),
+adapted to Flutter — which renders to canvas, so there is no real `<label for>`
+to hand a browser. The part that does carry over is the important one:
+`AutofillGroup` plus `autofillHints` makes Flutter emit genuine DOM inputs with
+`autocomplete="username"` / `current-password` (`new-password` when
+registering), stable `name`/`id`, and a submit control. That is exactly what
+browser password managers look for, and it is why a Queue Master ends up with a
+long unique password instead of a reused one.
+
+On top of the article: one password field ever, paste never blocked, a visible
+password reset, errors announced through `Semantics(liveRegion: true)`, and the
+show-password control carrying its on-screen warning in the semantic label.
+
+Two rules live in `lib/services/account_security.dart` and are unit-tested:
+
+- **Eight characters minimum — for new accounts only.** Firebase's floor is
+  six; accounts created under it must still be able to sign in. Locking someone
+  out of tonight to enforce a policy is the wrong trade.
+- **Failed-attempt backoff** grows 15s → 300s, and counts *wrong passwords
+  only*. A network failure never counts, because a Queue Master at the gym with
+  no signal must never be locked out of her own session.
+
+The password reset replies with the same message whether or not the account
+exists. Otherwise the sign-in page becomes a tool for checking who has an
+account.
 
 ## Folder structure
 
