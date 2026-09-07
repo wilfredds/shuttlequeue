@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
@@ -43,15 +45,45 @@ class ClubRepository {
     required String ownerUid,
     required String fallbackName,
   }) async {
-    // Cache-only: v1 ay single-device pa rin, kaya ang lokal na cache ang
-    // tanging katotohanang mahalaga. Ito rin ang unang read sa buong
-    // "create session" flow — kritikal na hindi ito maghintay ng server.
-    final existing = await _clubs
-        .where('ownerUid', isEqualTo: ownerUid)
-        .limit(1)
-        .get(cacheOnly);
+    // Cache muna: mabilis, at gumagana kahit walang signal.
+    final cached = await _clubsOwnedBy(ownerUid, cacheOnly);
 
-    if (existing.docs.isNotEmpty) return existing.docs.first.id;
+    // ...pero HINDI sapat ang cache dito, at ito ang natutunan natin sa
+    // mahirap na paraan. Kapag bagong device, bagong browser, o na-clear
+    // ang storage, walang laman ang cache — kahit may club na pala sa
+    // server. Kung basta tayo gagawa ng bago, maiiwan ang luma: mawawala
+    // ang buong regulars book, ang mga dalang utang, at ang GCash number
+    // ng QM, at hindi niya malalaman kung bakit.
+    //
+    // Masahol pa: kapag ang cache ay may HAWAK na ng naulit na club,
+    // habambuhay na iyon ang gagamitin — hindi na natin makikita ang totoo.
+    // Kaya tinatanong natin ang server kahit may laman ang cache.
+    //
+    // Isang beses lang ito kada buksan ng app (FutureProvider ang
+    // defaultClubId), kaya isang read lang ang dagdag — wala iyon.
+    //
+    // May hangganan ang paghihintay (R-15: huwag i-hang ang QM):
+    // maikli kung may sagot na tayo sa cache, mas mahaba kung wala.
+    List<QueryDocumentSnapshot<Map<String, dynamic>>>? remote;
+    try {
+      remote = await _clubsOwnedBy(ownerUid, null).timeout(
+        cached.isEmpty
+            ? const Duration(seconds: 5)
+            : const Duration(seconds: 2),
+      );
+    } catch (_) {
+      // Offline, mabagal, o tinanggihan — ang cache na ang bahala.
+    }
+
+    // Mas totoo ang server kapag nakasagot ito; kung hindi, cache muna.
+    final found = remote ?? cached;
+    final fromCache = remote == null;
+
+    // Ang karaniwang daan: iisa ang club, walang nadoble. Dito napupunta
+    // ang halos lahat ng gabi.
+    if (found.length == 1) return found.first.id;
+
+    if (found.isNotEmpty) return _resolveDuplicates(found, fromCache);
 
     // Ang doc ID ay nabubuo nang lokal, kaya maibabalik natin agad kahit
     // hindi pa naaabot ang server.
@@ -65,6 +97,71 @@ class ClubRepository {
       onWriteError,
     );
     return ref.id;
+  }
+
+  /// Walang `limit(1)` dito nang sinasadya: kung may nadoblang club, gusto
+  /// nating MAKITA silang lahat para makapili tayo nang parehong-pareho sa
+  /// bawat device. Tingnan ang pickPrimaryClub.
+  Future<List<QueryDocumentSnapshot<Map<String, dynamic>>>> _clubsOwnedBy(
+    String ownerUid,
+    GetOptions? source,
+  ) async {
+    final snapshot =
+        await _clubs.where('ownerUid', isEqualTo: ownerUid).get(source);
+    return snapshot.docs;
+  }
+
+  /// Nadoble ang club. Piliin ang totoo, at sagipin ang GCash number.
+  ///
+  /// Dito lang tayo nagbabasa ng miyembro — sa sirang kalagayan lang, hindi
+  /// sa karaniwang gabi. Kung saan natin nakita ang mga club, doon din natin
+  /// bibilangin ang miyembro: kapag galing sa server ang listahan, malamig
+  /// ang cache, kaya SERO ang mabibilang natin doon sa lahat — at mali ang
+  /// pagpili.
+  Future<String> _resolveDuplicates(
+    List<QueryDocumentSnapshot<Map<String, dynamic>>> clubs,
+    bool fromCache,
+  ) async {
+    final source = fromCache ? cacheOnly : null;
+    final candidates = <ClubCandidate>[];
+
+    for (final club in clubs) {
+      var memberCount = 0;
+      try {
+        final members = await _ownedQuery(membersOf(club.id))
+            .get(source)
+            .timeout(const Duration(seconds: 5));
+        memberCount = members.docs.length;
+      } catch (_) {
+        // Hindi mabilang — mananatiling sero. Ang edad at ID na ang bahala.
+      }
+
+      final createdAt = club.data()['createdAt'];
+      final gcash = club.data()['gcashNumber'];
+      candidates.add((
+        id: club.id,
+        createdAt: createdAt is Timestamp ? createdAt.toDate() : null,
+        memberCount: memberCount,
+        gcashNumber: gcash is String ? gcash : null,
+      ));
+    }
+
+    final choice = pickPrimaryClub(candidates)!;
+
+    // Ibalik ang naulilang numero. Fire-and-forget: hindi hihintayin ng QM
+    // ang pagkukumpuni, at kung mabigo man, subok ulit sa susunod na buksan.
+    final adopt = choice.adoptGcash;
+    if (adopt != null) {
+      fireAndForget(
+        _clubs.doc(choice.id).update({'gcashNumber': adopt}),
+        onWriteError,
+      );
+    }
+
+    // SADYANG hindi natin binubura ang mga naulit. Ang pagbura ay hindi na
+    // mababawi, at kung nagkamali ang bilang natin ng miyembro, datos ng QM
+    // ang mawawala. Libre naman ang dalawang tabi-tabing doc.
+    return choice.id;
   }
 
   Stream<Club?> watchClub(String clubId) {

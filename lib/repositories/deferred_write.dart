@@ -76,3 +76,80 @@ int naturalCompare(String a, String b) {
   if (numA != null && numB != null) return numA.compareTo(numB);
   return a.compareTo(b);
 }
+
+/// Isang club na nakita habang naghahanap ng default club ng QM.
+typedef ClubCandidate = ({
+  String id,
+  DateTime? createdAt,
+  int memberCount,
+  String? gcashNumber,
+});
+
+/// Ang napiling club, kasama ang isang maliit na pagkukumpuni kung kailangan.
+typedef ClubChoice = ({String id, String? adoptGcash});
+
+/// Pumipili ng ISA kapag may higit sa isang club ang QM.
+///
+/// Walang paraan ang Firestore para pigilan ang dalawang device (o dalawang
+/// browser) na sabay gumawa habang offline: lokal ang doc ID, kaya parehong
+/// tatanggapin ng server. Nangyari na ito sa totoong datos — tatlong club sa
+/// iisang QM, at HATI ang kanyang kasaysayan: nasa isa ang walong regular,
+/// nasa iba ang GCash number.
+///
+/// Kaya dalawa ang ginagawa natin:
+///
+/// 1. **Pumili nang deterministiko** — pinakamaraming miyembro ang panalo,
+///    dahil ang regulars book ang hindi na mababawi (may tier, palayaw, at
+///    balanse ang bawat isa). Kung pantay, ang mas matanda; kung pantay pa
+///    rin, ang ID — para pareho ang sagot sa bawat device at hindi
+///    nagpapalit-palit ang app. Ang `limit(1)` na walang orderBy ay HINDI
+///    deterministiko.
+///
+/// 2. **Sagipin ang GCash number** kung wala ito sa napili pero nasa isang
+///    naulit. Isang field lang ito, kaya ligtas ibalik — hindi tulad ng
+///    pagsasanib ng buong listahan ng miyembro.
+///
+/// Kung MAGKAIBA ang numero sa mga naulit, hindi tayo manghuhula: iiwan
+/// nating walang laman at ang QM na ang magpapasya — kapareho ng patakaran
+/// ng NameMatcher na hindi kailanman nag-aautomatiko ng malabo.
+ClubChoice? pickPrimaryClub(Iterable<ClubCandidate> clubs) {
+  final list = clubs.toList();
+  if (list.isEmpty) return null;
+
+  list.sort((a, b) {
+    // Una: sino ang may pinakamaraming regular.
+    final byMembers = b.memberCount.compareTo(a.memberCount);
+    if (byMembers != 0) return byMembers;
+
+    // Pangalawa: ang mas matanda. Ang walang createdAt ay kagagawa pa lang
+    // (serverTimestamp muna ay null sa lokal), kaya sa dulo iyon.
+    final at = a.createdAt;
+    final bt = b.createdAt;
+    if (at != null && bt != null) {
+      final byAge = at.compareTo(bt);
+      if (byAge != 0) return byAge;
+    } else if (at == null && bt != null) {
+      return 1;
+    } else if (at != null && bt == null) {
+      return -1;
+    }
+
+    // Panghuli: ang ID — walang kahulugan, basta pareho sa lahat.
+    return a.id.compareTo(b.id);
+  });
+
+  final winner = list.first;
+  if (winner.gcashNumber != null) return (id: winner.id, adoptGcash: null);
+
+  // Walang numero ang napili. May naiwan kaya sa mga naulit?
+  final orphaned = list
+      .skip(1)
+      .map((club) => club.gcashNumber)
+      .whereType<String>()
+      .toSet();
+
+  return (
+    id: winner.id,
+    adoptGcash: orphaned.length == 1 ? orphaned.first : null,
+  );
+}

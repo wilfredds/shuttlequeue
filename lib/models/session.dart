@@ -28,6 +28,14 @@ class Session {
 
   /// Nagli-link sa clubs/{clubId} para sa regulars book. Nullable-safe:
   /// kung walang club (hal. one-off session), empty string lang ito.
+  ///
+  /// TALA — ito ay TATAK ng kasaysayan, hindi ang pinagkukunan ng katotohanan.
+  /// Ang mga screen ay sadyang gumagamit ng defaultClubIdProvider, HINDI
+  /// nito. Isang club kada QM ang v1, kaya iisa dapat ang regulars book ng
+  /// lahat ng gabi. At kapag nadoble ang club, ang naitatak dito ay maaaring
+  /// ang PINABAYAANG walang lamang club — samantalang ang provider ay
+  /// nagpapagaling (tingnan ang pickPrimaryClub). Huwag itong palitan ng
+  /// session.clubId hangga't hindi sumusuporta ang v2 sa maraming club.
   final String clubId;
 
   final String title;
