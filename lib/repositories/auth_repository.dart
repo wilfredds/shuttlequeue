@@ -46,5 +46,15 @@ class AuthRepository {
     });
   }
 
+  /// Nagpapadala ng link para makapagpalit ng password.
+  ///
+  /// Sinasadyang WALANG sinasabi ang tumatawag kung may ganoong account o
+  /// wala — pareho ang mensahe sa dalawa. Kung iba ang sagot natin sa
+  /// umiiral at sa hindi, ang login page natin ay nagiging tseker kung
+  /// sino ang may account: email enumeration ang tawag doon.
+  Future<void> sendPasswordReset(String email) {
+    return _auth.sendPasswordResetEmail(email: email);
+  }
+
   Future<void> signOut() => _auth.signOut();
 }

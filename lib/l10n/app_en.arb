@@ -16,7 +16,7 @@
   "hidePassword": "Hide password",
   "errNameRequired": "Please enter your name",
   "errEmailRequired": "Please enter your email",
-  "errPasswordTooShort": "Password must be at least 6 characters",
+  "errPasswordTooShort": "Use at least 8 characters",
   "errInvalidCredentials": "Email or password is incorrect",
   "errEmailAlreadyInUse": "That email already has an account — try signing in",
   "errWeakPassword": "Please use a stronger password (at least 6 characters)",
@@ -141,7 +141,7 @@
     }
   },
   "undo": "Undo",
-  "gamesPlayedShort": "{count} games",
+  "gamesPlayedShort": "{count, plural, =1{1 game} other{{count} games}}",
   "@gamesPlayedShort": {
     "placeholders": {
       "count": {
@@ -480,5 +480,46 @@
   "gcashEdit": "Edit GCash number",
   "gcashNumberLabel": "GCash mobile number",
   "gcashHint": "Players can send payments here",
-  "gcashInvalid": "Enter an 11-digit mobile number starting 09"
+  "gcashInvalid": "Enter an 11-digit mobile number starting 09",
+  "registerTagline": "Create your Queue Master account",
+  "errPasswordRequired": "Enter your password",
+  "errEmailForReset": "Enter your email first, then tap reset",
+  "resetLinkSent": "If that email has an account, a reset link is on its way.",
+  "forgotPassword": "Forgot your password?",
+  "passwordHint": "At least 8 characters",
+  "showPasswordWarning": "Show password. Warning: this displays your password on screen.",
+  "tryAgainIn": "{seconds, plural, =1{Try again in 1 second} other{Try again in {seconds} seconds}}",
+  "strengthTooShort": "Too short",
+  "strengthWeak": "Weak",
+  "strengthFair": "Good",
+  "strengthStrong": "Strong",
+  "privacyNote": "ShuttleQueue stores player names and skill only — no phone numbers, no emails.",
+  "signOutWarning": "Signing back in needs internet. If you are at the gym with no signal, you will not get back into tonight.",
+  "statRegulars": "Regulars",
+  "statOwed": "Carried over",
+  "sectionUpcoming": "Upcoming",
+  "sectionEarlier": "Earlier",
+  "tonightLabel": "Tonight",
+  "resumeNight": "Resume the night",
+  "openNight": "Open tonight",
+  "@tryAgainIn": {
+    "placeholders": {
+      "seconds": {
+        "type": "int"
+      }
+    }
+  },
+  "moreActions": "More",
+  "exportAll": "Export all my data",
+  "exportAllHint": "A backup file you keep yourself",
+  "exportWorking": "Gathering your data...",
+  "exportDone": "Exported {summary}. Keep it somewhere safe.",
+  "exportFailed": "Could not export. Check your connection and try again.",
+  "@exportDone": {
+    "placeholders": {
+      "summary": {
+        "type": "String"
+      }
+    }
+  }
 }

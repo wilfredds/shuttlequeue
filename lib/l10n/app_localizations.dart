@@ -175,7 +175,7 @@ abstract class AppLocalizations {
   /// No description provided for @errPasswordTooShort.
   ///
   /// In en, this message translates to:
-  /// **'Password must be at least 6 characters'**
+  /// **'Use at least 8 characters'**
   String get errPasswordTooShort;
 
   /// No description provided for @errInvalidCredentials.
@@ -673,7 +673,7 @@ abstract class AppLocalizations {
   /// No description provided for @gamesPlayedShort.
   ///
   /// In en, this message translates to:
-  /// **'{count} games'**
+  /// **'{count, plural, =1{1 game} other{{count} games}}'**
   String gamesPlayedShort(int count);
 
   /// No description provided for @saveButton.
@@ -1275,6 +1275,168 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Enter an 11-digit mobile number starting 09'**
   String get gcashInvalid;
+
+  /// No description provided for @registerTagline.
+  ///
+  /// In en, this message translates to:
+  /// **'Create your Queue Master account'**
+  String get registerTagline;
+
+  /// No description provided for @errPasswordRequired.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter your password'**
+  String get errPasswordRequired;
+
+  /// No description provided for @errEmailForReset.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter your email first, then tap reset'**
+  String get errEmailForReset;
+
+  /// No description provided for @resetLinkSent.
+  ///
+  /// In en, this message translates to:
+  /// **'If that email has an account, a reset link is on its way.'**
+  String get resetLinkSent;
+
+  /// No description provided for @forgotPassword.
+  ///
+  /// In en, this message translates to:
+  /// **'Forgot your password?'**
+  String get forgotPassword;
+
+  /// No description provided for @passwordHint.
+  ///
+  /// In en, this message translates to:
+  /// **'At least 8 characters'**
+  String get passwordHint;
+
+  /// No description provided for @showPasswordWarning.
+  ///
+  /// In en, this message translates to:
+  /// **'Show password. Warning: this displays your password on screen.'**
+  String get showPasswordWarning;
+
+  /// No description provided for @tryAgainIn.
+  ///
+  /// In en, this message translates to:
+  /// **'{seconds, plural, =1{Try again in 1 second} other{Try again in {seconds} seconds}}'**
+  String tryAgainIn(int seconds);
+
+  /// No description provided for @strengthTooShort.
+  ///
+  /// In en, this message translates to:
+  /// **'Too short'**
+  String get strengthTooShort;
+
+  /// No description provided for @strengthWeak.
+  ///
+  /// In en, this message translates to:
+  /// **'Weak'**
+  String get strengthWeak;
+
+  /// No description provided for @strengthFair.
+  ///
+  /// In en, this message translates to:
+  /// **'Good'**
+  String get strengthFair;
+
+  /// No description provided for @strengthStrong.
+  ///
+  /// In en, this message translates to:
+  /// **'Strong'**
+  String get strengthStrong;
+
+  /// No description provided for @privacyNote.
+  ///
+  /// In en, this message translates to:
+  /// **'ShuttleQueue stores player names and skill only — no phone numbers, no emails.'**
+  String get privacyNote;
+
+  /// No description provided for @signOutWarning.
+  ///
+  /// In en, this message translates to:
+  /// **'Signing back in needs internet. If you are at the gym with no signal, you will not get back into tonight.'**
+  String get signOutWarning;
+
+  /// No description provided for @statRegulars.
+  ///
+  /// In en, this message translates to:
+  /// **'Regulars'**
+  String get statRegulars;
+
+  /// No description provided for @statOwed.
+  ///
+  /// In en, this message translates to:
+  /// **'Carried over'**
+  String get statOwed;
+
+  /// No description provided for @sectionUpcoming.
+  ///
+  /// In en, this message translates to:
+  /// **'Upcoming'**
+  String get sectionUpcoming;
+
+  /// No description provided for @sectionEarlier.
+  ///
+  /// In en, this message translates to:
+  /// **'Earlier'**
+  String get sectionEarlier;
+
+  /// No description provided for @tonightLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Tonight'**
+  String get tonightLabel;
+
+  /// No description provided for @resumeNight.
+  ///
+  /// In en, this message translates to:
+  /// **'Resume the night'**
+  String get resumeNight;
+
+  /// No description provided for @openNight.
+  ///
+  /// In en, this message translates to:
+  /// **'Open tonight'**
+  String get openNight;
+
+  /// No description provided for @moreActions.
+  ///
+  /// In en, this message translates to:
+  /// **'More'**
+  String get moreActions;
+
+  /// No description provided for @exportAll.
+  ///
+  /// In en, this message translates to:
+  /// **'Export all my data'**
+  String get exportAll;
+
+  /// No description provided for @exportAllHint.
+  ///
+  /// In en, this message translates to:
+  /// **'A backup file you keep yourself'**
+  String get exportAllHint;
+
+  /// No description provided for @exportWorking.
+  ///
+  /// In en, this message translates to:
+  /// **'Gathering your data...'**
+  String get exportWorking;
+
+  /// No description provided for @exportDone.
+  ///
+  /// In en, this message translates to:
+  /// **'Exported {summary}. Keep it somewhere safe.'**
+  String exportDone(String summary);
+
+  /// No description provided for @exportFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not export. Check your connection and try again.'**
+  String get exportFailed;
 }
 
 class _AppLocalizationsDelegate

@@ -48,7 +48,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get errEmailRequired => 'Please enter your email';
 
   @override
-  String get errPasswordTooShort => 'Password must be at least 6 characters';
+  String get errPasswordTooShort => 'Use at least 8 characters';
 
   @override
   String get errInvalidCredentials => 'Email or password is incorrect';
@@ -348,7 +348,13 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String gamesPlayedShort(int count) {
-    return '$count games';
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count games',
+      one: '1 game',
+    );
+    return '$_temp0';
   }
 
   @override
@@ -777,4 +783,100 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get gcashInvalid => 'Enter an 11-digit mobile number starting 09';
+
+  @override
+  String get registerTagline => 'Create your Queue Master account';
+
+  @override
+  String get errPasswordRequired => 'Enter your password';
+
+  @override
+  String get errEmailForReset => 'Enter your email first, then tap reset';
+
+  @override
+  String get resetLinkSent =>
+      'If that email has an account, a reset link is on its way.';
+
+  @override
+  String get forgotPassword => 'Forgot your password?';
+
+  @override
+  String get passwordHint => 'At least 8 characters';
+
+  @override
+  String get showPasswordWarning =>
+      'Show password. Warning: this displays your password on screen.';
+
+  @override
+  String tryAgainIn(int seconds) {
+    String _temp0 = intl.Intl.pluralLogic(
+      seconds,
+      locale: localeName,
+      other: 'Try again in $seconds seconds',
+      one: 'Try again in 1 second',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get strengthTooShort => 'Too short';
+
+  @override
+  String get strengthWeak => 'Weak';
+
+  @override
+  String get strengthFair => 'Good';
+
+  @override
+  String get strengthStrong => 'Strong';
+
+  @override
+  String get privacyNote =>
+      'ShuttleQueue stores player names and skill only — no phone numbers, no emails.';
+
+  @override
+  String get signOutWarning =>
+      'Signing back in needs internet. If you are at the gym with no signal, you will not get back into tonight.';
+
+  @override
+  String get statRegulars => 'Regulars';
+
+  @override
+  String get statOwed => 'Carried over';
+
+  @override
+  String get sectionUpcoming => 'Upcoming';
+
+  @override
+  String get sectionEarlier => 'Earlier';
+
+  @override
+  String get tonightLabel => 'Tonight';
+
+  @override
+  String get resumeNight => 'Resume the night';
+
+  @override
+  String get openNight => 'Open tonight';
+
+  @override
+  String get moreActions => 'More';
+
+  @override
+  String get exportAll => 'Export all my data';
+
+  @override
+  String get exportAllHint => 'A backup file you keep yourself';
+
+  @override
+  String get exportWorking => 'Gathering your data...';
+
+  @override
+  String exportDone(String summary) {
+    return 'Exported $summary. Keep it somewhere safe.';
+  }
+
+  @override
+  String get exportFailed =>
+      'Could not export. Check your connection and try again.';
 }

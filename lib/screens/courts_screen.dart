@@ -78,7 +78,10 @@ class CourtsScreen extends ConsumerWidget {
               padding: const EdgeInsets.fromLTRB(16, 4, 16, 12),
               child: Column(
                 children: [
-                  if (!canStart)
+                  // Habang naglo-load pa ang courts, walang laman ang
+                  // listahan — at "All courts are playing" ay kasinungalingan
+                  // noon. Tahimik muna tayo hanggang may masabi tayong totoo.
+                  if (!canStart && courts.isNotEmpty)
                     Padding(
                       padding: const EdgeInsets.only(bottom: 8),
                       child: Text(
