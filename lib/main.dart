@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'app.dart';
+import 'app_check.dart';
 import 'firebase_options.dart';
 
 Future<void> main() async {
@@ -13,6 +14,11 @@ Future<void> main() async {
   await Firebase.initializeApp(
     options: DefaultFirebaseOptions.currentPlatform,
   );
+
+  // Bago pa magamit ang Firestore: doon nakakabit ang App Check token.
+  // Hindi ito nagta-throw at hindi ito nakakapigil sa app kung mabigo man
+  // — tingnan ang app_check.dart.
+  await activateAppCheck();
 
   FirebaseFirestore.instance.settings = _firestoreSettings();
 

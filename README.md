@@ -143,6 +143,46 @@ the TODO in `android/app/build.gradle.kts`. That is fine for sideloading onto
 the Queue Master's own phone and *not* fine for the Play Store, which needs a
 real upload keystore.
 
+## App Check
+
+Security rules stop another signed-in user reading your data. They do **not**
+stop someone taking the public API key and burning through the free daily
+quota — and when that quota is gone, the app stops for everyone, including the
+Queue Master mid-session. App Check closes that hole.
+
+It is wired in [lib/app_check.dart](lib/app_check.dart) and **stays completely
+inert until a site key is supplied**, so the app behaves exactly as before
+until it is configured.
+
+### Turning it on
+
+1. Create a **reCAPTCHA v3** site at
+   [google.com/recaptcha/admin](https://www.google.com/recaptcha/admin) with
+   domains `badminton-ph.web.app` **and** `badminton-ph.firebaseapp.com`.
+2. Firebase Console → **Build → App Check → Apps** → register the web app with
+   reCAPTCHA v3, pasting the site key and the secret.
+3. Redeploy with the site key baked in:
+   ```bash
+   flutter build web --release --dart-define=RECAPTCHA_SITE_KEY=6Lxxxxxxxx
+   firebase deploy --only hosting
+   ```
+4. **Leave every API unenforced.** Watch App Check → APIs for a few days until
+   your own traffic shows as verified.
+5. Only then enforce.
+
+### The trap
+
+Enforcing early blocks **your own app**, including the coach's phone, with
+twelve people waiting on court. Two specific things to check before enforcing:
+
+- **Android cannot use Play Integrity here.** It requires distribution through
+  Google Play, and our APK is sideloaded and debug-signed — so the debug
+  provider is used. Before enforcing Firestore, register that phone's debug
+  token under App Check → Apps → Android → Manage debug tokens, or the coach is
+  locked out.
+- Attestation failures are swallowed by design. The app keeps working; App
+  Check is a shield against abuse, not a new way to lose the night.
+
 ## Brand
 
 The shuttlecock mark is drawn once, in two places that must agree:
