@@ -161,11 +161,17 @@ until it is configured.
    domains `badminton-ph.web.app` **and** `badminton-ph.firebaseapp.com`.
 2. Firebase Console → **Build → App Check → Apps** → register the web app with
    reCAPTCHA v3, pasting the site key and the secret.
-3. Redeploy with the site key baked in:
+3. Redeploy. The site key has a default baked into `lib/app_check.dart` (it is
+   public — it ships inside every page), so a plain build keeps App Check on;
+   a forgotten flag can no longer switch it off silently:
    ```bash
-   flutter build web --release --dart-define=RECAPTCHA_SITE_KEY=6Lxxxxxxxx
+   flutter build web --release
    firebase deploy --only hosting
    ```
+   Pointing at a different project? Override it, and **run `flutter clean`
+   first** — changing or removing a `--dart-define` does not invalidate
+   Flutter's incremental build, so the old value survives and App Check goes
+   quietly dead. Verify with `grep -c recaptcha build/web/main.dart.js`.
 4. **Leave every API unenforced.** Watch App Check → APIs for a few days until
    your own traffic shows as verified.
 5. Only then enforce.

@@ -47,15 +47,30 @@ import 'package:flutter/foundation.dart';
 ///     flutter build web --release \
 ///       --dart-define=RECAPTCHA_SITE_KEY=6Lxxxxxxxxxxxxxxxxxx
 ///
-/// Kapag walang laman ito, LAKTAWAN ang buong App Check. Ganito dapat bago
-/// pa may naisasaayos sa console: eksaktong kapareho ng dati ang app.
+/// May DEFAULT ito nang sinasadya. Ang unang bersyon ay walang laman kapag
+/// walang --dart-define, at iyon ay bitag: ang isang nakalimutang flag ay
+/// TAHIMIK na magpapatay ng App Check, at walang magsasabi. Sa seguridad,
+/// ang tahimik na pagkabukas ay mas masama kaysa sa isang repo na nakatali
+/// sa isang proyekto.
 ///
-/// Pampubliko ang site key na ito (nakikita ito sa loob ng bawat page), pero
-/// nasa build ito at hindi naka-hardcode para hindi maitali ang repo sa
-/// iisang Firebase project — kapareho ng ginagawa natin sa
-/// `firebase_options.dart`.
-const kRecaptchaSiteKey = String.fromEnvironment('RECAPTCHA_SITE_KEY');
+/// Ligtas itong nasa source: pampubliko ang site key — nakikita ito sa loob
+/// ng bawat page na naglo-load ng reCAPTCHA. Ang SECRET key ang hindi dapat
+/// makita kahit saan maliban sa Firebase Console.
+///
+/// Kapag walang laman (dahil sadyang pinawalang-bisa ng --dart-define=""),
+/// nilalaktawan ang buong App Check.
+const kRecaptchaSiteKey = String.fromEnvironment(
+  'RECAPTCHA_SITE_KEY',
+  defaultValue: '6LeniLItAAAAADN3610w5WAIbssBTstWKiX80vxW',
+);
 
+/// BITAG NG BUILD CACHE: kapag binago ang anumang --dart-define (kasama ang
+/// pag-alis nito), HINDI ito napapansin ng incremental build ng Flutter.
+/// Nananatili ang lumang halaga at tahimik na naiiwang patay ang App Check —
+/// naranasan ko ito: nawala ang buong sangay ng reCAPTCHA sa bundle at walang
+/// anumang babala. Patakbuhin ang `flutter clean` bago mag-build kapag
+/// gumalaw ang mga define. Ang tseke: dapat lumitaw ang "recaptcha" sa
+/// `build/web/main.dart.js`.
 /// Sinisimulan ang App Check kung nakaayos ito. Hindi kailanman nagta-throw.
 Future<void> activateAppCheck() async {
   if (kIsWeb && kRecaptchaSiteKey.isEmpty) {
