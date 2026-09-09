@@ -387,21 +387,27 @@ class _LockBanner extends ConsumerWidget {
       return Card(
         color: theme.colorScheme.surfaceContainerHighest,
         child: Padding(
-          padding: const EdgeInsets.fromLTRB(14, 10, 10, 10),
-          child: Row(
+          padding: const EdgeInsets.all(14),
+          // Nakasalansan, hindi magkatabi. Ang tema ay nagtatakda ng 56dp
+          // na taas at 18pt na teksto sa mga pangunahing button — tama
+          // iyon para sa isang taong nakatayo sa gilid ng court, pero
+          // ang ibig sabihin ay hindi kayang lumiit ng button na ito.
+          // Sa 390pt na telepono (iPhone 12 pataas) ay umaapaw ito nang
+          // 28 pixel, at ang lumalabas ay guhit-guhit na dilaw at itim.
+          //
+          // Mas mainam din ito: buong lapad ang pindutan, kaya isang
+          // hinlalaki lang ang kailangan.
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              Expanded(
-                child: Text(
-                  l10n.billNotLockedHint,
-                  style: theme.textTheme.bodySmall
-                      ?.copyWith(color: theme.colorScheme.onSurfaceVariant),
-                ),
+              Text(
+                l10n.billNotLockedHint,
+                style: theme.textTheme.bodySmall
+                    ?.copyWith(color: theme.colorScheme.onSurfaceVariant),
               ),
-              const SizedBox(width: 8),
+              const SizedBox(height: 10),
               FilledButton.tonalIcon(
-                onPressed: breakdown.lines.isEmpty
-                    ? null
-                    : () => _lock(ref),
+                onPressed: breakdown.lines.isEmpty ? null : () => _lock(ref),
                 icon: const Icon(Icons.lock_outline, size: 18),
                 label: Text(l10n.finalizeBill),
               ),
