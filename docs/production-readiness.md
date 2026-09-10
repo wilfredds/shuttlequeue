@@ -158,17 +158,19 @@ crash is silent.
 honestly — Crashlytics does not support Flutter web, so this would cover the
 Android build only.
 
-### ~~No abuse protection on Firestore~~ — deployed, awaiting console registration
+### ~~No abuse protection on Firestore~~ — deployed and registered, not yet attesting
 
 Rules stop a signed-in user from touching another Queue Master's data. They do
 not stop someone from taking the public API key and hammering the project to
 burn through the free quota.
 
-**Now:** App Check is wired in `lib/app_check.dart` and deployed. reCAPTCHA v3
-loads on the live site and mints tokens for `badminton-ph.web.app` — verified by
-exchanging one against the App Check API, which currently answers
-`FAILED_PRECONDITION: App not registered`. That is the one step left: register
-the web app under App Check in the Firebase Console.
+**Now:** App Check is wired in `lib/app_check.dart`, deployed, and uses
+**reCAPTCHA Enterprise** — Firebase deprecated the v3 provider. The web app is
+registered, and a real Enterprise token is minted on `badminton-ph.web.app`,
+but the exchange currently answers `403 App attestation failed`: Firebase is
+rejecting the token. The usual causes are a site-key mismatch between the
+console and the app, or a key that lives outside the `badminton-ph` Cloud
+project.
 
 **Still to do, and the order matters:** register the web app in the console, then
 leave every API **unenforced** while the metrics settle.
@@ -223,7 +225,7 @@ reset flow, no lockout, no forgotten password mid-night.
 Of roughly 110 items on that list: about 45 are Google's problem, about 40 do
 not apply to a client-only app, roughly 25 were already handled here, and six
 were real gaps. **Backups — the only one that could lose data permanently — is
-now closed.** Four remain, led by crash reporting; App Check is deployed and needs only its console registration.
+now closed.** Four remain, led by crash reporting; App Check is deployed and registered, but not yet attesting.
 
 The skill the list is really testing is not knowing all the words. It is being
 able to say, for each one, which of those four buckets it lands in for the

@@ -150,19 +150,23 @@ stop someone taking the public API key and burning through the free daily
 quota — and when that quota is gone, the app stops for everyone, including the
 Queue Master mid-session. App Check closes that hole.
 
-It is wired in [lib/app_check.dart](lib/app_check.dart) and **deployed**:
-reCAPTCHA v3 loads on the live site and mints tokens for
-`badminton-ph.web.app`. Firebase only accepts those tokens once the web app is
-registered in the App Check console (step 2 below). Until then — and until you
-choose to enforce — nothing is blocked.
+It is wired in [lib/app_check.dart](lib/app_check.dart) and **deployed**, using
+**reCAPTCHA Enterprise** — Firebase has deprecated the plain reCAPTCHA v3
+provider for App Check. Until the console side is complete, and until you
+choose to enforce, nothing is blocked: attestation failures are swallowed.
 
 ### Turning it on
 
-1. Create a **reCAPTCHA v3** site at
-   [google.com/recaptcha/admin](https://www.google.com/recaptcha/admin) with
-   domains `badminton-ph.web.app` **and** `badminton-ph.firebaseapp.com`.
+1. Get a **reCAPTCHA Enterprise** site key with domains `badminton-ph.web.app`
+   **and** `badminton-ph.firebaseapp.com`. A key made at
+   [google.com/recaptcha/admin](https://www.google.com/recaptcha/admin) works —
+   Google now backs those with Enterprise — **but it should belong to the
+   `badminton-ph` Google Cloud project**. A key living in another project is a
+   common cause of `403 App attestation failed`.
 2. Firebase Console → **Build → App Check → Apps** → register the web app with
-   reCAPTCHA v3, pasting the site key and the secret.
+   **reCAPTCHA Enterprise**, pasting that site key. Enterprise needs no secret;
+   it authenticates through the Cloud project. Ignore the plain "reCAPTCHA"
+   option — that is the deprecated one.
 3. Redeploy. The site key has a default baked into `lib/app_check.dart` (it is
    public — it ships inside every page), so a plain build keeps App Check on;
    a forgotten flag can no longer switch it off silently:
@@ -190,6 +194,11 @@ twelve people waiting on court. Two specific things to check before enforcing:
   locked out.
 - Attestation failures are swallowed by design. The app keeps working; App
   Check is a shield against abuse, not a new way to lose the night.
+- **`403 App attestation failed`** means the app is registered but Firebase
+  rejected the token. Check, in order: the key registered in App Check is the
+  same one in `lib/app_check.dart`; that key belongs to the `badminton-ph` Cloud
+  project; and the minimum score under Advanced settings (default 0.5) is not
+  turning away real visitors.
 
 ## Brand
 

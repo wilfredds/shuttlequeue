@@ -20,7 +20,7 @@ import 'package:flutter/foundation.dart';
 /// kabilang ang telepono ng coach, habang may labindalawang naghihintay sa
 /// court. Ang tamang pagkakasunod ay:
 ///
-///   1. Irehistro ang web app sa reCAPTCHA v3 (libre) sa Firebase Console.
+///   1. Irehistro ang web app sa reCAPTCHA Enterprise sa Firebase Console.
 ///   2. I-deploy ito na may site key. Manatili sa MONITORING.
 ///   3. Tingnan ang metrics sa loob ng ilang araw. Hintaying maging halos
 ///      lahat ay "verified" ang tunay mong trapiko.
@@ -42,7 +42,7 @@ import 'package:flutter/foundation.dart';
 /// pa rin ang app. Ang App Check ay panangga laban sa pang-aabuso; hindi ito
 /// dapat maging bagong paraan para masira ang gabi.
 
-/// Ang reCAPTCHA v3 site key, ibinibigay sa build:
+/// Ang reCAPTCHA Enterprise site key, ibinibigay sa build:
 ///
 ///     flutter build web --release \
 ///       --dart-define=RECAPTCHA_SITE_KEY=6Lxxxxxxxxxxxxxxxxxx
@@ -82,9 +82,13 @@ Future<void> activateAppCheck() async {
 
   try {
     await FirebaseAppCheck.instance.activate(
+      // Enterprise, hindi v3. Idineprecate na ng Firebase ang v3 provider
+      // para sa App Check, at Enterprise ang nakarehistro sa console. Kapag
+      // hindi magkatugma ang provider dito at ang nakarehistro doon, LAGING
+      // tatanggihan ang token — at tahimik, dahil nilulunok natin ang error.
       providerWeb: kRecaptchaSiteKey.isEmpty
           ? null
-          : ReCaptchaV3Provider(kRecaptchaSiteKey),
+          : ReCaptchaEnterpriseProvider(kRecaptchaSiteKey),
       // Tingnan ang tala tungkol sa Android sa itaas: hindi papasa ang
       // naka-sideload na APK sa Play Integrity.
       providerAndroid: const AndroidDebugProvider(),
