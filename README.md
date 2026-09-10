@@ -54,7 +54,7 @@ than waiting.
 
 ```bash
 flutter analyze                       # static analysis, must be clean
-flutter test                          # 205 unit + widget tests
+flutter test                          # 220 unit + widget tests
 cd test_rules && npm install && npm test   # 56 security-rules checks
 ```
 
@@ -150,9 +150,11 @@ stop someone taking the public API key and burning through the free daily
 quota — and when that quota is gone, the app stops for everyone, including the
 Queue Master mid-session. App Check closes that hole.
 
-It is wired in [lib/app_check.dart](lib/app_check.dart) and **stays completely
-inert until a site key is supplied**, so the app behaves exactly as before
-until it is configured.
+It is wired in [lib/app_check.dart](lib/app_check.dart) and **deployed**:
+reCAPTCHA v3 loads on the live site and mints tokens for
+`badminton-ph.web.app`. Firebase only accepts those tokens once the web app is
+registered in the App Check console (step 2 below). Until then — and until you
+choose to enforce — nothing is blocked.
 
 ### Turning it on
 

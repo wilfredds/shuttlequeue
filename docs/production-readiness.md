@@ -73,7 +73,7 @@ is gitignored to keep the repo unattached to one project, not to hide a key.
 | Dependency hell | `pubspec.lock` is committed; CI installs from it |
 | Latency, throughput, P99 | Reads come from local disk, so perceived latency is storage speed, not network. This is the whole point of the architecture |
 | Semantic versioning | `lib/app_version.dart`, shown on the sign-in screen, with a test that fails if it drifts from `pubspec.yaml` |
-| CI/CD | `.github/workflows/ci.yml` — analyze, 205 tests, and 56 rules checks on every push |
+| CI/CD | `.github/workflows/ci.yml` — analyze, 220 tests, and 56 rules checks on every push |
 | Blue-green / canary / rollback | `firebase hosting:channel:deploy` gives a preview URL to test before promoting; Hosting keeps release history and can roll back from the console |
 
 ## 3. Not applicable — and why
@@ -158,18 +158,20 @@ crash is silent.
 honestly — Crashlytics does not support Flutter web, so this would cover the
 Android build only.
 
-### ~~No abuse protection on Firestore~~ — wired, awaiting configuration
+### ~~No abuse protection on Firestore~~ — deployed, awaiting console registration
 
 Rules stop a signed-in user from touching another Queue Master's data. They do
 not stop someone from taking the public API key and hammering the project to
 burn through the free quota.
 
-**Now:** App Check is wired in `lib/app_check.dart`, and deliberately stays
-inert until a reCAPTCHA v3 site key is supplied at build time — so nothing
-changes until it is configured. The README has the console steps.
+**Now:** App Check is wired in `lib/app_check.dart` and deployed. reCAPTCHA v3
+loads on the live site and mints tokens for `badminton-ph.web.app` — verified by
+exchanging one against the App Check API, which currently answers
+`FAILED_PRECONDITION: App not registered`. That is the one step left: register
+the web app under App Check in the Firebase Console.
 
-**Still to do, and the order matters:** register the web app, redeploy with the
-site key, then leave every API **unenforced** while the metrics settle.
+**Still to do, and the order matters:** register the web app in the console, then
+leave every API **unenforced** while the metrics settle.
 Enforcing early blocks your own app. Android is the sharp edge: Play Integrity
 needs Google Play distribution and our APK is sideloaded, so it uses the debug
 provider and that phone's token must be registered before Firestore is
@@ -221,7 +223,7 @@ reset flow, no lockout, no forgotten password mid-night.
 Of roughly 110 items on that list: about 45 are Google's problem, about 40 do
 not apply to a client-only app, roughly 25 were already handled here, and six
 were real gaps. **Backups — the only one that could lose data permanently — is
-now closed.** Four remain, led by crash reporting; App Check is wired and awaiting its key.
+now closed.** Four remain, led by crash reporting; App Check is deployed and needs only its console registration.
 
 The skill the list is really testing is not knowing all the words. It is being
 able to say, for each one, which of those four buckets it lands in for the

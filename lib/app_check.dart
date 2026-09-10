@@ -71,6 +71,7 @@ const kRecaptchaSiteKey = String.fromEnvironment(
 /// anumang babala. Patakbuhin ang `flutter clean` bago mag-build kapag
 /// gumalaw ang mga define. Ang tseke: dapat lumitaw ang "recaptcha" sa
 /// `build/web/main.dart.js`.
+///
 /// Sinisimulan ang App Check kung nakaayos ito. Hindi kailanman nagta-throw.
 Future<void> activateAppCheck() async {
   if (kIsWeb && kRecaptchaSiteKey.isEmpty) {
