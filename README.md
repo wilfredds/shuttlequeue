@@ -205,6 +205,15 @@ twelve people waiting on court. Two specific things to check before enforcing:
   Enterprise — every browser that ran the old build uses the old provider on
   its next open, and the new one only from the open after that. Harmless while
   unenforced; don't enforce in the same week as a provider change.
+- **A 403 makes the SDK stop trying for 24 hours — in that browser.** After a
+  rejected exchange it enters `appCheck/initial-throttle` and will not retry
+  for a day. So after fixing something in the console, a browser that already
+  failed keeps failing until the throttle expires or its site data is cleared.
+  Test fixes in a fresh profile, such as a Chrome Guest window.
+- **Don't judge App Check from an automated browser.** reCAPTCHA scores
+  automation-driven browsers low, so they can be rejected on score alone while
+  real visitors pass. Judge it from a normal browser, or from the per-API
+  metrics on the App Check console page.
 
 ## Brand
 
