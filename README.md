@@ -199,6 +199,12 @@ twelve people waiting on court. Two specific things to check before enforcing:
   same one in `lib/app_check.dart`; that key belongs to the `badminton-ph` Cloud
   project; and the minimum score under Advanced settings (default 0.5) is not
   turning away real visitors.
+- **The plugin remembers the old provider for one load.** FlutterFire stores
+  the provider type in localStorage and activates App Check from it at startup,
+  before our code runs. So after a provider *type* change — as with v3 to
+  Enterprise — every browser that ran the old build uses the old provider on
+  its next open, and the new one only from the open after that. Harmless while
+  unenforced; don't enforce in the same week as a provider change.
 
 ## Brand
 

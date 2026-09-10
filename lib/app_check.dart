@@ -72,6 +72,17 @@ const kRecaptchaSiteKey = String.fromEnvironment(
 /// gumalaw ang mga define. Ang tseke: dapat lumitaw ang "recaptcha" sa
 /// `build/web/main.dart.js`.
 ///
+/// PANGALAWANG BITAG — may sariling alaala ang plugin. Isinusulat ng
+/// FlutterFire ang uri ng provider sa localStorage, at sa susunod na bukas ay
+/// ina-activate nito ang App Check MULA DOON, bago pa tumakbo ang code natin —
+/// at iisang instance lang ang ginagawa nito (`_webAppCheck ??= ...`). Kaya
+/// kapag pinalitan ang uri (v3 -> Enterprise), ang UNANG bukas ng bawat
+/// browser na nakagamit ng lumang build ay tumatakbo pa rin sa lumang
+/// provider; sa pangalawang bukas pa lang lilipat. Nakita ko ito mismo:
+/// Enterprise na ang nasa code at nasa storage, pero `api.js` (v3) pa rin ang
+/// na-load hanggang sa isang reload. Huwag mag-enforce sa parehong linggo ng
+/// pagpapalit ng uri ng provider.
+///
 /// Sinisimulan ang App Check kung nakaayos ito. Hindi kailanman nagta-throw.
 Future<void> activateAppCheck() async {
   if (kIsWeb && kRecaptchaSiteKey.isEmpty) {
