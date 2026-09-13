@@ -59,6 +59,78 @@ jobs:
 
       - run: flutter test
 
+  android:
+    name: android build
+    runs-on: ubuntu-latest
+    # Bakit hiwalay na build ng Android: pumasa sa analyze at sa 220 test ang
+    # isang pagbabagong SUMIRA sa APK. Nang idagdag ang firebase_app_check,
+    # itinaas nito ang firebase_core (at ang Firebase Android SDK) pero naiwan
+    # ang firebase_auth — hindi na nag-compile ang Java nito. Tanging web ang
+    # binubuo noon, kaya ilang araw itong hindi nakita. Ang analyzer ay hindi
+    # nagta-compile ng Java ng mga plugin; ang Gradle build ang tanging tseke.
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.44.5'
+          channel: stable
+          cache: true
+
+      - run: flutter pub get
+
+      # Parehong lihim na naka-gitignore gaya sa itaas, at dagdag ang
+      # google-services.json: kung wala ito, bumabagsak ang Gradle plugin ng
+      # Google Services bago pa makarating sa Java ng mga plugin.
+      - name: Stub the Firebase config
+        run: |
+          cat > lib/firebase_options.dart <<'DART'
+          // GAWA NG CI. Hindi ito ang totoong config.
+          import 'package:firebase_core/firebase_core.dart'
+              show FirebaseOptions;
+
+          class DefaultFirebaseOptions {
+            static FirebaseOptions get currentPlatform => android;
+
+            static const FirebaseOptions android = FirebaseOptions(
+              apiKey: 'ci',
+              appId: '1:1:android:1',
+              messagingSenderId: '1',
+              projectId: 'ci',
+            );
+
+            static const FirebaseOptions web = android;
+          }
+          DART
+          cat > android/app/google-services.json <<'JSON'
+          {
+            "project_info": {
+              "project_number": "1",
+              "project_id": "ci",
+              "storage_bucket": "ci.appspot.com"
+            },
+            "client": [
+              {
+                "client_info": {
+                  "mobilesdk_app_id": "1:1:android:1",
+                  "android_client_info": { "package_name": "com.france.shuttlequeue" }
+                },
+                "oauth_client": [],
+                "api_key": [{ "current_key": "ci" }],
+                "services": { "appinvite_service": { "other_platform_oauth_client": [] } }
+              }
+            ],
+            "configuration_version": "1"
+          }
+          JSON
+
+      - run: flutter build apk --debug
+
   rules:
     name: firestore rules
     runs-on: ubuntu-latest
