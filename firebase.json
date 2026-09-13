@@ -1,7 +1,13 @@
 {
   "firestore": {
+    "location": "asia-southeast1",
     "rules": "firestore.rules",
     "indexes": "firestore.indexes.json"
+  },
+  "auth": {
+    "providers": {
+      "emailPassword": true
+    }
   },
   "hosting": {
     "public": "build/web",
@@ -32,17 +38,17 @@
     "platforms": {
       "android": {
         "default": {
-          "projectId": "badminton-ph",
-          "appId": "1:594168567882:android:85f74e0bac3a6104e66eb3",
+          "projectId": "shuttlequeue-ph",
+          "appId": "1:242522883046:android:911d624bbc6ddd0c934c27",
           "fileOutput": "android/app/google-services.json"
         }
       },
       "dart": {
         "lib/firebase_options.dart": {
-          "projectId": "badminton-ph",
+          "projectId": "shuttlequeue-ph",
           "configurations": {
-            "android": "1:594168567882:android:85f74e0bac3a6104e66eb3",
-            "web": "1:594168567882:web:e31017fd163deb61e66eb3"
+            "android": "1:242522883046:android:911d624bbc6ddd0c934c27",
+            "web": "1:242522883046:web:fbcd8e92d9a38b8d934c27"
           }
         }
       }

@@ -2,7 +2,7 @@
  * Firestore security rules tests.
  *
  * Tumatakbo laban sa lokal na emulator — walang nagagalaw sa totoong
- * badminton-ph project. Tatlong tanong ang sinasagot nito:
+ * shuttlequeue-ph project. Tatlong tanong ang sinasagot nito:
  *
  *   1. Gumagana pa ba ang app? (dapat pumasa ang totoong writes)
  *   2. Naka-lock ba ang datos ng ibang QM?

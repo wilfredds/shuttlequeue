@@ -47,11 +47,9 @@ import 'package:flutter/foundation.dart';
 ///     flutter build web --release \
 ///       --dart-define=RECAPTCHA_SITE_KEY=6Lxxxxxxxxxxxxxxxxxx
 ///
-/// May DEFAULT ito nang sinasadya. Ang unang bersyon ay walang laman kapag
-/// walang --dart-define, at iyon ay bitag: ang isang nakalimutang flag ay
-/// TAHIMIK na magpapatay ng App Check, at walang magsasabi. Sa seguridad,
-/// ang tahimik na pagkabukas ay mas masama kaysa sa isang repo na nakatali
-/// sa isang proyekto.
+/// Ang default ay dapat ang tunay na site key kapag nakaayos. Kung walang
+/// laman at walang --dart-define, TAHIMIK na napapatay ang App Check — bitag
+/// ito, kaya sa source ang tahanan ng key, hindi sa isang flag na nalilimutan.
 ///
 /// Ligtas itong nasa source: pampubliko ang site key — nakikita ito sa loob
 /// ng bawat page na naglo-load ng reCAPTCHA. Ang SECRET key ang hindi dapat
@@ -61,7 +59,13 @@ import 'package:flutter/foundation.dart';
 /// nilalaktawan ang buong App Check.
 const kRecaptchaSiteKey = String.fromEnvironment(
   'RECAPTCHA_SITE_KEY',
-  defaultValue: '6LeniLItAAAAADN3610w5WAIbssBTstWKiX80vxW',
+  // WALANG LAMAN NANG SINASADYA — pansamantala. Inilipat ang ShuttleQueue sa
+  // sarili nitong Firebase project (`shuttlequeue-ph`), at ang lumang key ay
+  // nakatali sa mga domain ng `badminton-ph` — sa bagong site ay error sa
+  // bawat bukas. Ang lumang key ay ang may nakitang secret din. Kaya patay ang
+  // App Check hanggang may bagong Enterprise key na ginawa SA LOOB ng
+  // `shuttlequeue-ph`; ilagay ito rito, `flutter clean`, at i-deploy.
+  defaultValue: '',
 );
 
 /// BITAG NG BUILD CACHE: kapag binago ang anumang --dart-define (kasama ang
