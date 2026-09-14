@@ -13,7 +13,7 @@ Use your own account, not the throwaway one. Roughly 20 minutes.
 
 ## 0. Before you start
 
-- [ ] Open https://badminton-ph.web.app and hard-refresh once (Ctrl+Shift+R).
+- [ ] Open https://shuttlequeue-ph.web.app and hard-refresh once (Ctrl+Shift+R).
 - [ ] Chrome offers **Install app** in the address bar — install it. A tab can
       be closed by accident, and browsers can evict site storage; the installed
       app is what she should use on the night.

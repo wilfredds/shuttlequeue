@@ -320,6 +320,29 @@ conditional, the first access can be teardown. Also: an infinite `repeat()`
 makes `pumpAndSettle` hang forever, so widget tests wrap the tree in
 `MediaQuery(disableAnimations: true)`.
 
+### Two apps in one Firebase project
+
+**Symptom.** None visible from ShuttleQueue. Found only when asked to separate
+"two sites".
+
+**Cause.** ShuttleQueue reused an existing project, `badminton-ph`, that already
+hosted the BadmintonPH tournament app. A project has one ruleset and one default
+hosting site, so the last deploy wins: ShuttleQueue's hosting replaced the
+tournament website, and ShuttleQueue's rules — which name only its own
+collections — denied every tournament collection. Both apps also shared a
+top-level `users` collection, the Auth pool, the daily quota, and even the web
+app registration later used for App Check.
+
+**Fix.** ShuttleQueue moved to its own project, `shuttlequeue-ph`. The tournament
+got its website back and, rather than its old rules, a hardened set — the old
+ones let anyone self-assign `admin` and exposed minors' contact details to every
+signed-in user.
+
+**Lesson.** One app, one Firebase project — decided before the first deploy.
+And two traps on the way out: a Firestore deploy auto-creates a missing database
+in `nam5` (US) unless `firebase.json` names a location, and a deleted database ID
+cannot be reused for a few minutes.
+
 ### Flutter web does not content-hash main.dart.js
 
 **Symptom.** Fixes were deployed and verified, and the user still saw the old

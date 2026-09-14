@@ -5,7 +5,11 @@ Queue Master) runs an entire social badminton night — attendance, fair match
 rotation, and end-of-night cost splitting — from her phone, **fully offline**,
 syncing to the cloud when signal returns.
 
-**Live:** https://badminton-ph.web.app
+**Live:** https://shuttlequeue-ph.web.app
+
+Runs in its own Firebase project, `shuttlequeue-ph` (Firestore in `asia-southeast1`).
+It previously lived inside `badminton-ph`, which belongs to the separate
+BadmintonPH tournament app — see *Why its own project* below.
 
 Built with Flutter + Firebase (Firestore, Auth) on the free Spark tier.
 State management: Riverpod. **One codebase, two targets: Android and web.**
@@ -31,6 +35,21 @@ QR on the bill. Both need the coach's answer first — which format her club
 actually plays, and whether she wants her QR shown. Guessing would be worse
 than waiting.
 
+## Why its own project
+
+ShuttleQueue was first built inside `badminton-ph` — a Firebase project that
+already belonged to the BadmintonPH tournament app. A Firebase project is one
+database, **one** ruleset, one default hosting site, one pool of login accounts
+and one free quota, so the two apps silently overwrote each other: every
+ShuttleQueue deploy replaced the tournament website, and ShuttleQueue's rules
+locked every tournament collection out. Both apps also wrote a top-level
+`users` collection.
+
+In September 2026 ShuttleQueue moved to `shuttlequeue-ph`. The rule going
+forward: **one app, one Firebase project**. `.firebaserc` names it, and
+`firebase.json` pins the Firestore location, so a deploy can never target the
+wrong project or create a database in the wrong region.
+
 ## Setup
 
 1. Install the [Flutter SDK](https://docs.flutter.dev/get-started/install)
@@ -41,7 +60,7 @@ than waiting.
    npm i -g firebase-tools
    firebase login
    dart pub global activate flutterfire_cli
-   flutterfire configure --project=badminton-ph --platforms=android
+   flutterfire configure --project=shuttlequeue-ph --platforms=android,web
    ```
    This generates `lib/firebase_options.dart` (gitignored — regenerate, don't
    copy from someone else).
@@ -157,11 +176,11 @@ choose to enforce, nothing is blocked: attestation failures are swallowed.
 
 ### Turning it on
 
-1. Get a **reCAPTCHA Enterprise** site key with domains `badminton-ph.web.app`
-   **and** `badminton-ph.firebaseapp.com`. A key made at
+1. Get a **reCAPTCHA Enterprise** site key with domains `shuttlequeue-ph.web.app`
+   **and** `shuttlequeue-ph.firebaseapp.com`. A key made at
    [google.com/recaptcha/admin](https://www.google.com/recaptcha/admin) works —
    Google now backs those with Enterprise — **but it should belong to the
-   `badminton-ph` Google Cloud project**. A key living in another project is a
+   `shuttlequeue-ph` Google Cloud project**. A key living in another project is a
    common cause of `403 App attestation failed`.
 2. Firebase Console → **Build → App Check → Apps** → register the web app with
    **reCAPTCHA Enterprise**, pasting that site key. Enterprise needs no secret;
@@ -196,7 +215,7 @@ twelve people waiting on court. Two specific things to check before enforcing:
   Check is a shield against abuse, not a new way to lose the night.
 - **`403 App attestation failed`** means the app is registered but Firebase
   rejected the token. Check, in order: the key registered in App Check is the
-  same one in `lib/app_check.dart`; that key belongs to the `badminton-ph` Cloud
+  same one in `lib/app_check.dart`; that key belongs to the `shuttlequeue-ph` Cloud
   project; and the minimum score under Advanced settings (default 0.5) is not
   turning away real visitors.
 - **The plugin remembers the old provider for one load.** FlutterFire stores

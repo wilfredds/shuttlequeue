@@ -166,10 +166,10 @@ burn through the free quota.
 
 **Now:** App Check is wired in `lib/app_check.dart`, deployed, and uses
 **reCAPTCHA Enterprise** — Firebase deprecated the v3 provider. The web app is
-registered, and a real Enterprise token is minted on `badminton-ph.web.app`,
+registered, and a real Enterprise token is minted on `shuttlequeue-ph.web.app`,
 but the exchange currently answers `403 App attestation failed`: Firebase is
 rejecting the token. The usual causes are a site-key mismatch between the
-console and the app, or a key that lives outside the `badminton-ph` Cloud
+console and the app, or a key that lives outside the `shuttlequeue-ph` Cloud
 project.
 
 **Still to do, and the order matters:** register the web app in the console, then
