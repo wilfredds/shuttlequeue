@@ -73,7 +73,7 @@ is gitignored to keep the repo unattached to one project, not to hide a key.
 | Dependency hell | `pubspec.lock` is committed; CI installs from it |
 | Latency, throughput, P99 | Reads come from local disk, so perceived latency is storage speed, not network. This is the whole point of the architecture |
 | Semantic versioning | `lib/app_version.dart`, shown on the sign-in screen, with a test that fails if it drifts from `pubspec.yaml` |
-| CI/CD | `.github/workflows/ci.yml` — analyze, 220 tests, and 56 rules checks on every push |
+| CI/CD | `.github/workflows/ci.yml` — analyze, 225 tests, and 56 rules checks on every push |
 | Blue-green / canary / rollback | `firebase hosting:channel:deploy` gives a preview URL to test before promoting; Hosting keeps release history and can roll back from the console |
 
 ## 3. Not applicable — and why

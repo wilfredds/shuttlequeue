@@ -381,7 +381,7 @@ was allowed to cache.
 
 ## 10. What the tests are actually for
 
-220 Dart tests and 56 rules checks, and the split is deliberate.
+225 Dart tests and 56 rules checks, and the split is deliberate.
 
 The **pure services** carry the correctness burden and are tested hardest,
 because they decide who plays and who pays: matchmaking, fee calculation,

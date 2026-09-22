@@ -62,7 +62,7 @@ jobs:
   android:
     name: android build
     runs-on: ubuntu-latest
-    # Bakit hiwalay na build ng Android: pumasa sa analyze at sa 220 test ang
+    # Bakit hiwalay na build ng Android: pumasa sa analyze at sa 225 test ang
     # isang pagbabagong SUMIRA sa APK. Nang idagdag ang firebase_app_check,
     # itinaas nito ang firebase_core (at ang Firebase Android SDK) pero naiwan
     # ang firebase_auth — hindi na nag-compile ang Java nito. Tanging web ang

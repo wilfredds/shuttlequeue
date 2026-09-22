@@ -73,7 +73,7 @@ wrong project or create a database in the wrong region.
 
 ```bash
 flutter analyze                       # static analysis, must be clean
-flutter test                          # 220 unit + widget tests
+flutter test                          # 225 unit + widget tests
 cd test_rules && npm install && npm test   # 56 security-rules checks
 ```
 

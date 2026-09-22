@@ -322,7 +322,7 @@ class _FilterChip extends StatelessWidget {
           mainAxisSize: MainAxisSize.min,
           children: [
             if (tone == SQTone.live && count > 0 && !selected) ...[
-              SQLivePulse(color: tones.foreground, size: 6),
+              _Dot(color: tones.foreground),
               const SizedBox(width: SQSpace.xs),
             ],
             Text(
@@ -345,6 +345,24 @@ class _FilterChip extends StatelessWidget {
           ],
         ),
       ),
+    );
+  }
+}
+
+/// Tahimik na tuldok. Hindi ito tumitibok nang sinasadya: ang tibok ay
+/// para sa court na may laro, hindi para sa bawat taong nasa court. Walong
+/// tumitibok na tuldok sa isang listahan ay hindi na palatandaan — ingay na.
+class _Dot extends StatelessWidget {
+  const _Dot({required this.color});
+
+  final Color color;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: 6,
+      height: 6,
+      decoration: BoxDecoration(color: color, shape: BoxShape.circle),
     );
   }
 }
@@ -474,7 +492,7 @@ class _PlayerTile extends ConsumerWidget {
                         Row(
                           children: [
                             if (isPlaying) ...[
-                              SQLivePulse(color: sq.live, size: 6),
+                              _Dot(color: sq.live),
                               const SizedBox(width: SQSpace.xs),
                             ],
                             Text(
