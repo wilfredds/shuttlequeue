@@ -244,6 +244,30 @@ The shuttlecock mark is drawn once, in two places that must agree:
 - `lib/widgets/shuttle_mark.dart` — the same geometry as a `CustomPainter`, so
   the in-app logo and the installed icon cannot drift apart.
 
+## The look
+
+One file holds it: [lib/theme.dart](lib/theme.dart). Colour, type, spacing,
+shadow and motion are tokens there, reachable from any widget as `context.sq`.
+Nothing in `screens/` invents a colour.
+
+**Two typefaces, two jobs.** `Inter` for everything read at arm's length —
+labels, names, money, with tabular figures so a column of pesos does not shuffle
+sideways when 9 becomes 10. `Archivo` at width 88 for everything read across a
+gym: court numbers, game counts, the total on the bill.
+
+They are **bundled as assets, not fetched**. The `google_fonts` package
+downloads on first run, and this app has to work for four hours with no
+internet. `python tool/build_fonts.py` pulls both from Google Fonts, pins the
+static weights, subsets them to the characters the app actually uses, and
+refuses to write a file that is missing the peso sign — 876 KB becomes 452 KB.
+
+**Motion earns its place or it is not there.** Exactly one thing repeats: the
+pulse that means a match is live. Everything else answers a question — a card
+dips when your thumb lands, a list rises once on arrival, a number counts up so
+you notice the money moved. All of it collapses to zero under the system's
+reduce-motion setting, which is also why the controllers are built in
+`initState` and never in a field initialiser (see architecture §9).
+
 ## Sign-in
 
 Built against [web.dev's sign-in form best practices](https://web.dev/articles/sign-in-form-best-practices),
@@ -277,14 +301,16 @@ account.
 ```
 lib/
   main.dart          # bootstrap: Firebase init, offline persistence, ProviderScope
-  app.dart           # MaterialApp, theme (large targets, high contrast), routes
+  app.dart           # MaterialApp + the sync-error listener
+  theme.dart         # THE design system: colour, type, spacing, shadow, motion
   l10n/              # ALL user-facing strings (app_en.arb); Taglish locale later
   models/            # plain Dart data classes mirroring the Firestore contract
   services/          # PURE logic — matchmaking, fee calc, roster parsing. No Firestore.
   repositories/      # the ONLY layer that talks to Firestore
   providers/         # Riverpod providers wiring repositories to the UI
   screens/           # one file per screen
-  widgets/           # shared, reusable widgets
+  widgets/           # shared vocabulary: cards, pills, headings, motion
+assets/fonts/        # Inter + Archivo, subset; built by tool/build_fonts.py
 test/                # unit tests for services + widget smoke tests
 docs/architecture.md # offline-first design & data model notes
 firestore.rules      # security rules (deployed at M5)

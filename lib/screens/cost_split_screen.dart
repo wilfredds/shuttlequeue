@@ -1,19 +1,35 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import 'package:share_plus/share_plus.dart';
 
 import '../l10n/app_localizations.dart';
-import '../models/enums.dart';
 import '../models/bill_line.dart';
 import '../models/club.dart';
+import '../models/enums.dart';
 import '../models/session.dart';
 import '../models/session_player.dart';
 import '../providers/session_providers.dart';
 import '../services/fee_calculator.dart';
 import '../services/money.dart';
+import '../theme.dart';
+import '../widgets/motion.dart';
+import '../widgets/surfaces.dart';
 
 /// Ang dulo ng gabi: sino ang may bayad, magkano, at sino pa ang hindi.
+///
+/// ITO ANG SCREEN NA PINAKAMABILIS SUMIRA NG TIWALA. Ang bawat ibang
+/// screen ay tungkol sa laro; ito ay tungkol sa pera ng ibang tao. Kaya:
+///
+///  * **Isang bilang ang nangingibabaw** — kung magkano ang hatian kada
+///    tao. Iyon ang tanong na tinatanong nang labindalawang beses kada
+///    gabi, at dati ay kailangan pang basahin sa isang listahan.
+///  * **May guhit ng pag-usad ang koleksyon.** Hindi ito palamuti: ito
+///    ang sagot sa "tapos na ba ako?" nang hindi binibilang ang mga tsek.
+///  * **Ang buong hilera ay pindutan.** Isang kamay lang ang libre ng QM
+///    habang tumatanggap ng pera; hindi siya dapat tumutudla ng maliit na
+///    chip.
 class CostSplitScreen extends ConsumerWidget {
   const CostSplitScreen({super.key, required this.sessionId});
 
@@ -22,22 +38,18 @@ class CostSplitScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final l10n = AppLocalizations.of(context)!;
-    final theme = Theme.of(context);
 
     final session = ref.watch(sessionProvider(sessionId)).value;
     final players =
         ref.watch(playersProvider(sessionId)).value?.data ?? const [];
 
     if (session == null || players.isEmpty) {
-      return Center(
-        child: Padding(
-          padding: const EdgeInsets.all(32),
-          child: Text(
-            l10n.moneyEmpty,
-            textAlign: TextAlign.center,
-            style: theme.textTheme.bodyLarge
-                ?.copyWith(color: theme.colorScheme.outline),
-          ),
+      return Scaffold(
+        backgroundColor: context.sq.canvas,
+        body: SQEmptyState(
+          icon: Icons.payments_outlined,
+          title: l10n.moneyTitle,
+          body: l10n.moneyEmpty,
         ),
       );
     }
@@ -56,45 +68,81 @@ class CostSplitScreen extends ConsumerWidget {
           );
 
     return Scaffold(
-      body: ListView(
-        padding: const EdgeInsets.fromLTRB(12, 12, 12, 96),
+      backgroundColor: context.sq.canvas,
+      body: Column(
         children: [
-          _Summary(breakdown: breakdown),
-          const SizedBox(height: 10),
-          _LockBanner(sessionId: sessionId, session: session,
-              breakdown: breakdown),
-          const SizedBox(height: 6),
-          const _GcashCard(),
-          const SizedBox(height: 6),
-          for (final line in breakdown.lines)
-            _FeeTile(
-              sessionId: sessionId,
-              line: line,
-              feeMode: session.feeMode,
-              isLocked: session.isBillFinalized,
+          Expanded(
+            child: ListView(
+              padding: const EdgeInsets.only(bottom: SQSpace.xxl),
+              children: [
+                _BillHeader(breakdown: breakdown),
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(
+                    SQSpace.lg,
+                    SQSpace.lg,
+                    SQSpace.lg,
+                    0,
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      _LockBanner(
+                        sessionId: sessionId,
+                        session: session,
+                        breakdown: breakdown,
+                      ),
+                      const SizedBox(height: SQSpace.md),
+                      const _GcashCard(),
+                      const SizedBox(height: SQSpace.xl),
+                      for (var i = 0; i < breakdown.lines.length; i++)
+                        Padding(
+                          padding: const EdgeInsets.only(bottom: SQSpace.sm),
+                          child: SQEntrance(
+                            index: i,
+                            child: _FeeTile(
+                              sessionId: sessionId,
+                              line: breakdown.lines[i],
+                              feeMode: session.feeMode,
+                              isLocked: session.isBillFinalized,
+                            ),
+                          ),
+                        ),
+                      const SizedBox(height: SQSpace.lg),
+                      // Nasa DULO ng listahan ang paglipat ng utang, hindi
+                      // sa nakapinid na bar: dito lumalapag ang QM kapag
+                      // tapos na siyang mangolekta, at dito lang ito may
+                      // saysay.
+                      OutlinedButton.icon(
+                        onPressed: () =>
+                            _carryUnpaid(context, ref, breakdown, players),
+                        icon: const Icon(Icons.receipt_long_outlined, size: 19),
+                        label: Text(l10n.carryUnpaid),
+                      ),
+                      const SizedBox(height: SQSpace.lg),
+                    ],
+                  ),
+                ),
+              ],
             ),
-        ],
-      ),
-      floatingActionButton: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.end,
-        children: [
-          // Utang: dinadala sa susunod na gabi ang hindi nabayaran.
-          // Ganito talaga tumatakbo ang mga club — nasa memorya ng QM at
-          // sa notebook ang listahang ito ngayon.
-          FloatingActionButton.small(
-            heroTag: 'carry',
-            tooltip: l10n.carryUnpaid,
-            onPressed: () => _carryUnpaid(context, ref, breakdown, players),
-            child: const Icon(Icons.receipt_long_outlined),
           ),
-          const SizedBox(height: 10),
-          FloatingActionButton.extended(
-            heroTag: 'shareFees',
-            onPressed: () =>
-                _share(context, session, breakdown, ref.read(clubProvider).value),
-            icon: const Icon(Icons.share_outlined),
-            label: Text(l10n.shareSummary),
+          // Nasa bar ang dalawang aksyon ng dulo ng gabi, hindi sa
+          // magkapatong na FAB. Sa listahan ng labindalawang pangalan,
+          // natatakpan ng lumulutang na pindutan ang mismong hilerang
+          // pinipindot habang tumatanggap ng bayad.
+          SQCommandBar(
+            child: SizedBox(
+              width: double.infinity,
+              child: FilledButton.icon(
+                onPressed: () => _share(
+                  context,
+                  session,
+                  breakdown,
+                  ref.read(clubProvider).value,
+                ),
+                icon: const Icon(Icons.share_outlined),
+                label: Text(l10n.shareSummary),
+              ),
+            ),
           ),
         ],
       ),
@@ -224,6 +272,178 @@ class CostSplitScreen extends ConsumerWidget {
   }
 }
 
+/// Ang ulo ng bill: magkano kada tao, at gaano na kalayo ang koleksyon.
+///
+/// Buong lapad ito at puti, hindi kard na lumulutang — kaya ito ang
+/// *papel*, at ang mga hilera sa ibaba ang nakasulat dito. Isang hugis
+/// lang ito sa buong app, at dito lang.
+class _BillHeader extends StatelessWidget {
+  const _BillHeader({required this.breakdown});
+
+  final FeeBreakdown breakdown;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+    final theme = Theme.of(context);
+    final sq = context.sq;
+
+    final lines = breakdown.lines;
+    final total = breakdown.chargedTotalCentavos;
+    final collected = breakdown.collectedCentavos;
+    final progress = total == 0 ? 0.0 : (collected / total).clamp(0.0, 1.0);
+    final done = lines.isNotEmpty && breakdown.paidCount == lines.length;
+
+    // Ang pinakamadalas na tanong sa gabi ay hindi "magkano lahat" kundi
+    // "magkano ako". Kapag pare-pareho ang hati, iyon ang nasa itaas.
+    final shares = lines.map((l) => l.totalCentavos).toSet();
+    final headline = shares.length == 1
+        ? formatCentavos(shares.first)
+        : formatCentavos(total);
+    final headlineLabel =
+        shares.length == 1 ? l10n.perPlayerLabel : l10n.totalCost;
+
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.fromLTRB(
+        SQSpace.lg,
+        SQSpace.lg,
+        SQSpace.lg,
+        SQSpace.lg,
+      ),
+      decoration: BoxDecoration(
+        color: theme.colorScheme.surface,
+        border: Border(bottom: BorderSide(color: sq.line)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.end,
+            children: [
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      headline,
+                      style: theme.textTheme.displayMedium?.copyWith(
+                        color: sq.ink,
+                        fontSize: 40,
+                      ),
+                      maxLines: 1,
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      headlineLabel,
+                      style: theme.textTheme.bodyMedium
+                          ?.copyWith(color: sq.inkMuted),
+                    ),
+                  ],
+                ),
+              ),
+              SQStatusPill(
+                label: l10n.paidOf(breakdown.paidCount, lines.length),
+                tone: done ? SQTone.live : SQTone.neutral,
+                icon: done ? Icons.check_circle_outline : null,
+              ),
+            ],
+          ),
+          const SizedBox(height: SQSpace.lg),
+
+          // Ang guhit ng koleksyon. Ito ang sagot sa "tapos na ba?" nang
+          // hindi binibilang ang mga tsek — at gumagalaw ito tuwing may
+          // nagbabayad, kaya may nararamdamang usad ang QM.
+          ClipRRect(
+            borderRadius: const BorderRadius.all(Radius.circular(SQRadius.sm)),
+            child: TweenAnimationBuilder<double>(
+              tween: Tween<double>(begin: progress, end: progress),
+              duration: context.motion(SQDuration.count),
+              curve: SQCurve.enter,
+              builder: (context, value, _) => LinearProgressIndicator(
+                value: value,
+                minHeight: 10,
+                backgroundColor: sq.surfaceMuted,
+                valueColor: AlwaysStoppedAnimation<Color>(sq.live),
+              ),
+            ),
+          ),
+          const SizedBox(height: SQSpace.md),
+          Row(
+            children: [
+              _Amount(
+                label: l10n.collected,
+                centavos: collected,
+                tone: SQTone.live,
+              ),
+              const SizedBox(width: SQSpace.xxl),
+              _Amount(
+                label: l10n.outstanding,
+                centavos: breakdown.outstandingCentavos,
+                tone: breakdown.outstandingCentavos > 0
+                    ? SQTone.attention
+                    : SQTone.neutral,
+              ),
+              const Spacer(),
+              if (shares.length == 1)
+                _Amount(
+                  label: l10n.totalCost,
+                  centavos: total,
+                  tone: SQTone.neutral,
+                  alignEnd: true,
+                ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// Halaga ng pera na umaakyat papunta sa bagong bilang.
+class _Amount extends StatelessWidget {
+  const _Amount({
+    required this.label,
+    required this.centavos,
+    required this.tone,
+    this.alignEnd = false,
+  });
+
+  final String label;
+  final int centavos;
+  final SQTone tone;
+  final bool alignEnd;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final sq = context.sq;
+    final color =
+        tone == SQTone.neutral ? sq.inkStrong : toneColors(context, tone).foreground;
+
+    return Column(
+      crossAxisAlignment:
+          alignEnd ? CrossAxisAlignment.end : CrossAxisAlignment.start,
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        SQCountUp(
+          value: centavos,
+          builder: (context, value) => Text(
+            // Sentimo pa rin ang binibilang habang umaakyat — hindi
+            // kailanman double ang pera, kahit sa animasyon.
+            formatCentavos(value.round()),
+            style: theme.textTheme.titleMedium?.copyWith(color: color).tabular,
+          ),
+        ),
+        Text(
+          label,
+          style: theme.textTheme.labelSmall?.copyWith(color: sq.inkFaint),
+        ),
+      ],
+    );
+  }
+}
+
 /// Saan ipapadala ng mga manlalaro ang bayad.
 ///
 /// Sinasadyang hindi naka-hardcode ang numero: iba ang numero ng bawat QM,
@@ -236,57 +456,71 @@ class _GcashCard extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final l10n = AppLocalizations.of(context)!;
     final theme = Theme.of(context);
+    final sq = context.sq;
     final club = ref.watch(clubProvider).value;
+    final hasNumber = club != null && club.hasGcash;
 
-    return Card(
-      color: theme.colorScheme.surfaceContainerHighest,
-      child: InkWell(
-        onTap: () => _edit(context, ref, club),
-        borderRadius: BorderRadius.circular(12),
-        child: Padding(
-          padding: const EdgeInsets.fromLTRB(14, 12, 12, 12),
-          child: Row(
-            children: [
-              Icon(
-                Icons.account_balance_wallet_outlined,
-                size: 20,
-                color: theme.colorScheme.onSurfaceVariant,
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      l10n.gcashTitle,
-                      style: theme.textTheme.labelMedium?.copyWith(
-                        color: theme.colorScheme.outline,
-                      ),
-                    ),
-                    Text(
-                      club != null && club.hasGcash
-                          ? club.formattedGcash
-                          : l10n.gcashAdd,
-                      style: theme.textTheme.titleMedium?.copyWith(
-                        // Malaki at madaling basahin — babasahin ito ng
-                        // manlalaro mula sa kabilang dulo ng mesa.
-                        fontWeight: FontWeight.w700,
-                        color: club != null && club.hasGcash
-                            ? theme.colorScheme.onSurface
-                            : theme.colorScheme.outline,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              Icon(
-                Icons.edit_outlined,
-                size: 18,
-                color: theme.colorScheme.outline,
-              ),
-            ],
+    return SQCard(
+      padding: const EdgeInsets.fromLTRB(
+        SQSpace.lg,
+        SQSpace.md,
+        SQSpace.sm,
+        SQSpace.md,
+      ),
+      child: Row(
+        children: [
+          Icon(
+            Icons.account_balance_wallet_outlined,
+            size: 20,
+            color: sq.inkMuted,
           ),
-        ),
+          const SizedBox(width: SQSpace.md),
+          Expanded(
+            child: SQPressable(
+              onTap: () => _edit(context, ref, club),
+              borderRadius: const BorderRadius.all(
+                Radius.circular(SQRadius.md),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    l10n.gcashTitle,
+                    style: theme.textTheme.labelSmall
+                        ?.copyWith(color: sq.inkFaint),
+                  ),
+                  Text(
+                    hasNumber ? club.formattedGcash : l10n.gcashAdd,
+                    // Malaki at madaling basahin — babasahin ito ng
+                    // manlalaro mula sa kabilang dulo ng mesa.
+                    style: theme.textTheme.titleMedium
+                        ?.copyWith(color: hasNumber ? sq.ink : sq.inkFaint)
+                        .tabular,
+                  ),
+                ],
+              ),
+            ),
+          ),
+          // Kinokopya, hindi binabasa nang malakas. Sa maingay na gym, ang
+          // pagsigaw ng labing-isang numero ay tatlong beses na inuulit.
+          if (hasNumber)
+            IconButton(
+              tooltip: l10n.gcashTitle,
+              icon: Icon(Icons.copy_rounded, size: 18, color: sq.inkMuted),
+              onPressed: () async {
+                final messenger = ScaffoldMessenger.of(context);
+                await Clipboard.setData(
+                  ClipboardData(text: club.formattedGcash),
+                );
+                HapticFeedback.selectionClick();
+                messenger.showSnackBar(
+                  SnackBar(content: Text(club.formattedGcash)),
+                );
+              },
+            )
+          else
+            Icon(Icons.edit_outlined, size: 18, color: sq.inkFaint),
+        ],
       ),
     );
   }
@@ -319,11 +553,10 @@ class _GcashCard extends ConsumerWidget {
                 decoration: InputDecoration(
                   labelText: l10n.gcashNumberLabel,
                   hintText: '0929 365 6299',
-                  border: const OutlineInputBorder(),
                   errorText: errorText,
                 ),
               ),
-              const SizedBox(height: 8),
+              const SizedBox(height: SQSpace.sm),
               Text(
                 l10n.gcashHint,
                 style: Theme.of(dialogContext).textTheme.bodySmall,
@@ -382,76 +615,75 @@ class _LockBanner extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final l10n = AppLocalizations.of(context)!;
     final theme = Theme.of(context);
+    final sq = context.sq;
 
     if (!session.isBillFinalized) {
-      return Card(
-        color: theme.colorScheme.surfaceContainerHighest,
-        child: Padding(
-          padding: const EdgeInsets.all(14),
-          // Nakasalansan, hindi magkatabi. Ang tema ay nagtatakda ng 56dp
-          // na taas at 18pt na teksto sa mga pangunahing button — tama
-          // iyon para sa isang taong nakatayo sa gilid ng court, pero
-          // ang ibig sabihin ay hindi kayang lumiit ng button na ito.
-          // Sa 390pt na telepono (iPhone 12 pataas) ay umaapaw ito nang
-          // 28 pixel, at ang lumalabas ay guhit-guhit na dilaw at itim.
-          //
-          // Mas mainam din ito: buong lapad ang pindutan, kaya isang
-          // hinlalaki lang ang kailangan.
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              Text(
-                l10n.billNotLockedHint,
-                style: theme.textTheme.bodySmall
-                    ?.copyWith(color: theme.colorScheme.onSurfaceVariant),
+      return SQCard(
+        // Nakasalansan, hindi magkatabi. Ang tema ay nagtatakda ng 56dp
+        // na taas at 17pt na teksto sa mga pangunahing button — tama iyon
+        // para sa isang taong nakatayo sa gilid ng court, pero ang ibig
+        // sabihin ay hindi kayang lumiit ng button na ito. Sa 390pt na
+        // telepono ay umaapaw ito nang 28 pixel noon, at ang lumalabas ay
+        // guhit-guhit na dilaw at itim.
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Text(
+              l10n.billNotLockedHint,
+              style: theme.textTheme.bodySmall?.copyWith(color: sq.inkMuted),
+            ),
+            const SizedBox(height: SQSpace.md),
+            FilledButton.tonalIcon(
+              style: FilledButton.styleFrom(
+                minimumSize: const Size.fromHeight(50),
+                backgroundColor: sq.liveWash,
+                foregroundColor: sq.live,
               ),
-              const SizedBox(height: 10),
-              FilledButton.tonalIcon(
-                onPressed: breakdown.lines.isEmpty ? null : () => _lock(ref),
-                icon: const Icon(Icons.lock_outline, size: 18),
-                label: Text(l10n.finalizeBill),
-              ),
-            ],
-          ),
+              onPressed: breakdown.lines.isEmpty ? null : () => _lock(ref),
+              icon: const Icon(Icons.lock_outline, size: 18),
+              label: Text(l10n.finalizeBill),
+            ),
+          ],
         ),
       );
     }
 
     final lockedAt = DateFormat('h:mm a').format(session.billFinalizedAt!);
-    return Card(
-      color: theme.colorScheme.secondaryContainer,
-      child: Padding(
-        padding: const EdgeInsets.fromLTRB(14, 10, 10, 10),
-        child: Row(
-          children: [
-            Icon(Icons.lock, size: 18,
-                color: theme.colorScheme.onSecondaryContainer),
-            const SizedBox(width: 10),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    l10n.billLocked,
-                    style: theme.textTheme.bodyMedium?.copyWith(
-                      color: theme.colorScheme.onSecondaryContainer,
-                    ),
+    return SQCard(
+      tone: SQTone.live,
+      filled: true,
+      padding: const EdgeInsets.fromLTRB(
+        SQSpace.lg,
+        SQSpace.md,
+        SQSpace.sm,
+        SQSpace.md,
+      ),
+      child: Row(
+        children: [
+          Icon(Icons.lock, size: 18, color: sq.live),
+          const SizedBox(width: SQSpace.md),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  l10n.billLocked,
+                  style: theme.textTheme.bodyMedium?.copyWith(color: sq.live),
+                ),
+                Text(
+                  l10n.billLockedAt(lockedAt),
+                  style: theme.textTheme.labelSmall?.copyWith(
+                    color: sq.live.withValues(alpha: 0.75),
                   ),
-                  Text(
-                    l10n.billLockedAt(lockedAt),
-                    style: theme.textTheme.labelSmall?.copyWith(
-                      color: theme.colorScheme.onSecondaryContainer,
-                    ),
-                  ),
-                ],
-              ),
+                ),
+              ],
             ),
-            TextButton(
-              onPressed: () => _confirmReopen(context, ref, l10n),
-              child: Text(l10n.reopenBill),
-            ),
-          ],
-        ),
+          ),
+          TextButton(
+            onPressed: () => _confirmReopen(context, ref, l10n),
+            child: Text(l10n.reopenBill),
+          ),
+        ],
       ),
     );
   }
@@ -488,6 +720,9 @@ class _LockBanner extends ConsumerWidget {
             child: Text(l10n.cancel),
           ),
           FilledButton(
+            style: FilledButton.styleFrom(
+              backgroundColor: Theme.of(dialogContext).colorScheme.error,
+            ),
             onPressed: () => Navigator.of(dialogContext).pop(true),
             child: Text(l10n.reopenBillCta),
           ),
@@ -497,91 +732,6 @@ class _LockBanner extends ConsumerWidget {
 
     if (confirmed != true) return;
     await ref.read(sessionRepositoryProvider).reopenBill(sessionId);
-  }
-}
-
-class _Summary extends StatelessWidget {
-  const _Summary({required this.breakdown});
-
-  final FeeBreakdown breakdown;
-
-  @override
-  Widget build(BuildContext context) {
-    final l10n = AppLocalizations.of(context)!;
-    final theme = Theme.of(context);
-
-    return Card(
-      color: theme.colorScheme.primaryContainer,
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              formatCentavos(breakdown.chargedTotalCentavos),
-              style: theme.textTheme.displaySmall?.copyWith(
-                color: theme.colorScheme.onPrimaryContainer,
-                fontWeight: FontWeight.w700,
-              ),
-            ),
-            Text(
-              l10n.totalCost,
-              style: theme.textTheme.bodyMedium
-                  ?.copyWith(color: theme.colorScheme.onPrimaryContainer),
-            ),
-            const SizedBox(height: 14),
-            Row(
-              children: [
-                _Metric(
-                  label: l10n.collected,
-                  value: formatCentavos(breakdown.collectedCentavos),
-                ),
-                const SizedBox(width: 24),
-                _Metric(
-                  label: l10n.outstanding,
-                  value: formatCentavos(breakdown.outstandingCentavos),
-                ),
-                const Spacer(),
-                Text(
-                  l10n.paidOf(breakdown.paidCount, breakdown.lines.length),
-                  style: theme.textTheme.bodyMedium
-                      ?.copyWith(color: theme.colorScheme.onPrimaryContainer),
-                ),
-              ],
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class _Metric extends StatelessWidget {
-  const _Metric({required this.label, required this.value});
-
-  final String label;
-  final String value;
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          value,
-          style: theme.textTheme.titleMedium?.copyWith(
-            color: theme.colorScheme.onPrimaryContainer,
-            fontWeight: FontWeight.w700,
-          ),
-        ),
-        Text(
-          label,
-          style: theme.textTheme.labelSmall
-              ?.copyWith(color: theme.colorScheme.onPrimaryContainer),
-        ),
-      ],
-    );
   }
 }
 
@@ -605,18 +755,36 @@ class _FeeTile extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final l10n = AppLocalizations.of(context)!;
     final theme = Theme.of(context);
+    final sq = context.sq;
     final repo = ref.read(playerRepositoryProvider);
+    final paid = line.hasPaid;
 
+    final showStepper = feeMode == FeeMode.perHead && !isLocked;
     final shuttles = feeMode == FeeMode.perHead && line.shuttleShareCentavos > 0
-        ? ' · ${formatCentavos(line.shuttleShareCentavos)} ${l10n.shuttlesLabel.toLowerCase()}'
-        : '';
+        ? '${formatCentavos(line.shuttleShareCentavos)} '
+            '${l10n.shuttlesLabel.toLowerCase()}'
+        : null;
 
-    return Card(
-      margin: const EdgeInsets.only(bottom: 6),
-      child: Padding(
-        padding: const EdgeInsets.fromLTRB(12, 4, 4, 4),
+    return SQPressable(
+      // Buong hilera ang target. Isang kamay ang hawak ng pera, ang isa ay
+      // ang telepono — walang natitirang daliri para sa maliit na chip.
+      onTap: () =>
+          repo.updatePlayer(sessionId, line.playerId, hasPaid: !paid),
+      haptic: HapticLevel.impact,
+      semanticLabel: '${line.name} ${formatCentavos(line.totalCentavos)}',
+      child: SQCard(
+        tone: paid ? SQTone.live : SQTone.neutral,
+        filled: paid,
+        padding: EdgeInsets.fromLTRB(
+          SQSpace.lg,
+          SQSpace.sm,
+          showStepper ? SQSpace.xs : SQSpace.md,
+          SQSpace.sm,
+        ),
         child: Row(
           children: [
+            _PaidMark(paid: paid),
+            const SizedBox(width: SQSpace.md),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -626,59 +794,97 @@ class _FeeTile extends ConsumerWidget {
                       Flexible(
                         child: Text(
                           line.name,
-                          style: theme.textTheme.titleMedium,
+                          style: theme.textTheme.titleMedium?.copyWith(
+                            color: paid ? sq.live : sq.ink,
+                          ),
                           overflow: TextOverflow.ellipsis,
                         ),
                       ),
                       if (line.hasLeft)
                         Padding(
-                          padding: const EdgeInsets.only(left: 6),
+                          padding: const EdgeInsets.only(left: SQSpace.sm),
                           child: Text(
                             l10n.leftEarlyTag,
                             style: theme.textTheme.labelSmall
-                                ?.copyWith(color: theme.colorScheme.outline),
+                                ?.copyWith(color: sq.inkFaint),
                           ),
                         ),
                     ],
                   ),
-                  Text(
-                    '${formatCentavos(line.totalCentavos)}$shuttles',
-                    style: theme.textTheme.bodyMedium?.copyWith(
-                      color: theme.colorScheme.onSurfaceVariant,
+                  if (shuttles != null)
+                    Text(
+                      shuttles,
+                      style: theme.textTheme.bodySmall
+                          ?.copyWith(color: sq.inkMuted)
+                          .tabular,
                     ),
-                  ),
                 ],
               ),
             ),
+            Text(
+              formatCentavos(line.totalCentavos),
+              style: theme.textTheme.titleMedium
+                  ?.copyWith(color: paid ? sq.live : sq.ink)
+                  .tabular,
+            ),
 
             // Bilang ng shuttle — stepper, para hindi mag-type ang QM.
-            if (feeMode == FeeMode.perHead && !isLocked) ...[
+            if (showStepper) ...[
+              const SizedBox(width: SQSpace.xs),
               IconButton(
-                icon: const Icon(Icons.remove_circle_outline),
+                visualDensity: VisualDensity.compact,
+                icon: Icon(Icons.remove_circle_outline, color: sq.inkFaint),
                 onPressed: () =>
                     repo.adjustShuttles(sessionId, line.playerId, -1),
               ),
               IconButton(
-                icon: const Icon(Icons.add_circle_outline),
+                visualDensity: VisualDensity.compact,
+                icon: Icon(Icons.add_circle_outline, color: sq.inkMuted),
                 onPressed: () =>
                     repo.adjustShuttles(sessionId, line.playerId, 1),
               ),
             ],
-
-            // Malaking target: ito ang pinipindot habang tumatanggap ng bayad.
-            Padding(
-              padding: const EdgeInsets.only(left: 4, right: 8),
-              child: FilterChip(
-                selected: line.hasPaid,
-                label: Text(l10n.markPaid),
-                onSelected: (value) => repo.updatePlayer(
-                  sessionId,
-                  line.playerId,
-                  hasPaid: value,
-                ),
-              ),
-            ),
           ],
+        ),
+      ),
+    );
+  }
+}
+
+/// Ang tsek na pumapasok kapag may nagbayad.
+///
+/// Lumalaki ito paloob sa halip na biglang sumulpot: ang pagbabago ng
+/// pera ay dapat may kaunting timbang, kahit isang-katlong segundo lang.
+class _PaidMark extends StatelessWidget {
+  const _PaidMark({required this.paid});
+
+  final bool paid;
+
+  @override
+  Widget build(BuildContext context) {
+    final sq = context.sq;
+
+    return AnimatedContainer(
+      duration: context.motion(SQDuration.state),
+      curve: SQCurve.arrive,
+      width: 30,
+      height: 30,
+      decoration: BoxDecoration(
+        color: paid ? sq.live : Colors.transparent,
+        shape: BoxShape.circle,
+        border: Border.all(
+          color: paid ? sq.live : sq.line,
+          width: paid ? 1 : 1.8,
+        ),
+      ),
+      child: AnimatedScale(
+        scale: paid ? 1 : 0.4,
+        duration: context.motion(SQDuration.state),
+        curve: SQCurve.arrive,
+        child: AnimatedOpacity(
+          opacity: paid ? 1 : 0,
+          duration: context.motion(SQDuration.tap),
+          child: const Icon(Icons.check_rounded, size: 19, color: Colors.white),
         ),
       ),
     );

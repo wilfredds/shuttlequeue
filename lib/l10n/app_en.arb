@@ -521,5 +521,57 @@
         "type": "String"
       }
     }
+  },
+  "detailOnCourt": "{count} on court",
+  "@detailOnCourt": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "queueReady": "Ready to start",
+  "courtPlayingFor": "{minutes}m in play",
+  "@courtPlayingFor": {
+    "placeholders": {
+      "minutes": {
+        "type": "int"
+      }
+    }
+  },
+  "waitingLongest": "longest {minutes}m",
+  "@waitingLongest": {
+    "placeholders": {
+      "minutes": {
+        "type": "int"
+      }
+    }
+  },
+  "fairnessSpread": "Games {low}–{high}",
+  "@fairnessSpread": {
+    "placeholders": {
+      "low": {
+        "type": "int"
+      },
+      "high": {
+        "type": "int"
+      }
+    }
+  },
+  "fairnessEven": "Everyone within one game",
+  "filterAll": "All",
+  "rosterFilterEmpty": "Nobody here right now",
+  "perPlayerLabel": "Each player pays",
+  "recapMissedTitle": "Never got on court",
+  "recapPlayersLabel": "players",
+  "recapOnCourtLabel": "on court",
+  "recapShuttlesLabel": "shuttles",
+  "nextUpNames": "Next: {names}",
+  "@nextUpNames": {
+    "placeholders": {
+      "names": {
+        "type": "String"
+      }
+    }
   }
 }

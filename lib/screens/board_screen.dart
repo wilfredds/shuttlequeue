@@ -11,6 +11,8 @@ import '../models/enums.dart';
 import '../models/match.dart';
 import '../models/session_player.dart';
 import '../providers/session_providers.dart';
+import '../theme.dart';
+import '../widgets/motion.dart';
 import '../widgets/skill_badge.dart';
 
 /// Ang "Up Next" board — pangalawang screen na nakaharap sa lahat.
@@ -103,6 +105,7 @@ class _BoardScreenState extends ConsumerState<BoardScreen> {
                               courts: courts,
                               liveMatches: liveMatches,
                               playersById: playersById,
+                              fill: true,
                             ),
                           ),
                           const SizedBox(width: 24),
@@ -150,6 +153,10 @@ ThemeData _boardTheme() {
   return ThemeData(
     brightness: Brightness.dark,
     scaffoldBackgroundColor: _bg,
+    // Kasama ang pamilya ng font: may sariling Theme ang board, at kung
+    // hindi ito sasabihin ay Roboto ang lalabas sa TV habang Inter ang
+    // nasa telepono ng QM. Dalawang magkaibang app ang magmumukha nito.
+    fontFamily: kTextFamily,
     colorScheme: const ColorScheme.dark(
       primary: _accent,
       surface: _card,
@@ -162,24 +169,34 @@ class _Courts extends StatelessWidget {
     required this.courts,
     required this.liveMatches,
     required this.playersById,
+    this.fill = false,
   });
 
   final List<Court> courts;
   final Map<String, GameMatch> liveMatches;
   final Map<String, SessionPlayer> playersById;
 
+  /// Sa malapad na screen, pinaghahatian ng mga court ang buong taas.
+  /// Sa telepono ay hindi — naka-Column siya roon na walang hangganan.
+  final bool fill;
+
   @override
   Widget build(BuildContext context) {
+    final panels = [
+      for (final court in courts)
+        _CourtPanel(
+          court: court,
+          match: liveMatches[court.id],
+          playersById: playersById,
+        ),
+    ];
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
-      mainAxisSize: MainAxisSize.min,
+      mainAxisSize: fill ? MainAxisSize.max : MainAxisSize.min,
       children: [
-        for (final court in courts)
-          _CourtPanel(
-            court: court,
-            match: liveMatches[court.id],
-            playersById: playersById,
-          ),
+        for (final panel in panels)
+          if (fill) Expanded(child: panel) else panel,
       ],
     );
   }
@@ -216,15 +233,29 @@ class _CourtPanel extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.center,
         children: [
           SizedBox(
-            width: 110,
-            child: Text(
-              court.label,
-              style: const TextStyle(
-                color: Colors.white70,
-                fontSize: 22,
-                fontWeight: FontWeight.w800,
-                letterSpacing: -0.5,
-              ),
+            width: 124,
+            child: Row(
+              children: [
+                // Ang tumitibok na tuldok ang nagsasabing buhay ang
+                // screen. Sa TV na nakasabit buong gabi, ito ang
+                // pagkakaiba ng "live" at "na-freeze kanina pa".
+                if (isPlaying) ...[
+                  SQLivePulse(color: _accent, size: 8),
+                  const SizedBox(width: 10),
+                ],
+                Flexible(
+                  child: Text(
+                    court.label,
+                    style: TextStyle(
+                      color: isPlaying ? Colors.white : Colors.white38,
+                      fontSize: 24,
+                      letterSpacing: -0.5,
+                    ).scoreboard,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+              ],
             ),
           ),
           Expanded(
@@ -232,11 +263,16 @@ class _CourtPanel extends StatelessWidget {
                 ? Row(
                     children: [
                       Expanded(child: _Team(ids: match!.teamA, playersById: playersById)),
-                      const Padding(
-                        padding: EdgeInsets.symmetric(horizontal: 12),
-                        child: Text(
-                          'vs',
-                          style: TextStyle(color: Colors.white30, fontSize: 18),
+                      // Lambat, hindi salita: ang parehong motif ng
+                      // courts screen, nakatayo dahil magkatabi ang
+                      // dalawang panig dito.
+                      Container(
+                        width: 2,
+                        height: 58,
+                        margin: const EdgeInsets.symmetric(horizontal: 18),
+                        decoration: BoxDecoration(
+                          color: Colors.white.withValues(alpha: 0.12),
+                          borderRadius: BorderRadius.circular(1),
                         ),
                       ),
                       Expanded(child: _Team(ids: match!.teamB, playersById: playersById)),
@@ -335,15 +371,19 @@ class _Queue extends StatelessWidget {
               l10n.boardUpNext.toUpperCase(),
               style: const TextStyle(
                 color: _accent,
-                fontSize: 18,
-                fontWeight: FontWeight.w900,
+                fontSize: 19,
                 letterSpacing: 2,
-              ),
+              ).scoreboard,
             ),
             const Spacer(),
-            Text(
-              l10n.boardPlayersWaiting(queue.length),
-              style: const TextStyle(color: Colors.white38, fontSize: 16),
+            // May puwang sa kanan: nandoon ang pindutang isara, at
+            // nagkakapatong sila noon sa malapad na screen.
+            Padding(
+              padding: const EdgeInsets.only(right: 40),
+              child: Text(
+                l10n.boardPlayersWaiting(queue.length),
+                style: const TextStyle(color: Colors.white38, fontSize: 16),
+              ),
             ),
           ],
         ),
@@ -404,9 +444,8 @@ class _QueueRow extends StatelessWidget {
               '$position',
               style: TextStyle(
                 color: isNextUp ? _accent : Colors.white24,
-                fontSize: isNextUp ? 24 : 18,
-                fontWeight: FontWeight.w800,
-              ),
+                fontSize: isNextUp ? 25 : 19,
+              ).scoreboard,
             ),
           ),
           _TierDot(tier: player.skillTier),
@@ -429,9 +468,8 @@ class _QueueRow extends StatelessWidget {
             l10n.boardGamesCount(player.gamesPlayed),
             style: const TextStyle(
               color: Colors.white70,
-              fontSize: 20,
-              fontWeight: FontWeight.w700,
-            ),
+              fontSize: 21,
+            ).scoreboard,
           ),
           const SizedBox(width: 4),
           Text(
@@ -447,8 +485,8 @@ class _QueueRow extends StatelessWidget {
               style: TextStyle(
                 color: isLongWait ? const Color(0xFFE8A33D) : Colors.white38,
                 fontSize: 18,
-                fontWeight: isLongWait ? FontWeight.w800 : FontWeight.w500,
-              ),
+                fontWeight: isLongWait ? FontWeight.w600 : FontWeight.w500,
+              ).tabular,
             ),
           ),
         ],

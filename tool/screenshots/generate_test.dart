@@ -7,7 +7,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:shuttlequeue/app.dart';
 import 'package:shuttlequeue/l10n/app_localizations.dart';
 import 'package:shuttlequeue/models/bill_line.dart';
 import 'package:shuttlequeue/models/club.dart';
@@ -23,6 +22,7 @@ import 'package:shuttlequeue/providers/firebase_providers.dart';
 import 'package:shuttlequeue/providers/session_providers.dart';
 import 'package:shuttlequeue/screens/session_detail_screen.dart';
 import 'package:shuttlequeue/screens/sessions_list_screen.dart';
+import 'package:shuttlequeue/theme.dart';
 
 /// Gumagawa ng mga screenshot para sa pag-anunsyo ng app.
 ///
@@ -47,33 +47,47 @@ final _today = DateTime(
   20,
 );
 
-/// Kinukuha ang Roboto at ang MaterialIcons mula mismo sa Flutter SDK.
-/// Kung wala ito, kahon-kahon ang teksto sa golden — walang saysay iyon
-/// bilang screenshot.
+/// Kinukuha ang mga font ng app mula sa asset bundle, at ang MaterialIcons
+/// mula sa SDK. Kung wala ito, kahon-kahon ang teksto sa golden — walang
+/// saysay iyon bilang screenshot.
+///
+/// Mahalaga na ang TOTOONG font ang nakukuha dito: ang larawang ipo-post sa
+/// Facebook ay dapat kaparehong-kapareho ng makikita ng QM sa telepono
+/// niya. Noong Roboto pa ang ginagamit dito, ang screenshot ay isang
+/// magandang kasinungalingan.
 Future<void> _loadFonts() async {
-  final root = Platform.environment['FLUTTER_ROOT'];
-  if (root == null) {
-    throw StateError('Walang FLUTTER_ROOT — patakbuhin sa `flutter test`.');
-  }
-  final dir = Directory('$root/bin/cache/artifacts/material_fonts');
-
-  Future<void> load(String family, List<String> files) async {
+  Future<void> loadAssets(String family, List<String> assets) async {
     final loader = FontLoader(family);
-    for (final name in files) {
-      final bytes = await File('${dir.path}/$name').readAsBytes();
-      loader.addFont(
-        Future.value(ByteData.view(Uint8List.fromList(bytes).buffer)),
-      );
+    for (final path in assets) {
+      loader.addFont(rootBundle.load(path));
     }
     await loader.load();
   }
 
-  // IISA lang ang timbang nang sinasadya. Nang irehistro ko ang tatlo sa
-  // iisang pamilya, hindi natugma ang w600 na hinihingi ng tema at
-  // PUTING KAHON ang lumabas sa mga button. Isang file, at ang Flutter
-  // na ang bahalang gumawa ng bold.
-  await load('Roboto', const ['roboto-regular.ttf']);
-  await load('MaterialIcons', const ['materialicons-regular.otf']);
+  await loadAssets('Inter', const [
+    'assets/fonts/Inter-400.ttf',
+    'assets/fonts/Inter-500.ttf',
+    'assets/fonts/Inter-600.ttf',
+  ]);
+  await loadAssets('Archivo', const [
+    'assets/fonts/Archivo-600.ttf',
+    'assets/fonts/Archivo-800.ttf',
+  ]);
+
+  final root = Platform.environment['FLUTTER_ROOT'];
+  if (root == null) {
+    throw StateError('Walang FLUTTER_ROOT — patakbuhin sa `flutter test`.');
+  }
+  final iconFile = File(
+    '$root/bin/cache/artifacts/material_fonts/materialicons-regular.otf',
+  );
+  final icons = FontLoader('MaterialIcons')
+    ..addFont(
+      iconFile.readAsBytes().then(
+            (bytes) => ByteData.view(Uint8List.fromList(bytes).buffer),
+          ),
+    );
+  await icons.load();
 }
 
 Session _session({
@@ -225,34 +239,6 @@ final _members = <ClubMember>[
     ),
 ];
 
-/// Ang tema ng app, may iisang pagbabago para lang sa larawan: nakapako
-/// ang pamilya ng font sa "Roboto".
-///
-/// Kung hindi, ang mga label ng FilledButton ay lumalabas na PUTING KAHON.
-/// Ang mga estilo ng button ay hindi nagmamana ng pamilya, kaya bumabagsak
-/// sila sa panlaping font ng flutter_test — at doon, kahon ang bawat titik.
-/// Ang natitirang teksto ay ayos lang dahil namamana nito ang Roboto na
-/// nirehistro natin.
-///
-/// Hindi ito nakikita sa tunay na app: totoong Roboto ang meron doon.
-ThemeData _screenshotTheme() {
-  final base = buildShuttleQueueTheme();
-  return base.copyWith(
-    textTheme: base.textTheme.apply(fontFamily: 'Roboto'),
-    primaryTextTheme: base.primaryTextTheme.apply(fontFamily: 'Roboto'),
-    filledButtonTheme: FilledButtonThemeData(
-      style: FilledButton.styleFrom(
-        minimumSize: const Size(64, 56),
-        textStyle: const TextStyle(
-          fontFamily: 'Roboto',
-          fontSize: 18,
-          fontWeight: FontWeight.w600,
-        ),
-      ),
-    ),
-  );
-}
-
 Future<void> _shoot(
   WidgetTester tester,
   String file,
@@ -308,7 +294,7 @@ Future<void> _shoot(
         ],
         child: MaterialApp(
           debugShowCheckedModeBanner: false,
-          theme: _screenshotTheme(),
+          theme: buildShuttleQueueTheme(),
           localizationsDelegates: AppLocalizations.localizationsDelegates,
           supportedLocales: AppLocalizations.supportedLocales,
           home: Builder(

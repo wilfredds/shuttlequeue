@@ -343,6 +343,24 @@ And two traps on the way out: a Firestore deploy auto-creates a missing database
 in `nam5` (US) unless `firebase.json` names a location, and a deleted database ID
 cannot be reused for a few minutes.
 
+### A palette token that quietly changed meaning
+
+Replacing the seeded `ColorScheme` with a designed one redefined
+`colorScheme.outline` from a mid-grey — which several screens were using as
+**text** colour — to `#DDE4DE`, a border colour. Nothing failed. The analyzer
+was clean, all 220 tests passed, and the import screen, the regulars list, the
+sign-in privacy note and the fee-mode help text all went very nearly invisible
+on white.
+
+It was found by rendering the screens and looking at them, which is the only
+way it could have been found: contrast is not a type error.
+
+**Lesson:** a shared token is an interface. When you change what one means,
+grep every consumer of it — the compiler sees the name, never the meaning.
+There are now no callers of `colorScheme.outline` for text anywhere in the app;
+secondary text asks `context.sq` for `inkMuted` or `inkFaint`, which are named
+after their job.
+
 ### Flutter web does not content-hash main.dart.js
 
 **Symptom.** Fixes were deployed and verified, and the user still saw the old
@@ -383,3 +401,52 @@ and the list queries that caused the dead taps.
 What is *not* covered, and should be said plainly: `fake_cloud_firestore`
 ignores `GetOptions`, so the cache-versus-server behaviour of the club lookup
 is reasoned about and observed in production, but not unit-tested.
+
+---
+
+## 11. The look
+
+The design system lives in one file, `lib/theme.dart`, and is reachable from
+any widget as `context.sq`. This is deliberate: when colour lives in the
+screens, six screens drift into six apps.
+
+**The scene decides, not the category.** This app is used standing up, in a
+bright gym, with one hand, by someone being interrupted. So: light UI (a dark
+screen under fluorescent tubes is a mirror), 48–60dp targets, and the one
+screen that is *not* used in the hand — the Up Next board on a TV — is dark,
+because that one is read from thirty feet away.
+
+**Two typefaces, two distances.** `Inter` for reading in the hand, with tabular
+figures everywhere a number changes, so the money column never shuffles
+sideways. `Archivo` at width 88 for reading across the gym: court numbers, game
+counts, the night's total. Both are bundled as assets rather than fetched by
+`google_fonts`, because the whole architecture assumes no network;
+`tool/build_fonts.py` rebuilds them and fails if the peso sign is missing.
+
+**Colour means something or it is not used.** Green is live, amber is *there is
+something for you to do*, red is wrong or missed. There is no decorative
+colour. The amber count on the Courts tab appears only when a court is free
+*and* four people are waiting — a badge that is always present is a badge
+nobody reads.
+
+**One shape vocabulary**, in `widgets/surfaces.dart` and `widgets/motion.dart`:
+`SQCard`, `SQStatusPill`, `SQSectionHeading`, `SQEmptyState`, `SQCommandBar`,
+`SQPressable`, `SQEntrance`, `SQLivePulse`, `SQCountUp`. Two layout rules keep
+screens from arguing with each other: the floating button is only ever *add*,
+and every other screen-level action lives in the command bar at the bottom —
+which is also how the two stacked FABs that covered the row you were trying to
+tap got removed.
+
+**Motion has one repeating element** — the live pulse — and everything else is
+a response to an action. Two rules were learned the hard way and are enforced
+in the shared widgets rather than trusted to each screen: animation
+controllers are built in `initState` (§9), and nothing measures itself during
+layout (an `AnimatedSize` in the courts command bar crashed the smoke test with
+`RenderAnimatedSize was mutated in its own performLayout`; the fix was to
+delete the animation, because it was not worth the risk).
+
+**The screenshots are the app.** `tool/screenshots/generate_test.dart` renders
+the marketing images from the real theme with the real fonts and real-shaped
+data. It is what caught the money screen overflowing at 390pt, the three-line
+hint crushing the court actions, and the invisible text above. A design pass
+without a rendering step is a guess.

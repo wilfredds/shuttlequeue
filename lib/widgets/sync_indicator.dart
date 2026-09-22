@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../l10n/app_localizations.dart';
+import '../theme.dart';
 
 /// Ipinapakita lang kapag may hindi pa naipapadalang sulat.
 ///
@@ -19,24 +20,26 @@ class SyncIndicator extends StatelessWidget {
     final l10n = AppLocalizations.of(context)!;
     final theme = Theme.of(context);
 
+    final sq = context.sq;
+
     return Container(
       width: double.infinity,
-      color: theme.colorScheme.secondaryContainer,
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+      decoration: BoxDecoration(
+        color: sq.surfaceMuted,
+        border: Border(bottom: BorderSide(color: sq.line)),
+      ),
+      padding: const EdgeInsets.symmetric(
+        horizontal: SQSpace.lg,
+        vertical: SQSpace.md,
+      ),
       child: Row(
         children: [
-          Icon(
-            Icons.cloud_off_outlined,
-            size: 20,
-            color: theme.colorScheme.onSecondaryContainer,
-          ),
-          const SizedBox(width: 10),
+          Icon(Icons.cloud_off_outlined, size: 18, color: sq.inkMuted),
+          const SizedBox(width: SQSpace.md),
           Expanded(
             child: Text(
               l10n.pendingSync,
-              style: theme.textTheme.bodyMedium?.copyWith(
-                color: theme.colorScheme.onSecondaryContainer,
-              ),
+              style: theme.textTheme.bodySmall?.copyWith(color: sq.inkStrong),
             ),
           ),
         ],

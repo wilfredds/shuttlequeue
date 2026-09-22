@@ -8,6 +8,7 @@ import '../models/session.dart';
 import '../providers/session_providers.dart';
 import '../services/money.dart';
 import '../services/session_schedule.dart';
+import '../theme.dart';
 
 /// Gumawa o mag-edit ng session. Piso ang ipinapakita; centavos ang
 /// iniimbak — sa boundary na ito nangyayari ang conversion, isang beses lang.
@@ -264,8 +265,10 @@ class _SessionFormScreenState extends ConsumerState<SessionFormScreen> {
               decoration: InputDecoration(
                 labelText: l10n.sessionNameLabel,
                 hintText: l10n.sessionNameHint,
-                border: const OutlineInputBorder(),
-                prefixIcon: const Icon(Icons.event_outlined),
+                // Hindi kalendaryo: may TOTOONG petsa sa ibaba na may
+                // kalendaryo rin, at dalawang magkatulad na icon sa isang
+                // porma ay nagpapahina sa dalawa.
+                prefixIcon: const Icon(Icons.sports_tennis_outlined),
               ),
               textCapitalization: TextCapitalization.words,
               textInputAction: TextInputAction.next,
@@ -276,7 +279,6 @@ class _SessionFormScreenState extends ConsumerState<SessionFormScreen> {
               decoration: InputDecoration(
                 labelText: l10n.venueLabel,
                 hintText: l10n.venueHint,
-                border: const OutlineInputBorder(),
                 prefixIcon: const Icon(Icons.place_outlined),
               ),
               textCapitalization: TextCapitalization.words,
@@ -291,8 +293,7 @@ class _SessionFormScreenState extends ConsumerState<SessionFormScreen> {
               child: InputDecorator(
                 decoration: InputDecoration(
                   labelText: l10n.dateLabel,
-                  border: const OutlineInputBorder(),
-                  prefixIcon: const Icon(Icons.calendar_today_outlined),
+                    prefixIcon: const Icon(Icons.calendar_today_outlined),
                 ),
                 child: Text(
                   DateFormat('EEE, MMM d, y · h:mm a').format(_sessionDate),
@@ -312,7 +313,6 @@ class _SessionFormScreenState extends ConsumerState<SessionFormScreen> {
               controller: _courtFeeController,
               decoration: InputDecoration(
                 labelText: l10n.courtFeeLabel,
-                border: const OutlineInputBorder(),
                 prefixText: '₱ ',
               ),
               keyboardType: const TextInputType.numberWithOptions(decimal: true),
@@ -323,7 +323,6 @@ class _SessionFormScreenState extends ConsumerState<SessionFormScreen> {
               controller: _shuttlePriceController,
               decoration: InputDecoration(
                 labelText: l10n.shuttlePriceLabel,
-                border: const OutlineInputBorder(),
                 prefixText: '₱ ',
               ),
               keyboardType: const TextInputType.numberWithOptions(decimal: true),
@@ -353,7 +352,7 @@ class _SessionFormScreenState extends ConsumerState<SessionFormScreen> {
                   ? l10n.feeModePerHeadHelp
                   : l10n.feeModeAmericanHelp,
               style: theme.textTheme.bodyMedium?.copyWith(
-                color: theme.colorScheme.outline,
+                color: context.sq.inkMuted,
               ),
             ),
 
@@ -390,6 +389,13 @@ class _SessionFormScreenState extends ConsumerState<SessionFormScreen> {
   }
 }
 
+ButtonStyle _stepperStyle(BuildContext context) => IconButton.styleFrom(
+      backgroundColor: context.sq.surfaceMuted,
+      foregroundColor: context.sq.inkStrong,
+      side: BorderSide(color: context.sq.line),
+      minimumSize: const Size(48, 48),
+    );
+
 /// Bilang ng court: malalaking +/- na button imbes na keyboard.
 class _CourtStepper extends StatelessWidget {
   const _CourtStepper({required this.value, required this.onChanged});
@@ -405,7 +411,6 @@ class _CourtStepper extends StatelessWidget {
     return InputDecorator(
       decoration: InputDecoration(
         labelText: l10n.courtsLabel,
-        border: const OutlineInputBorder(),
         prefixIcon: const Icon(Icons.grid_view_outlined),
       ),
       child: Row(
@@ -417,12 +422,14 @@ class _CourtStepper extends StatelessWidget {
             ),
           ),
           IconButton.filledTonal(
+            style: _stepperStyle(context),
             onPressed: value > 1 ? () => onChanged(value - 1) : null,
             icon: const Icon(Icons.remove),
             tooltip: '−',
           ),
-          const SizedBox(width: 8),
+          const SizedBox(width: SQSpace.sm),
           IconButton.filledTonal(
+            style: _stepperStyle(context),
             onPressed: value < 12 ? () => onChanged(value + 1) : null,
             icon: const Icon(Icons.add),
             tooltip: '+',

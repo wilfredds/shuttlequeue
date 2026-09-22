@@ -879,4 +879,56 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get exportFailed =>
       'Could not export. Check your connection and try again.';
+
+  @override
+  String detailOnCourt(int count) {
+    return '$count on court';
+  }
+
+  @override
+  String get queueReady => 'Ready to start';
+
+  @override
+  String courtPlayingFor(int minutes) {
+    return '${minutes}m in play';
+  }
+
+  @override
+  String waitingLongest(int minutes) {
+    return 'longest ${minutes}m';
+  }
+
+  @override
+  String fairnessSpread(int low, int high) {
+    return 'Games $low–$high';
+  }
+
+  @override
+  String get fairnessEven => 'Everyone within one game';
+
+  @override
+  String get filterAll => 'All';
+
+  @override
+  String get rosterFilterEmpty => 'Nobody here right now';
+
+  @override
+  String get perPlayerLabel => 'Each player pays';
+
+  @override
+  String get recapMissedTitle => 'Never got on court';
+
+  @override
+  String get recapPlayersLabel => 'players';
+
+  @override
+  String get recapOnCourtLabel => 'on court';
+
+  @override
+  String get recapShuttlesLabel => 'shuttles';
+
+  @override
+  String nextUpNames(String names) {
+    return 'Next: $names';
+  }
 }

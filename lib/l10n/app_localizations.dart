@@ -1437,6 +1437,90 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Could not export. Check your connection and try again.'**
   String get exportFailed;
+
+  /// No description provided for @detailOnCourt.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} on court'**
+  String detailOnCourt(int count);
+
+  /// No description provided for @queueReady.
+  ///
+  /// In en, this message translates to:
+  /// **'Ready to start'**
+  String get queueReady;
+
+  /// No description provided for @courtPlayingFor.
+  ///
+  /// In en, this message translates to:
+  /// **'{minutes}m in play'**
+  String courtPlayingFor(int minutes);
+
+  /// No description provided for @waitingLongest.
+  ///
+  /// In en, this message translates to:
+  /// **'longest {minutes}m'**
+  String waitingLongest(int minutes);
+
+  /// No description provided for @fairnessSpread.
+  ///
+  /// In en, this message translates to:
+  /// **'Games {low}–{high}'**
+  String fairnessSpread(int low, int high);
+
+  /// No description provided for @fairnessEven.
+  ///
+  /// In en, this message translates to:
+  /// **'Everyone within one game'**
+  String get fairnessEven;
+
+  /// No description provided for @filterAll.
+  ///
+  /// In en, this message translates to:
+  /// **'All'**
+  String get filterAll;
+
+  /// No description provided for @rosterFilterEmpty.
+  ///
+  /// In en, this message translates to:
+  /// **'Nobody here right now'**
+  String get rosterFilterEmpty;
+
+  /// No description provided for @perPlayerLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Each player pays'**
+  String get perPlayerLabel;
+
+  /// No description provided for @recapMissedTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Never got on court'**
+  String get recapMissedTitle;
+
+  /// No description provided for @recapPlayersLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'players'**
+  String get recapPlayersLabel;
+
+  /// No description provided for @recapOnCourtLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'on court'**
+  String get recapOnCourtLabel;
+
+  /// No description provided for @recapShuttlesLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'shuttles'**
+  String get recapShuttlesLabel;
+
+  /// No description provided for @nextUpNames.
+  ///
+  /// In en, this message translates to:
+  /// **'Next: {names}'**
+  String nextUpNames(String names);
 }
 
 class _AppLocalizationsDelegate

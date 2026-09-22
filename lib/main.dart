@@ -1,7 +1,9 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_core/firebase_core.dart';
-import 'package:flutter/foundation.dart' show kIsWeb;
+import 'package:flutter/foundation.dart'
+    show LicenseEntryWithLineBreaks, LicenseRegistry, kIsWeb;
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart' show rootBundle;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'app.dart';
@@ -10,6 +12,8 @@ import 'firebase_options.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
+  _registerFontLicenses();
 
   await Firebase.initializeApp(
     options: DefaultFirebaseOptions.currentPlatform,
@@ -24,6 +28,24 @@ Future<void> main() async {
 
   // ProviderScope = root ng lahat ng Riverpod providers (auth, session, queue).
   runApp(const ProviderScope(child: ShuttleQueueApp()));
+}
+
+/// Ang dalawang font ay nakasilid sa app, kaya ipinapamahagi natin sila sa
+/// bawat build. Hinihingi ng SIL Open Font License na kasama ang teksto ng
+/// lisensya — dito ito nakakabit, kaya lumalabas ito sa karaniwang
+/// "licenses" na pahina ng Flutter nang walang dagdag na screen.
+void _registerFontLicenses() {
+  LicenseRegistry.addLicense(() async* {
+    for (final (family, path) in const [
+      ('Inter', 'assets/fonts/OFL-Inter.txt'),
+      ('Archivo', 'assets/fonts/OFL-Archivo.txt'),
+    ]) {
+      yield LicenseEntryWithLineBreaks(
+        [family],
+        await rootBundle.loadString(path),
+      );
+    }
+  });
 }
 
 /// Offline-first ang buong app: madalas walang signal ang QM sa court,

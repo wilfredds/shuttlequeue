@@ -6,7 +6,10 @@ import '../models/enums.dart';
 import '../models/session_player.dart';
 import '../providers/session_providers.dart';
 import '../repositories/player_repository.dart';
+import '../theme.dart';
+import '../widgets/motion.dart';
 import '../widgets/skill_badge.dart';
+import '../widgets/surfaces.dart';
 import '../widgets/sync_indicator.dart';
 import 'import_screen.dart';
 
@@ -15,18 +18,33 @@ import 'import_screen.dart';
 /// Lahat ng edit ay inline at isang tap — walang malalim na modal chain.
 /// Ang pagtanggal ay may undo (R-03), walang confirmation dialog: mabilis
 /// ang gabi at madalas ang maling pindot.
-class RosterScreen extends ConsumerWidget {
+///
+/// BAKIT MAY SALAAN. Sa dalawampu't apat na pangalan, ang tanong ng QM ay
+/// hindi "sino ang nandito" kundi **"sino ang nagpapahinga"** o "sino ang
+/// umuwi na". Ang isang mahabang listahan ay hindi sumasagot niyan nang
+/// hindi ka nag-i-scroll nang tatlong beses. Ang mga salaan sa itaas ay may
+/// bilang, kaya nasasagot ang tanong bago pa mapindot.
+class RosterScreen extends ConsumerStatefulWidget {
   const RosterScreen({super.key, required this.sessionId});
 
   final String sessionId;
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<RosterScreen> createState() => _RosterScreenState();
+}
+
+class _RosterScreenState extends ConsumerState<RosterScreen> {
+  /// Null ang ibig sabihin ay lahat.
+  PlayerStatus? _filter;
+
+  @override
+  Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
-    final theme = Theme.of(context);
+    final sessionId = widget.sessionId;
     final playersAsync = ref.watch(playersProvider(sessionId));
 
     return Scaffold(
+      backgroundColor: context.sq.canvas,
       body: playersAsync.when(
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (_, _) => _Empty(sessionId: sessionId),
@@ -34,68 +52,75 @@ class RosterScreen extends ConsumerWidget {
           final players = synced.data;
           if (players.isEmpty) return _Empty(sessionId: sessionId);
 
-          final queued = players
-              .where((p) => p.status == PlayerStatus.queued)
-              .length;
+          final shown = _filter == null
+              ? players
+              : players.where((p) => p.status == _filter).toList();
 
           return Column(
             children: [
               SyncIndicator(hasPendingWrites: synced.hasPendingWrites),
-              Padding(
-                padding: const EdgeInsets.fromLTRB(16, 12, 16, 4),
-                child: Row(
-                  children: [
-                    Text(
-                      l10n.rosterCountSummary(players.length, queued),
-                      style: theme.textTheme.titleSmall?.copyWith(
-                        color: theme.colorScheme.onSurfaceVariant,
-                      ),
-                    ),
-                  ],
+              _FilterBar(
+                players: players,
+                selected: _filter,
+                onSelect: (value) => setState(() => _filter = value),
+                onPaste: () => Navigator.of(context).push(
+                  MaterialPageRoute<void>(
+                    builder: (_) => ImportScreen(sessionId: sessionId),
+                  ),
                 ),
               ),
               Expanded(
-                child: ListView.builder(
-                  padding: const EdgeInsets.fromLTRB(8, 0, 8, 96),
-                  itemCount: players.length,
-                  itemBuilder: (context, index) => _PlayerTile(
-                    sessionId: sessionId,
-                    player: players[index],
-                    allPlayers: players,
-                  ),
-                ),
+                child: shown.isEmpty
+                    ? Center(
+                        child: Text(
+                          l10n.rosterFilterEmpty,
+                          style: Theme.of(context)
+                              .textTheme
+                              .bodyMedium
+                              ?.copyWith(color: context.sq.inkMuted),
+                        ),
+                      )
+                    : ListView.builder(
+                        padding: const EdgeInsets.fromLTRB(
+                          SQSpace.lg,
+                          SQSpace.xs,
+                          SQSpace.lg,
+                          104,
+                        ),
+                        itemCount: shown.length,
+                        itemBuilder: (context, index) => Padding(
+                          padding: const EdgeInsets.only(bottom: SQSpace.sm),
+                          child: SQEntrance(
+                            // Susi ang pangalan: kapag nagpalit ng salaan,
+                            // bagong pasok ang animasyon — kaya halatang
+                            // nagbago ang listahan.
+                            key: ValueKey('${_filter?.value}-${shown[index].id}'),
+                            index: index,
+                            child: _PlayerTile(
+                              sessionId: sessionId,
+                              player: shown[index],
+                            ),
+                          ),
+                        ),
+                      ),
               ),
             ],
           );
         },
       ),
-      floatingActionButton: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.end,
-        children: [
-          FloatingActionButton.small(
-            heroTag: 'addOne',
-            tooltip: l10n.addPlayer,
-            onPressed: () => _addPlayerDialog(context, ref),
-            child: const Icon(Icons.person_add_alt),
-          ),
-          const SizedBox(height: 10),
-          FloatingActionButton.extended(
-            heroTag: 'paste',
-            onPressed: () => Navigator.of(context).push(
-              MaterialPageRoute<void>(
-                builder: (_) => ImportScreen(sessionId: sessionId),
-              ),
-            ),
-            icon: const Icon(Icons.content_paste),
-            label: Text(l10n.pasteList),
-          ),
-        ],
+      // Isang lumulutang na pindutan lang. Ang pagdagdag ng huling
+      // dumating ay paulit-ulit hanggang alas-nuwebe, kaya ito ang nasa
+      // hinlalaki; ang pag-paste ay isang beses lang sa simula ng gabi at
+      // nasa hanay ng mga salaan sa itaas.
+      floatingActionButton: FloatingActionButton.extended(
+        onPressed: () => _addPlayerDialog(context),
+        icon: const Icon(Icons.person_add_alt),
+        label: Text(l10n.addPlayer),
       ),
     );
   }
 
-  Future<void> _addPlayerDialog(BuildContext context, WidgetRef ref) async {
+  Future<void> _addPlayerDialog(BuildContext context) async {
     final l10n = AppLocalizations.of(context)!;
     final controller = TextEditingController();
     var tier = SkillTier.intermediate;
@@ -112,17 +137,17 @@ class RosterScreen extends ConsumerWidget {
                 controller: controller,
                 autofocus: true,
                 textCapitalization: TextCapitalization.words,
-                decoration: InputDecoration(
-                  labelText: l10n.playerNameLabel,
-                  border: const OutlineInputBorder(),
-                ),
+                decoration: InputDecoration(labelText: l10n.playerNameLabel),
                 onSubmitted: (value) =>
                     Navigator.of(dialogContext).pop(value.trim()),
               ),
-              const SizedBox(height: 16),
+              const SizedBox(height: SQSpace.lg),
               Row(
                 children: [
-                  Text(l10n.skillLabel),
+                  Text(
+                    l10n.skillLabel,
+                    style: Theme.of(dialogContext).textTheme.bodyMedium,
+                  ),
                   const Spacer(),
                   SkillTierSelector(
                     value: tier,
@@ -152,12 +177,175 @@ class RosterScreen extends ConsumerWidget {
 
     // Late arrival: pumapasok na may gamesPlayed ng pinakamababa sa aktibo,
     // kaya hindi siya lumulundag sa pila at hindi rin nalilibing.
-    final current = ref.read(playersProvider(sessionId)).value?.data ?? const [];
+    final current =
+        ref.read(playersProvider(widget.sessionId)).value?.data ?? const [];
     await ref.read(playerRepositoryProvider).addLateArrival(
-          sessionId,
+          widget.sessionId,
           NewPlayer(name: name, skillTier: tier),
           current,
         );
+  }
+}
+
+/// Mga salaan na may bilang. Ang bilang ang totoong laman nito — ang
+/// pagpindot ay pangalawa lang.
+class _FilterBar extends StatelessWidget {
+  const _FilterBar({
+    required this.players,
+    required this.selected,
+    required this.onSelect,
+    required this.onPaste,
+  });
+
+  final List<SessionPlayer> players;
+  final PlayerStatus? selected;
+  final ValueChanged<PlayerStatus?> onSelect;
+  final VoidCallback onPaste;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+
+    int count(PlayerStatus status) =>
+        players.where((p) => p.status == status).length;
+
+    final entries = <(PlayerStatus?, String, int, SQTone)>[
+      (null, l10n.filterAll, players.length, SQTone.neutral),
+      (
+        PlayerStatus.queued,
+        l10n.statusQueued,
+        count(PlayerStatus.queued),
+        SQTone.neutral,
+      ),
+      (
+        PlayerStatus.playing,
+        l10n.statusPlaying,
+        count(PlayerStatus.playing),
+        SQTone.live,
+      ),
+      (
+        PlayerStatus.resting,
+        l10n.statusResting,
+        count(PlayerStatus.resting),
+        SQTone.neutral,
+      ),
+      (
+        PlayerStatus.left,
+        l10n.statusLeft,
+        count(PlayerStatus.left),
+        SQTone.neutral,
+      ),
+    ];
+
+    return SizedBox(
+      height: 62,
+      child: Row(
+        children: [
+          Expanded(
+            child: ListView(
+              scrollDirection: Axis.horizontal,
+              padding: const EdgeInsets.symmetric(
+                horizontal: SQSpace.lg,
+                vertical: SQSpace.md,
+              ),
+              children: [
+                for (final (status, label, value, tone) in entries)
+                  // Nawawala ang walang laman na salaan. Ang "Left early 0"
+                  // ay hindi kapaki-pakinabang, at ang bawat karagdagang
+                  // pindutan ay nagpapabagal sa paghahanap.
+                  if (status == null || value > 0)
+                    Padding(
+                      padding: const EdgeInsets.only(right: SQSpace.sm),
+                      child: _FilterChip(
+                        label: label,
+                        count: value,
+                        tone: tone,
+                        selected: selected == status,
+                        onTap: () => onSelect(status),
+                      ),
+                    ),
+              ],
+            ),
+          ),
+          Padding(
+            padding: const EdgeInsets.only(right: SQSpace.sm),
+            child: IconButton(
+              tooltip: l10n.pasteList,
+              onPressed: onPaste,
+              icon: const Icon(Icons.content_paste),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _FilterChip extends StatelessWidget {
+  const _FilterChip({
+    required this.label,
+    required this.count,
+    required this.tone,
+    required this.selected,
+    required this.onTap,
+  });
+
+  final String label;
+  final int count;
+  final SQTone tone;
+  final bool selected;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final sq = context.sq;
+    final tones = toneColors(context, tone);
+
+    return SQPressable(
+      onTap: onTap,
+      scale: 0.94,
+      borderRadius: SQRadius.pill,
+      child: AnimatedContainer(
+        duration: context.motion(SQDuration.state),
+        curve: SQCurve.enter,
+        padding: const EdgeInsets.symmetric(
+          horizontal: SQSpace.md,
+          vertical: SQSpace.sm,
+        ),
+        decoration: BoxDecoration(
+          color: selected ? sq.ink : theme.colorScheme.surface,
+          borderRadius: SQRadius.pill,
+          border: Border.all(color: selected ? sq.ink : sq.line),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            if (tone == SQTone.live && count > 0 && !selected) ...[
+              SQLivePulse(color: tones.foreground, size: 6),
+              const SizedBox(width: SQSpace.xs),
+            ],
+            Text(
+              label,
+              style: theme.textTheme.labelMedium?.copyWith(
+                color: selected ? Colors.white : sq.inkStrong,
+              ),
+            ),
+            const SizedBox(width: 6),
+            Text(
+              '$count',
+              style: theme.textTheme.labelMedium
+                  ?.copyWith(
+                    color: selected
+                        ? Colors.white.withValues(alpha: 0.75)
+                        : sq.inkFaint,
+                  )
+                  .tabular,
+            ),
+          ],
+        ),
+      ),
+    );
   }
 }
 
@@ -169,64 +357,63 @@ class _Empty extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
-    final theme = Theme.of(context);
 
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.all(32),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(
-              Icons.groups_outlined,
-              size: 72,
-              color: theme.colorScheme.outline,
-            ),
-            const SizedBox(height: 16),
-            Text(l10n.rosterEmptyTitle, style: theme.textTheme.titleLarge),
-            const SizedBox(height: 8),
-            Text(
-              l10n.rosterEmptyBody,
-              textAlign: TextAlign.center,
-              style: theme.textTheme.bodyLarge?.copyWith(
-                color: theme.colorScheme.outline,
-              ),
-            ),
-          ],
+    return SQEmptyState(
+      icon: Icons.groups_outlined,
+      title: l10n.rosterEmptyTitle,
+      body: l10n.rosterEmptyBody,
+      // Dati, ang walang lamang roster ay nagsasabi ng "i-paste ang listahan"
+      // pero walang mapipindot para gawin iyon. Ngayon, nandito na ang
+      // pinto sa mismong lugar kung saan itinuturo.
+      action: FilledButton.icon(
+        onPressed: () => Navigator.of(context).push(
+          MaterialPageRoute<void>(
+            builder: (_) => ImportScreen(sessionId: sessionId),
+          ),
         ),
+        icon: const Icon(Icons.content_paste),
+        label: Text(l10n.pasteList),
       ),
     );
   }
 }
 
 class _PlayerTile extends ConsumerWidget {
-  const _PlayerTile({
-    required this.sessionId,
-    required this.player,
-    required this.allPlayers,
-  });
+  const _PlayerTile({required this.sessionId, required this.player});
 
   final String sessionId;
   final SessionPlayer player;
-  final List<SessionPlayer> allPlayers;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final l10n = AppLocalizations.of(context)!;
     final theme = Theme.of(context);
+    final sq = context.sq;
     final repo = ref.read(playerRepositoryProvider);
     final hasLeft = player.status == PlayerStatus.left;
+    final isPlaying = player.status == PlayerStatus.playing;
 
     return Dismissible(
       key: ValueKey(player.id),
       direction: DismissDirection.endToStart,
       background: Container(
         alignment: Alignment.centerRight,
-        padding: const EdgeInsets.only(right: 20),
-        color: theme.colorScheme.errorContainer,
-        child: Icon(
-          Icons.delete_outline,
-          color: theme.colorScheme.onErrorContainer,
+        padding: const EdgeInsets.only(right: SQSpace.xl),
+        decoration: BoxDecoration(
+          color: sq.alarmWash,
+          borderRadius: SQRadius.cardShape,
+          border: Border.all(color: sq.alarm.withValues(alpha: 0.28)),
+        ),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.end,
+          children: [
+            Text(
+              l10n.removePlayer,
+              style: theme.textTheme.labelMedium?.copyWith(color: sq.alarm),
+            ),
+            const SizedBox(width: SQSpace.sm),
+            Icon(Icons.delete_outline, color: sq.alarm),
+          ],
         ),
       ),
       onDismissed: (_) async {
@@ -246,73 +433,105 @@ class _PlayerTile extends ConsumerWidget {
           ),
         );
       },
-      child: Card(
-        margin: const EdgeInsets.symmetric(horizontal: 4, vertical: 4),
-        child: Opacity(
-          opacity: hasLeft ? 0.5 : 1,
-          child: Padding(
-            padding: const EdgeInsets.fromLTRB(8, 4, 4, 4),
-            child: Row(
-              children: [
-                SkillTierSelector(
-                  value: player.skillTier,
-                  onChanged: hasLeft ? null : (tier) => _changeTier(ref, tier),
-                ),
-                const SizedBox(width: 4),
-                Expanded(
-                  child: InkWell(
-                    onTap: () => _renameDialog(context, repo, l10n),
-                    child: Padding(
-                      padding: const EdgeInsets.symmetric(vertical: 10),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            player.name,
-                            style: theme.textTheme.titleMedium?.copyWith(
-                              decoration:
-                                  hasLeft ? TextDecoration.lineThrough : null,
-                            ),
+      child: Opacity(
+        opacity: hasLeft ? 0.55 : 1,
+        child: SQCard(
+          tone: isPlaying ? SQTone.live : SQTone.neutral,
+          padding: const EdgeInsets.fromLTRB(
+            SQSpace.sm,
+            SQSpace.xs,
+            SQSpace.xs,
+            SQSpace.xs,
+          ),
+          child: Row(
+            children: [
+              SkillTierSelector(
+                value: player.skillTier,
+                onChanged: hasLeft ? null : (tier) => _changeTier(ref, tier),
+              ),
+              const SizedBox(width: SQSpace.xs),
+              Expanded(
+                child: SQPressable(
+                  onTap: () => _renameDialog(context, repo, l10n),
+                  borderRadius: const BorderRadius.all(
+                    Radius.circular(SQRadius.md),
+                  ),
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(vertical: SQSpace.md),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          player.name,
+                          style: theme.textTheme.titleMedium?.copyWith(
+                            decoration:
+                                hasLeft ? TextDecoration.lineThrough : null,
                           ),
-                          Text(
-                            '${_statusLabel(l10n, player.status)} · '
-                            '${l10n.gamesPlayedShort(player.gamesPlayed)}',
-                            style: theme.textTheme.bodySmall?.copyWith(
-                              color: theme.colorScheme.outline,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                        const SizedBox(height: 3),
+                        Row(
+                          children: [
+                            if (isPlaying) ...[
+                              SQLivePulse(color: sq.live, size: 6),
+                              const SizedBox(width: SQSpace.xs),
+                            ],
+                            Text(
+                              _statusLabel(l10n, player.status),
+                              style: theme.textTheme.bodySmall?.copyWith(
+                                color: isPlaying ? sq.live : sq.inkMuted,
+                              ),
                             ),
-                          ),
-                        ],
-                      ),
+                          ],
+                        ),
+                      ],
                     ),
                   ),
                 ),
-                PopupMenuButton<PlayerStatus>(
-                  icon: const Icon(Icons.more_vert),
-                  onSelected: (status) => repo.updatePlayer(
-                    sessionId,
-                    player.id,
-                    status: status,
-                  ),
-                  itemBuilder: (context) => [
-                    if (player.status != PlayerStatus.queued)
-                      PopupMenuItem(
-                        value: PlayerStatus.queued,
-                        child: Text(l10n.markQueued),
-                      ),
-                    if (player.status == PlayerStatus.queued)
-                      PopupMenuItem(
-                        value: PlayerStatus.resting,
-                        child: Text(l10n.markResting),
-                      ),
-                    if (player.status != PlayerStatus.left)
-                      PopupMenuItem(
-                        value: PlayerStatus.left,
-                        child: Text(l10n.markLeft),
-                      ),
-                  ],
+              ),
+              // Ang bilang ng laro ay nasa boses ng scoreboard: ito ang
+              // sinusukat ng patas na pila, at ito ang tinitingnan ng QM
+              // kapag may nagreklamo.
+              SQCountUp(
+                value: player.gamesPlayed,
+                builder: (context, value) => Text(
+                  value.round().toString(),
+                  style: theme.textTheme.titleLarge
+                      ?.copyWith(
+                        color: player.gamesPlayed == 0 ? sq.inkFaint : sq.ink,
+                      )
+                      .scoreboard,
                 ),
-              ],
-            ),
+              ),
+              const SizedBox(width: SQSpace.xs),
+              Text(
+                l10n.boardGamesLabel,
+                style: theme.textTheme.labelSmall?.copyWith(color: sq.inkFaint),
+              ),
+              PopupMenuButton<PlayerStatus>(
+                icon: Icon(Icons.more_vert, color: sq.inkFaint),
+                onSelected: (status) =>
+                    repo.updatePlayer(sessionId, player.id, status: status),
+                itemBuilder: (context) => [
+                  if (player.status != PlayerStatus.queued)
+                    PopupMenuItem(
+                      value: PlayerStatus.queued,
+                      child: Text(l10n.markQueued),
+                    ),
+                  if (player.status == PlayerStatus.queued)
+                    PopupMenuItem(
+                      value: PlayerStatus.resting,
+                      child: Text(l10n.markResting),
+                    ),
+                  if (player.status != PlayerStatus.left)
+                    PopupMenuItem(
+                      value: PlayerStatus.left,
+                      child: Text(l10n.markLeft),
+                    ),
+                ],
+              ),
+            ],
           ),
         ),
       ),
@@ -362,12 +581,8 @@ class _PlayerTile extends ConsumerWidget {
           controller: controller,
           autofocus: true,
           textCapitalization: TextCapitalization.words,
-          decoration: InputDecoration(
-            labelText: l10n.playerNameLabel,
-            border: const OutlineInputBorder(),
-          ),
-          onSubmitted: (value) =>
-              Navigator.of(dialogContext).pop(value.trim()),
+          decoration: InputDecoration(labelText: l10n.playerNameLabel),
+          onSubmitted: (value) => Navigator.of(dialogContext).pop(value.trim()),
         ),
         actions: [
           TextButton(

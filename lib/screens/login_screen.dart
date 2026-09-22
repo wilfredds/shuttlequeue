@@ -10,6 +10,7 @@ import '../providers/auth_providers.dart';
 import '../services/account_security.dart';
 import '../services/auth_error_mapper.dart';
 import '../widgets/shuttle_mark.dart';
+import '../theme.dart';
 
 /// Email/password sign-in at registration sa iisang screen.
 /// Walang navigation pagkatapos mag-login — ang AuthGate na ang
@@ -262,7 +263,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                       _isRegistering ? l10n.registerTagline : l10n.loginTagline,
                       textAlign: TextAlign.center,
                       style: theme.textTheme.bodyLarge?.copyWith(
-                        color: theme.colorScheme.outline,
+                        color: context.sq.inkMuted,
                       ),
                     ),
                     const SizedBox(height: 32),
@@ -421,14 +422,22 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                                       : l10n.signInButton,
                             ),
                     ),
+                    // Dalawang berdeng link na magkasinglakas ay nagiging
+                    // dalawang panukala. Ang "nakalimutan ko" ay tahimik —
+                    // hinahanap mo lang ito kapag kailangan; ang paglipat ng
+                    // mode ay siyang totoong pangalawang daan.
                     if (!_isRegistering) ...[
-                      const SizedBox(height: 4),
+                      const SizedBox(height: SQSpace.xs),
                       TextButton(
+                        style: TextButton.styleFrom(
+                          foregroundColor: context.sq.inkMuted,
+                          textStyle: theme.textTheme.bodyMedium,
+                        ),
                         onPressed: _isSubmitting ? null : _sendReset,
                         child: Text(l10n.forgotPassword),
                       ),
                     ],
-                    const SizedBox(height: 4),
+                    const SizedBox(height: SQSpace.xs),
                     TextButton(
                       onPressed: _isSubmitting ? null : _switchMode,
                       child: Text(
@@ -444,7 +453,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                       l10n.privacyNote,
                       textAlign: TextAlign.center,
                       style: theme.textTheme.bodySmall?.copyWith(
-                        color: theme.colorScheme.outline,
+                        color: context.sq.inkMuted,
                       ),
                     ),
                     const SizedBox(height: 10),
@@ -454,7 +463,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                       'v$kAppVersion',
                       textAlign: TextAlign.center,
                       style: theme.textTheme.bodySmall?.copyWith(
-                        color: theme.colorScheme.outline.withValues(
+                        color: context.sq.inkFaint.withValues(
                           alpha: 0.7,
                         ),
                       ),

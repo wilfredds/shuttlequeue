@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'l10n/app_localizations.dart';
 import 'providers/sync_error_provider.dart';
 import 'screens/auth_gate.dart';
+import 'theme.dart';
 
 /// Root widget. Walang Firebase init dito — nasa main.dart yun — para
 /// pwedeng i-pump ang buong app sa widget tests nang walang network.
@@ -20,37 +21,6 @@ class ShuttleQueueApp extends StatelessWidget {
       home: const _SyncErrorListener(child: AuthGate()),
     );
   }
-}
-
-/// Theme tuned for the live-session UX requirement: the QM is standing in a
-/// bright gym, glancing at arm's length. High contrast + large tap targets.
-///
-/// Nasa labas ng widget ito para may isang pinagmumulan ang hitsura ng app —
-/// ginagamit din ito ng screenshot generator sa `tool/screenshots/`, kaya
-/// ang ipinapakita sa anunsyo ay siya ring nakikita ng QM.
-ThemeData buildShuttleQueueTheme() {
-  const courtGreen = Color(0xFF1B5E20);
-
-  final base = ThemeData(
-    colorScheme: ColorScheme.fromSeed(
-      seedColor: courtGreen,
-      brightness: Brightness.light,
-    ),
-    materialTapTargetSize: MaterialTapTargetSize.padded,
-    visualDensity: VisualDensity.standard,
-  );
-
-  return base.copyWith(
-    // 56dp minimum ang mga pangunahing buttons — madaling tamaan kahit
-    // nagmamadali at isang kamay lang ang libre.
-    filledButtonTheme: FilledButtonThemeData(
-      style: FilledButton.styleFrom(
-        minimumSize: const Size(64, 56),
-        textStyle: const TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
-      ),
-    ),
-    listTileTheme: const ListTileThemeData(minTileHeight: 56),
-  );
 }
 
 /// Ipinapakita ang mga sulat na tinanggihan ng server.

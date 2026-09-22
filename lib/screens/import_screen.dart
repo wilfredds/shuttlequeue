@@ -9,6 +9,7 @@ import '../repositories/player_repository.dart';
 import '../services/name_matcher.dart';
 import '../services/roster_parser.dart';
 import '../widgets/skill_badge.dart';
+import '../theme.dart';
 
 /// Ang pinakamalaking time-saver: paste ng Messenger list papuntang roster.
 ///
@@ -203,7 +204,7 @@ class _ImportScreenState extends ConsumerState<ImportScreen> {
               Text(
                 l10n.importEmpty,
                 style: theme.textTheme.bodyMedium?.copyWith(
-                  color: theme.colorScheme.outline,
+                  color: context.sq.inkMuted,
                 ),
               )
             else ...[
@@ -273,7 +274,7 @@ class _ImportScreenState extends ConsumerState<ImportScreen> {
                 Text(
                   l10n.importSkippedExplain,
                   style: theme.textTheme.bodySmall?.copyWith(
-                    color: theme.colorScheme.outline,
+                    color: context.sq.inkMuted,
                   ),
                 ),
                 const SizedBox(height: 8),
@@ -303,14 +304,14 @@ class _ImportScreenState extends ConsumerState<ImportScreen> {
                   Icon(
                     Icons.privacy_tip_outlined,
                     size: 18,
-                    color: theme.colorScheme.outline,
+                    color: context.sq.inkMuted,
                   ),
                   const SizedBox(width: 8),
                   Expanded(
                     child: Text(
                       l10n.importConsent,
                       style: theme.textTheme.bodySmall?.copyWith(
-                        color: theme.colorScheme.outline,
+                        color: context.sq.inkMuted,
                       ),
                     ),
                   ),
@@ -469,7 +470,7 @@ class _EntryTile extends StatelessWidget {
                           Text(
                             entry.note!,
                             style: theme.textTheme.bodySmall?.copyWith(
-                              color: theme.colorScheme.outline,
+                              color: context.sq.inkMuted,
                             ),
                           ),
                       ],

@@ -7,6 +7,7 @@ import '../models/enums.dart';
 import '../providers/session_providers.dart';
 import '../services/money.dart';
 import '../widgets/skill_badge.dart';
+import '../theme.dart';
 
 /// Ang regulars book, nakikita at naaayos.
 ///
@@ -34,14 +35,14 @@ class RegularsScreen extends ConsumerWidget {
                     Icon(
                       Icons.badge_outlined,
                       size: 72,
-                      color: theme.colorScheme.outline,
+                      color: context.sq.inkMuted,
                     ),
                     const SizedBox(height: 16),
                     Text(
                       l10n.regularsEmpty,
                       textAlign: TextAlign.center,
                       style: theme.textTheme.bodyLarge?.copyWith(
-                        color: theme.colorScheme.outline,
+                        color: context.sq.inkMuted,
                       ),
                     ),
                   ],
@@ -92,7 +93,7 @@ class _MemberTile extends ConsumerWidget {
                   Text(
                     subtitle,
                     style: theme.textTheme.bodySmall
-                        ?.copyWith(color: theme.colorScheme.outline),
+                        ?.copyWith(color: context.sq.inkMuted),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                   ),

@@ -16,7 +16,10 @@ import '../providers/sync_error_provider.dart';
 import '../services/data_export.dart';
 import '../services/money.dart';
 import '../services/session_grouping.dart';
+import '../theme.dart';
+import '../widgets/motion.dart';
 import '../widgets/shuttle_mark.dart';
+import '../widgets/surfaces.dart';
 import '../widgets/sync_indicator.dart';
 import 'regulars_screen.dart';
 import 'session_detail_screen.dart';
@@ -35,6 +38,7 @@ class SessionsListScreen extends ConsumerWidget {
     final sessionsAsync = ref.watch(sessionsProvider);
 
     return Scaffold(
+      backgroundColor: context.sq.canvas,
       floatingActionButton: _NewSessionButton(onPressed: () => openForm(context)),
       body: SafeArea(
         bottom: false,
@@ -98,7 +102,7 @@ class _Header extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final l10n = AppLocalizations.of(context)!;
     final theme = Theme.of(context);
-    final scheme = theme.colorScheme;
+    final sq = context.sq;
 
     final user = ref.watch(authStateChangesProvider).value;
     final name = user?.displayName?.trim();
@@ -113,15 +117,29 @@ class _Header extends ConsumerWidget {
 
     return Container(
       width: double.infinity,
-      color: scheme.primary,
-      padding: const EdgeInsets.fromLTRB(16, 14, 8, 16),
+      decoration: BoxDecoration(
+        color: sq.live,
+        // Bilugan ang ibaba: ang banda ay isang bagay na nakapatong sa
+        // pahina, hindi hangganan ng screen. Ito rin ang nagsasabing may
+        // naka-scroll pa sa ilalim niya.
+        borderRadius: const BorderRadius.vertical(
+          bottom: Radius.circular(SQRadius.sheet),
+        ),
+        boxShadow: sq.shadowLifted,
+      ),
+      padding: const EdgeInsets.fromLTRB(
+        SQSpace.lg,
+        SQSpace.md,
+        SQSpace.sm,
+        SQSpace.xl,
+      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
             children: [
-              ShuttleMark(size: 34, color: scheme.onPrimary),
-              const SizedBox(width: 10),
+              ShuttleMark(size: 32, color: Colors.white),
+              const SizedBox(width: SQSpace.md),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -129,9 +147,9 @@ class _Header extends ConsumerWidget {
                   children: [
                     Text(
                       l10n.appTitle,
-                      style: theme.textTheme.titleLarge?.copyWith(
-                        color: scheme.onPrimary,
-                        fontWeight: FontWeight.w700,
+                      style: theme.textTheme.headlineSmall?.copyWith(
+                        color: Colors.white,
+                        letterSpacing: -0.1,
                       ),
                     ),
                     if (name != null && name.isNotEmpty)
@@ -139,8 +157,8 @@ class _Header extends ConsumerWidget {
                         name,
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
-                        style: theme.textTheme.bodyMedium?.copyWith(
-                          color: scheme.onPrimary.withValues(alpha: 0.75),
+                        style: theme.textTheme.bodySmall?.copyWith(
+                          color: Colors.white.withValues(alpha: 0.75),
                         ),
                       ),
                   ],
@@ -148,7 +166,7 @@ class _Header extends ConsumerWidget {
               ),
               PopupMenuButton<String>(
                 tooltip: l10n.moreActions,
-                icon: Icon(Icons.more_vert, color: scheme.onPrimary),
+                icon: const Icon(Icons.more_vert, color: Colors.white),
                 onSelected: (value) => switch (value) {
                   'export' => _export(context, ref, l10n),
                   _ => _confirmSignOut(context, ref, l10n),
@@ -175,7 +193,7 @@ class _Header extends ConsumerWidget {
               ),
             ],
           ),
-          const SizedBox(height: 14),
+          const SizedBox(height: SQSpace.lg),
           Row(
             children: [
               Expanded(
@@ -190,12 +208,15 @@ class _Header extends ConsumerWidget {
                   ),
                 ),
               ),
-              const SizedBox(width: 10),
+              const SizedBox(width: SQSpace.md),
               Expanded(
                 child: _StatTile(
                   value: formatCentavos(owed),
                   label: l10n.statOwed,
                   icon: Icons.account_balance_wallet_outlined,
+                  // Ang utang ay hindi tahimik kapag may laman: amber ang
+                  // numero, kaya nakikita ito bago pa mabasa ang label.
+                  highlight: owed > 0,
                   onTap: () => Navigator.of(context).push(
                     MaterialPageRoute<void>(
                       builder: (_) => const RegularsScreen(),
@@ -320,57 +341,65 @@ class _StatTile extends StatelessWidget {
     required this.label,
     required this.icon,
     required this.onTap,
+    this.highlight = false,
   });
 
   final String value;
   final String label;
   final IconData icon;
   final VoidCallback onTap;
+  final bool highlight;
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final scheme = theme.colorScheme;
+    // Ang amber sa ibabaw ng berde ay mahina ang kontrast, kaya ang
+    // ginagamit dito ay maputlang bersyon nito — nakikitang iba sa puti,
+    // at nababasa pa rin sa ilalim ng ilaw ng gym.
+    final accent = highlight ? const Color(0xFFFFD79A) : Colors.white;
 
-    return Material(
-      color: scheme.onPrimary.withValues(alpha: 0.12),
-      borderRadius: BorderRadius.circular(14),
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(14),
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-          child: Row(
-            children: [
-              Icon(icon, size: 20, color: scheme.onPrimary),
-              const SizedBox(width: 10),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Text(
-                      value,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: theme.textTheme.titleMedium?.copyWith(
-                        color: scheme.onPrimary,
-                        fontWeight: FontWeight.w700,
-                      ),
+    return SQPressable(
+      onTap: onTap,
+      borderRadius: const BorderRadius.all(Radius.circular(SQRadius.lg)),
+      child: Container(
+        padding: const EdgeInsets.symmetric(
+          horizontal: SQSpace.md,
+          vertical: SQSpace.md,
+        ),
+        decoration: BoxDecoration(
+          color: Colors.white.withValues(alpha: 0.13),
+          borderRadius: const BorderRadius.all(Radius.circular(SQRadius.lg)),
+          border: Border.all(color: Colors.white.withValues(alpha: 0.14)),
+        ),
+        child: Row(
+          children: [
+            Icon(icon, size: 19, color: Colors.white.withValues(alpha: 0.8)),
+            const SizedBox(width: SQSpace.sm),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    value,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: theme.textTheme.titleMedium
+                        ?.copyWith(color: accent)
+                        .scoreboard,
+                  ),
+                  Text(
+                    label,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: theme.textTheme.labelSmall?.copyWith(
+                      color: Colors.white.withValues(alpha: 0.7),
                     ),
-                    Text(
-                      label,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: theme.textTheme.bodySmall?.copyWith(
-                        color: scheme.onPrimary.withValues(alpha: 0.75),
-                      ),
-                    ),
-                  ],
-                ),
+                  ),
+                ],
               ),
-            ],
-          ),
+            ),
+          ],
         ),
       ),
     );
@@ -388,16 +417,23 @@ class _SessionList extends StatelessWidget {
     final tonight = grouped.tonight;
 
     return ListView(
-      padding: const EdgeInsets.fromLTRB(12, 14, 12, 96),
+      padding: const EdgeInsets.fromLTRB(
+        SQSpace.lg,
+        SQSpace.xl,
+        SQSpace.lg,
+        104,
+      ),
       children: [
         if (tonight != null) _TonightCard(session: tonight),
         if (grouped.upcoming.isNotEmpty) ...[
           _SectionLabel(l10n.sectionUpcoming),
-          for (final s in grouped.upcoming) _SessionCard(session: s),
+          for (var i = 0; i < grouped.upcoming.length; i++)
+            SQEntrance(index: i, child: _SessionCard(session: grouped.upcoming[i])),
         ],
         if (grouped.earlier.isNotEmpty) ...[
           _SectionLabel(l10n.sectionEarlier),
-          for (final s in grouped.earlier) _SessionCard(session: s),
+          for (var i = 0; i < grouped.earlier.length; i++)
+            SQEntrance(index: i, child: _SessionCard(session: grouped.earlier[i])),
         ],
       ],
     );
@@ -413,20 +449,33 @@ class _SectionLabel extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     return Padding(
-      padding: const EdgeInsets.fromLTRB(4, 18, 4, 8),
-      child: Text(
-        text.toUpperCase(),
-        style: theme.textTheme.labelMedium?.copyWith(
-          color: theme.colorScheme.outline,
-          fontWeight: FontWeight.w700,
-          letterSpacing: 0.8,
-        ),
+      padding: const EdgeInsets.fromLTRB(
+        SQSpace.xs,
+        SQSpace.xxl,
+        SQSpace.xs,
+        SQSpace.md,
+      ),
+      child: Row(
+        children: [
+          Text(
+            text.toUpperCase(),
+            style: theme.textTheme.labelSmall?.copyWith(
+              color: context.sq.inkFaint,
+            ),
+          ),
+          const SizedBox(width: SQSpace.md),
+          Expanded(child: SQHairline()),
+        ],
       ),
     );
   }
 }
 
 /// Ang gabi ngayong araw, malaki at may isang malinaw na aksyon.
+///
+/// Ito ang **nag-iisang** bagay sa buong app na may ganitong bigat: puno
+/// ng berde, nakaangat, at may sarili nitong malaking pindutan. Kapag may
+/// pangalawa, hindi na alam ng mata kung saan titingin muna.
 class _TonightCard extends StatelessWidget {
   const _TonightCard({required this.session});
 
@@ -436,84 +485,85 @@ class _TonightCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
     final theme = Theme.of(context);
-    final scheme = theme.colorScheme;
+    final sq = context.sq;
     final isLive = session.status == SessionStatus.live;
 
-    return Card(
-      margin: EdgeInsets.zero,
-      clipBehavior: Clip.antiAlias,
-      elevation: 0,
-      color: scheme.primaryContainer,
-      child: InkWell(
-        onTap: () => _open(context),
-        child: Padding(
-          padding: const EdgeInsets.all(18),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                children: [
-                  if (isLive) ...[
-                    _LiveDot(color: scheme.primary),
-                    const SizedBox(width: 8),
-                  ],
-                  Text(
-                    isLive ? l10n.sessionStatusLive : l10n.tonightLabel,
-                    style: theme.textTheme.labelMedium?.copyWith(
-                      color: scheme.primary,
-                      fontWeight: FontWeight.w800,
-                      letterSpacing: 0.8,
+    return SQPressable(
+      onTap: () => _open(context),
+      scale: 0.99,
+      borderRadius: SQRadius.heroShape,
+      child: Container(
+        padding: const EdgeInsets.all(SQSpace.xl),
+        decoration: BoxDecoration(
+          color: sq.live,
+          borderRadius: SQRadius.heroShape,
+          boxShadow: sq.shadowLifted,
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Ang estado ay tatak sa tabi ng pamagat, hindi maliit na
+            // salita sa ibabaw nito. Ang salitang nakapatong sa pamagat ay
+            // nagpapahina sa pamagat; ang tatak sa gilid ay nagsasabi ng
+            // ibang bagay — kung anong kalagayan ang gabi ngayon.
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Expanded(
+                  child: Text(
+                    session.title,
+                    style: theme.textTheme.headlineLarge?.copyWith(
+                      color: Colors.white,
                     ),
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
                   ),
-                ],
-              ),
-              const SizedBox(height: 8),
-              Text(
-                session.title,
-                style: theme.textTheme.headlineSmall?.copyWith(
-                  color: scheme.onPrimaryContainer,
-                  fontWeight: FontWeight.w700,
                 ),
-                maxLines: 2,
-                overflow: TextOverflow.ellipsis,
-              ),
-              const SizedBox(height: 4),
-              Text(
-                DateFormat('h:mm a').format(session.sessionDate) +
-                    (session.venue.isEmpty ? '' : ' · ${session.venue}'),
-                style: theme.textTheme.bodyLarge?.copyWith(
-                  color: scheme.onPrimaryContainer.withValues(alpha: 0.8),
+                const SizedBox(width: SQSpace.md),
+                _HeroStatus(
+                  label: isLive ? l10n.sessionStatusLive : l10n.tonightLabel,
+                  live: isLive,
                 ),
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
+              ],
+            ),
+            const SizedBox(height: SQSpace.xs),
+            Text(
+              DateFormat('h:mm a').format(session.sessionDate) +
+                  (session.venue.isEmpty ? '' : ' · ${session.venue}'),
+              style: theme.textTheme.bodyMedium?.copyWith(
+                color: Colors.white.withValues(alpha: 0.8),
               ),
-              const SizedBox(height: 14),
-              Row(
-                children: [
-                  _Fact(
-                    icon: Icons.grid_view_outlined,
-                    label: l10n.courtCountLabel(session.courtCount),
-                    color: scheme.onPrimaryContainer,
-                  ),
-                  const SizedBox(width: 16),
-                  _Fact(
-                    icon: Icons.payments_outlined,
-                    label: formatCentavos(session.courtFeeCentavos),
-                    color: scheme.onPrimaryContainer,
-                  ),
-                ],
-              ),
-              const SizedBox(height: 16),
-              FilledButton.icon(
-                style: FilledButton.styleFrom(
-                  minimumSize: const Size.fromHeight(50),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+            ),
+            const SizedBox(height: SQSpace.lg),
+            Row(
+              children: [
+                _Fact(
+                  icon: Icons.grid_view_outlined,
+                  label: l10n.courtCountLabel(session.courtCount),
+                  color: Colors.white,
                 ),
-                onPressed: () => _open(context),
-                icon: const Icon(Icons.play_arrow_rounded),
-                label: Text(isLive ? l10n.resumeNight : l10n.openNight),
+                const SizedBox(width: SQSpace.lg),
+                _Fact(
+                  icon: Icons.payments_outlined,
+                  label: formatCentavos(session.courtFeeCentavos),
+                  color: Colors.white,
+                ),
+              ],
+            ),
+            const SizedBox(height: SQSpace.lg),
+            FilledButton.icon(
+              style: FilledButton.styleFrom(
+                minimumSize: const Size.fromHeight(52),
+                backgroundColor: Colors.white,
+                foregroundColor: sq.live,
               ),
-            ],
-          ),
+              onPressed: () => _open(context),
+              icon: const Icon(Icons.play_arrow_rounded, size: 24),
+              label: Text(isLive ? l10n.resumeNight : l10n.openNight),
+            ),
+          ],
         ),
       ),
     );
@@ -528,75 +578,45 @@ class _TonightCard extends StatelessWidget {
   }
 }
 
-/// Tahimik na tibok — sapat para mapansin, hindi sapat para makaabala.
-class _LiveDot extends StatefulWidget {
-  const _LiveDot({required this.color});
+/// Tatak ng estado sa ibabaw ng berde.
+///
+/// Sarili nitong hugis at hindi [SQStatusPill]: lahat ng tono ng pill ay
+/// madilim sa maputlang likod, at dito ay kabaligtaran. Isang lugar lang
+/// ito ginagamit — ang kard ng gabi ngayong araw.
+class _HeroStatus extends StatelessWidget {
+  const _HeroStatus({required this.label, required this.live});
 
-  final Color color;
-
-  @override
-  State<_LiveDot> createState() => _LiveDotState();
-}
-
-class _LiveDotState extends State<_LiveDot>
-    with SingleTickerProviderStateMixin {
-  // Ginagawa sa initState, HINDI `late final` na may inline na halaga.
-  //
-  // Ganito ako nadapa: `late final _controller = AnimationController(...)`
-  // ay ginagawa lang sa UNANG paggamit. Kapag naka-reduce motion, hindi
-  // ito nagagalaw ng build() — kaya ang dispose() na ang unang humipo, at
-  // doon ito ginagawa: bumubuo ng ticker sa isang patay nang element.
-  // "Looking up a deactivated widget's ancestor is unsafe" — crash sa
-  // pag-alis sa dashboard, para lang sa mga taong naka-reduce motion.
-  late final AnimationController _controller;
-
-  @override
-  void initState() {
-    super.initState();
-    _controller = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 1400),
-    );
-  }
-
-  @override
-  void didChangeDependencies() {
-    super.didChangeDependencies();
-    // Dito ligtas basahin ang MediaQuery. Kapag ayaw ng tao ng galaw,
-    // pinapatigil natin ang ticker mismo — hindi lang itinatago ang epekto.
-    final reduceMotion = MediaQuery.maybeDisableAnimationsOf(context) ?? false;
-    if (reduceMotion) {
-      _controller.stop();
-    } else if (!_controller.isAnimating) {
-      _controller.repeat(reverse: true);
-    }
-  }
-
-  @override
-  void dispose() {
-    _controller.dispose();
-    super.dispose();
-  }
+  final String label;
+  final bool live;
 
   @override
   Widget build(BuildContext context) {
-    final reduceMotion = MediaQuery.maybeDisableAnimationsOf(context) ?? false;
-    final dot = Container(
-      width: 9,
-      height: 9,
-      decoration: BoxDecoration(color: widget.color, shape: BoxShape.circle),
-    );
-
-    // Tuloy pa rin ang tuldok kapag naka-reduce motion — hindi na lang
-    // ito kumikislap. Ang impormasyon ay nananatili; ang galaw lang ang
-    // nawawala.
-    if (reduceMotion) return dot;
-
-    return FadeTransition(
-      opacity: Tween<double>(begin: 1, end: 0.35).animate(
-        CurvedAnimation(parent: _controller, curve: Curves.easeInOut),
+    return Container(
+      padding: const EdgeInsets.symmetric(
+        horizontal: SQSpace.md,
+        vertical: 6,
       ),
-      child: dot,
+      decoration: BoxDecoration(
+        color: Colors.white.withValues(alpha: 0.16),
+        borderRadius: SQRadius.pill,
+        border: Border.all(color: Colors.white.withValues(alpha: 0.22)),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          if (live) ...[
+            SQLivePulse(color: Colors.white, size: 6),
+            const SizedBox(width: SQSpace.xs),
+          ],
+          Text(
+            label,
+            style: Theme.of(context)
+                .textTheme
+                .labelMedium
+                ?.copyWith(color: Colors.white),
+          ),
+        ],
+      ),
     );
   }
 }
@@ -634,31 +654,40 @@ class _EmptyState extends StatelessWidget {
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
     final theme = Theme.of(context);
+    final sq = context.sq;
 
     return Center(
-      child: Padding(
-        padding: const EdgeInsets.all(32),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            ShuttleMark(size: 64, color: theme.colorScheme.outlineVariant),
-            const SizedBox(height: 20),
-            Text(l10n.sessionsEmptyTitle, style: theme.textTheme.titleLarge),
-            const SizedBox(height: 8),
-            Text(
-              l10n.sessionsEmptyBody,
-              textAlign: TextAlign.center,
-              style: theme.textTheme.bodyLarge?.copyWith(
-                color: theme.colorScheme.outline,
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(maxWidth: 420),
+        child: Padding(
+          padding: const EdgeInsets.all(SQSpace.xxl),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              // Ang marka mismo ang larawan dito — hindi generic na icon.
+              // Ito ang unang screen ng bagong QM, at dapat ShuttleQueue
+              // ang tingin niya, hindi "isang app".
+              ShuttleMark(size: 64, color: sq.line),
+              const SizedBox(height: SQSpace.xl),
+              Text(
+                l10n.sessionsEmptyTitle,
+                style: theme.textTheme.headlineSmall,
+                textAlign: TextAlign.center,
               ),
-            ),
-            const SizedBox(height: 24),
-            FilledButton.icon(
-              onPressed: onCreate,
-              icon: const Icon(Icons.add),
-              label: Text(l10n.newSession),
-            ),
-          ],
+              const SizedBox(height: SQSpace.sm),
+              Text(
+                l10n.sessionsEmptyBody,
+                textAlign: TextAlign.center,
+                style: theme.textTheme.bodyMedium?.copyWith(color: sq.inkMuted),
+              ),
+              const SizedBox(height: SQSpace.xxl),
+              FilledButton.icon(
+                onPressed: onCreate,
+                icon: const Icon(Icons.add),
+                label: Text(l10n.newSession),
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -674,58 +703,62 @@ class _SessionCard extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final l10n = AppLocalizations.of(context)!;
     final theme = Theme.of(context);
+    final sq = context.sq;
     final dateText =
         DateFormat('EEE, MMM d · h:mm a').format(session.sessionDate);
 
-    return Card(
-      margin: const EdgeInsets.only(bottom: 10),
-      clipBehavior: Clip.antiAlias,
-      child: InkWell(
+    return Padding(
+      padding: const EdgeInsets.only(bottom: SQSpace.sm),
+      child: SQPressable(
         onTap: () => _openSession(context),
-        child: Padding(
-          padding: const EdgeInsets.all(14),
+        child: SQCard(
+          tone: session.status == SessionStatus.live
+              ? SQTone.live
+              : SQTone.neutral,
+          padding: const EdgeInsets.fromLTRB(
+            SQSpace.lg,
+            SQSpace.md,
+            SQSpace.sm,
+            SQSpace.sm,
+          ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Expanded(
                     child: Text(
                       session.title,
-                      style: theme.textTheme.titleMedium?.copyWith(
-                        fontWeight: FontWeight.w700,
-                      ),
+                      style: theme.textTheme.titleMedium,
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
                     ),
                   ),
+                  const SizedBox(width: SQSpace.sm),
                   _StatusChip(status: session.status),
                 ],
               ),
-              const SizedBox(height: 4),
+              const SizedBox(height: SQSpace.xs),
               Text(
                 dateText,
-                style: theme.textTheme.bodyMedium?.copyWith(
-                  color: theme.colorScheme.onSurfaceVariant,
-                ),
+                style: theme.textTheme.bodySmall?.copyWith(color: sq.inkMuted),
               ),
               if (session.venue.isNotEmpty)
                 Text(
                   session.venue,
-                  style: theme.textTheme.bodySmall?.copyWith(
-                    color: theme.colorScheme.outline,
-                  ),
+                  style: theme.textTheme.bodySmall?.copyWith(color: sq.inkFaint),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                 ),
-              const SizedBox(height: 8),
+              const SizedBox(height: SQSpace.sm),
               Row(
                 children: [
                   _Fact(
                     icon: Icons.grid_view_outlined,
                     label: l10n.courtCountLabel(session.courtCount),
                   ),
-                  const SizedBox(width: 14),
+                  const SizedBox(width: SQSpace.lg),
                   _Fact(
                     icon: Icons.payments_outlined,
                     label: formatCentavos(session.courtFeeCentavos),
@@ -736,12 +769,12 @@ class _SessionCard extends ConsumerWidget {
                   // na lang ang kailangan.
                   IconButton(
                     tooltip: l10n.repeatSession,
-                    icon: const Icon(Icons.event_repeat_outlined),
+                    icon: Icon(Icons.event_repeat_outlined, color: sq.inkFaint),
                     onPressed: () => _repeat(context),
                   ),
                   IconButton(
                     tooltip: l10n.deleteSession,
-                    icon: const Icon(Icons.delete_outline),
+                    icon: Icon(Icons.delete_outline, color: sq.inkFaint),
                     onPressed: () => _confirmDelete(context, ref, l10n),
                   ),
                 ],
@@ -818,40 +851,20 @@ class _StatusChip extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
-    final scheme = Theme.of(context).colorScheme;
+    final sq = context.sq;
 
-    final (String label, Color background, Color foreground) = switch (status) {
-      SessionStatus.setup => (
-          l10n.sessionStatusSetup,
-          scheme.surfaceContainerHighest,
-          scheme.onSurfaceVariant,
+    return switch (status) {
+      SessionStatus.setup =>
+        SQStatusPill(label: l10n.sessionStatusSetup, dense: true),
+      SessionStatus.live => SQStatusPill(
+          label: l10n.sessionStatusLive,
+          tone: SQTone.live,
+          dense: true,
+          leading: SQLivePulse(color: sq.live, size: 6),
         ),
-      SessionStatus.live => (
-          l10n.sessionStatusLive,
-          scheme.primary,
-          scheme.onPrimary,
-        ),
-      SessionStatus.ended => (
-          l10n.sessionStatusEnded,
-          scheme.surfaceContainerHighest,
-          scheme.outline,
-        ),
+      SessionStatus.ended =>
+        SQStatusPill(label: l10n.sessionStatusEnded, dense: true),
     };
-
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-      decoration: BoxDecoration(
-        color: background,
-        borderRadius: BorderRadius.circular(20),
-      ),
-      child: Text(
-        label,
-        style: Theme.of(context).textTheme.labelSmall?.copyWith(
-              color: foreground,
-              fontWeight: FontWeight.w700,
-            ),
-      ),
-    );
   }
 }
 
@@ -865,15 +878,15 @@ class _Fact extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final tint = color ?? theme.colorScheme.outline;
+    final tint = color ?? context.sq.inkMuted;
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
-        Icon(icon, size: 17, color: tint.withValues(alpha: 0.75)),
+        Icon(icon, size: 16, color: tint.withValues(alpha: 0.75)),
         const SizedBox(width: 5),
         Text(
           label,
-          style: theme.textTheme.bodyMedium?.copyWith(color: tint),
+          style: theme.textTheme.bodySmall?.copyWith(color: tint).tabular,
         ),
       ],
     );
