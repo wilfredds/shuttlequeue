@@ -78,9 +78,10 @@ flutter test                          # 260 unit + widget tests
 cd test_rules && npm install && npm test   # 69 security-rules checks
 ```
 
-The rules tests run against the local Firestore emulator (needs Java — the
-JDK bundled with Android Studio works: set `JAVA_HOME` to
-`C:\Program Files\Android\Android Studio\jbr`). They never touch the real
+The rules tests run against the local Firestore emulator, which needs
+**Java 21 or newer** — firebase-tools 15 refuses anything older. The JDK
+bundled with Android Studio is 21 and works: set `JAVA_HOME` to
+`C:\Program Files\Android\Android Studio\jbr`. They never touch the real
 project.
 
 `firebase-tools` is a **devDependency of `test_rules/`, not a global install**.

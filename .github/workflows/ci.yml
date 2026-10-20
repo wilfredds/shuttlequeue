@@ -143,10 +143,20 @@ jobs:
 
       # Java ang tumatakbong Firestore emulator. Ito ang katumbas ng
       # JAVA_HOME na itinuturo sa jbr ng Android Studio sa laptop.
+      #
+      # DAPAT 21 PATAAS, at hiwalay ito sa 17 ng android job sa itaas.
+      # Tumatanggi ang firebase-tools 15 sa kahit anong Java bago ang 21:
+      #
+      #   firebase-tools no longer supports Java version before 21
+      #
+      # Hindi ito nakita sa laptop dahil ang jbr ng Android Studio ay 21
+      # na — kaya tama pa rin ang tagubilin sa README, at tahimik lang na
+      # mali ang CI. Ang android job ay nananatili sa 17: iyon ang hinahanap
+      # ng Android Gradle Plugin, at hindi magkaparehong tanong ang dalawa.
       - uses: actions/setup-java@v4
         with:
           distribution: temurin
-          java-version: '17'
+          java-version: '21'
 
       - run: npm install
         working-directory: test_rules
