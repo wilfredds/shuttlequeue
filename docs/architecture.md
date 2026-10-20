@@ -201,7 +201,7 @@ Shape validation is not paranoia. Without it any signed-in client can write
 900 KB string as a player name. The `gamesPlayed >= 0` rule also acts as a
 backstop for a buggy undo.
 
-**Tested, not assumed.** `test_rules/` runs 34 checks against the local
+**Tested, not assumed.** `test_rules/` runs 69 checks against the local
 Firestore emulator: every real write path succeeds, anonymous access fails,
 a second QM is denied on every collection, immutable fields reject changes,
 and each malformed-data case is refused.
@@ -436,7 +436,7 @@ was allowed to cache.
 
 ## 10. What the tests are actually for
 
-225 Dart tests and 56 rules checks, and the split is deliberate.
+260 Dart tests and 69 rules checks, and the split is deliberate.
 
 The **pure services** carry the correctness burden and are tested hardest,
 because they decide who plays and who pays: matchmaking, fee calculation,

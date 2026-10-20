@@ -10,5 +10,8 @@
   "dependencies": {
     "@firebase/rules-unit-testing": "^4.0.1",
     "firebase": "^11.0.0"
+  },
+  "devDependencies": {
+    "firebase-tools": "^15.19.0"
   }
 }

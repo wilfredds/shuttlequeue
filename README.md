@@ -74,14 +74,20 @@ wrong project or create a database in the wrong region.
 
 ```bash
 flutter analyze                       # static analysis, must be clean
-flutter test                          # 225 unit + widget tests
-cd test_rules && npm install && npm test   # 56 security-rules checks
+flutter test                          # 260 unit + widget tests
+cd test_rules && npm install && npm test   # 69 security-rules checks
 ```
 
 The rules tests run against the local Firestore emulator (needs Java — the
 JDK bundled with Android Studio works: set `JAVA_HOME` to
 `C:\Program Files\Android\Android Studio\jbr`). They never touch the real
 project.
+
+`firebase-tools` is a **devDependency of `test_rules/`, not a global install**.
+It used to rely on whatever `firebase` happened to be on your PATH, which
+worked on the machine that wrote the tests and nowhere else: CI had no global
+Firebase CLI, so `npm test` died with `firebase: not found`. A test suite that
+only runs on one laptop is not a test suite.
 
 Before a real night, drive [docs/trial-night.md](docs/trial-night.md) end to
 end — a 20-minute scripted dry run through one imaginary session, including a
