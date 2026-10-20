@@ -17,6 +17,7 @@ class ClubMember {
     required this.sessionsAttended,
     required this.createdAt,
     this.lastPlayedAt,
+    this.avatarSeed,
   });
 
   final String id;
@@ -37,6 +38,14 @@ class ClubMember {
   final DateTime createdAt;
   final DateTime? lastPlayedAt;
 
+  /// Ang mukhang pinili ng QM para sa taong ito, naaalala sa pagitan ng
+  /// mga gabi. Null ang karaniwan: galing sa pangalan ang mukha.
+  ///
+  /// Bilang bago na ito, hindi pangalan: wala itong sinasabi tungkol sa
+  /// tao na hindi pa alam ng app. Ang privacy na nakasulat sa itaas ay
+  /// nananatiling totoo — pangalan at skill pa rin lang ang hawak natin.
+  final int? avatarSeed;
+
   bool get hasOutstandingBalance => balanceCentavos != 0;
 
   /// Lahat ng pangalang pwedeng itugma sa isang pasted line.
@@ -49,6 +58,7 @@ class ClubMember {
     int? balanceCentavos,
     int? sessionsAttended,
     DateTime? lastPlayedAt,
+    int? avatarSeed,
   }) {
     return ClubMember(
       id: id,
@@ -59,6 +69,7 @@ class ClubMember {
       sessionsAttended: sessionsAttended ?? this.sessionsAttended,
       createdAt: createdAt,
       lastPlayedAt: lastPlayedAt ?? this.lastPlayedAt,
+      avatarSeed: avatarSeed ?? this.avatarSeed,
     );
   }
 }

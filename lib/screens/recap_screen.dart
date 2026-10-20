@@ -8,6 +8,7 @@ import '../providers/session_providers.dart';
 import '../services/night_recap.dart';
 import '../theme.dart';
 import '../widgets/motion.dart';
+import '../widgets/player_avatar.dart';
 import '../widgets/surfaces.dart';
 
 /// Ang buod ng gabi — ang bahaging isc-screenshot ng mga manlalaro.
@@ -351,8 +352,14 @@ class _PlayerCard extends StatelessWidget {
       ),
       child: Row(
         children: [
+          PlayerAvatar(
+            name: recap.name,
+            seed: recap.avatarSeed,
+            size: 34,
+          ),
+          const SizedBox(width: SQSpace.md),
           SizedBox(
-            width: 40,
+            width: 34,
             child: Text(
               '${recap.gamesPlayed}',
               style: theme.textTheme.headlineMedium

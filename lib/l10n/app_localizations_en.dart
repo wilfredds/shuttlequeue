@@ -156,6 +156,45 @@ class AppLocalizationsEn extends AppLocalizations {
       'Court fee is split evenly; each player pays for their own shuttles.';
 
   @override
+  String get changeFace => 'Change character';
+
+  @override
+  String faceChanged(String name) {
+    return 'New character for $name';
+  }
+
+  @override
+  String get feeModePerGame => 'Per game';
+
+  @override
+  String get feeModePerGameHelp =>
+      'Court fee is split by how many games each player got. Play more, pay more. Shuttles stay personal.';
+
+  @override
+  String get courtFeeLabelPerGame => 'Court fee for the night';
+
+  @override
+  String get courtFeeHelpPerGame =>
+      'Still the whole night\'s court rent. The app divides it by the games actually played.';
+
+  @override
+  String get moneyPerGameRateLabel => 'per game';
+
+  @override
+  String moneyPerGameRate(String rate) {
+    return '$rate per game';
+  }
+
+  @override
+  String moneyPerGameBasis(String fee, int games) {
+    return '$fee court · $games games played';
+  }
+
+  @override
+  String get moneyNoGamesYet =>
+      'Nobody has played yet, so the court is split evenly for now.';
+
+  @override
   String get feeModeAmerican => 'American';
 
   @override

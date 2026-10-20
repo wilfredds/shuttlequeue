@@ -155,6 +155,27 @@ void main() {
       );
       expect(text, contains('COST SPLIT (american)'));
     });
+
+    test('per-game mode is labelled and explains itself on paper', () {
+      // Ito ang papel na binabasa ng QM kapag patay na ang telepono. Ang
+      // magkakaibang halaga ay dapat may paliwanag dito, kung hindi ay
+      // mukhang arbitraryo ang listahan sa harap ng labindalawang tao.
+      final text = buildSessionSnapshot(
+        session: session(mode: FeeMode.perGame, shuttlePrice: 0),
+        players: [player('Ana', games: 8), player('Ben', games: 4)],
+        courts: const [],
+        matches: const [],
+        now: _now,
+      );
+
+      expect(text, contains('COST SPLIT (per game)'));
+      // 12 player-game, ₱1200 -> ₱100 kada laro.
+      expect(text, contains('₱100.00 per game'));
+      expect(text, contains('12 games played'));
+      // At ang bilang ng laro sa bawat linya.
+      expect(text, contains('Ana (8)'));
+      expect(text, contains('Ben (4)'));
+    });
   });
 
   group('never breaks when the night has barely started', () {

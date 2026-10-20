@@ -32,10 +32,15 @@ class PlayerRecap {
     required this.longestWait,
     this.mostFrequentPartner,
     this.mostFrequentPartnerCount = 0,
+    this.avatarSeed,
   });
 
   final String playerId;
   final String name;
+
+  /// Ang mukhang pinili ng QM, kung may pinili. Dinadala dito para ang
+  /// recap card ay magmukhang parehong tao gaya sa pila at sa bill.
+  final int? avatarSeed;
 
   /// Mula sa player document — ito ang opisyal na bilang na ginagamit ng
   /// fairness, hindi ang bilang ng match records.
@@ -153,6 +158,7 @@ NightRecap buildNightRecap({
         mostFrequentPartner:
             topPartnerId == null ? null : nameOf[topPartnerId] ?? topPartnerId,
         mostFrequentPartnerCount: topCount,
+        avatarSeed: player.avatarSeed,
       ),
     );
   }

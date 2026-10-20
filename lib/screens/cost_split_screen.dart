@@ -15,6 +15,7 @@ import '../services/fee_calculator.dart';
 import '../services/money.dart';
 import '../theme.dart';
 import '../widgets/motion.dart';
+import '../widgets/player_avatar.dart';
 import '../widgets/surfaces.dart';
 
 /// Ang dulo ng gabi: sino ang may bayad, magkano, at sino pa ang hindi.
@@ -55,6 +56,10 @@ class CostSplitScreen extends ConsumerWidget {
     }
 
     final frozen = ref.watch(billProvider(sessionId)).value ?? const <BillLine>[];
+
+    // Ang mukha ay buhay kahit naka-lock ang bill: ang naka-freeze ay ang
+    // HALAGA, hindi kung ano ang hitsura ng tao.
+    final seedById = {for (final p in players) p.id: p.avatarSeed};
 
     // R-09: kapag naka-lock, ang naka-imbak na halaga ang totoo. Ang live
     // na kuwenta ay ginagamit lang bago mag-lock.
@@ -104,6 +109,7 @@ class CostSplitScreen extends ConsumerWidget {
                               line: breakdown.lines[i],
                               feeMode: session.feeMode,
                               isLocked: session.isBillFinalized,
+                              avatarSeed: seedById[breakdown.lines[i].playerId],
                             ),
                           ),
                         ),
@@ -168,6 +174,12 @@ class CostSplitScreen extends ConsumerWidget {
           name: line.name,
           courtShareCentavos: line.courtShareCentavos,
           shuttleShareCentavos: line.shuttleShareCentavos,
+          // Ang bilang ay galing sa naka-freeze na linya, HINDI sa player
+          // doc. Kung sa player doc natin ito kukunin, ang isang larong
+          // naipuslit pagkatapos ng lock ay gagawing "9 games" ang hilera
+          // na may bayad para sa walo — at ang hindi pagkakatugmang iyon
+          // ang eksaktong bagay na pinipigilan ng lock.
+          gamesPlayed: line.gamesPlayed,
           hasPaid: player?.hasPaid ?? false,
           hasLeft: player?.status == PlayerStatus.left,
         ),
@@ -180,6 +192,11 @@ class CostSplitScreen extends ConsumerWidget {
       lines: lines,
       mode: mode,
       expectedTotalCentavos: total,
+      // Mula rin sa mga naka-freeze na linya ang dalawang ito, kaya ang
+      // ipinapakitang halaga kada laro ay tugma sa mga halagang nakalista
+      // sa ibaba nito — kahit magpatuloy pa ang laro pagkatapos ng lock.
+      courtFeeCentavos: lines.fold(0, (sum, l) => sum + l.courtShareCentavos),
+      totalPlayerGames: lines.fold(0, (sum, l) => sum + l.gamesPlayed),
     );
   }
 
@@ -297,11 +314,31 @@ class _BillHeader extends StatelessWidget {
     // Ang pinakamadalas na tanong sa gabi ay hindi "magkano lahat" kundi
     // "magkano ako". Kapag pare-pareho ang hati, iyon ang nasa itaas.
     final shares = lines.map((l) => l.totalCentavos).toSet();
-    final headline = shares.length == 1
-        ? formatCentavos(shares.first)
-        : formatCentavos(total);
-    final headlineLabel =
-        shares.length == 1 ? l10n.perPlayerLabel : l10n.totalCost;
+
+    // Sa per-game, walang iisang "magkano ako" — iba-iba ang bayad. Ang
+    // tanong na tinatanong nang labindalawang beses ay naging "magkano
+    // kada laro", at iyon ang nasasagot nang isang beses sa buong grupo.
+    // Kaya iyon ang nangingibabaw na bilang dito, hindi ang kabuuan.
+    final perGame = breakdown.mode == FeeMode.perGame &&
+        breakdown.totalPlayerGames > 0;
+
+    final String headline;
+    final String headlineLabel;
+    if (perGame) {
+      headline = formatCentavos(breakdown.courtRatePerGameCentavos);
+      headlineLabel = l10n.moneyPerGameRateLabel;
+    } else if (shares.length == 1) {
+      headline = formatCentavos(shares.first);
+      headlineLabel = l10n.perPlayerLabel;
+    } else {
+      headline = formatCentavos(total);
+      headlineLabel = l10n.totalCost;
+    }
+
+    // Kapag hindi tugma ang nangingibabaw na bilang sa kabuuan, kailangang
+    // makita pa rin ang kabuuan sa ibaba — ito ang halagang ipapasa ng QM
+    // sa may-ari ng court.
+    final showTotalBelow = perGame || shares.length == 1;
 
     return Container(
       width: double.infinity,
@@ -339,6 +376,20 @@ class _BillHeader extends StatelessWidget {
                       style: theme.textTheme.bodyMedium
                           ?.copyWith(color: sq.inkMuted),
                     ),
+                    // Kung saan nanggaling ang bilang sa itaas. Walang ito,
+                    // ang magkakaibang halaga sa listahan ay mukhang
+                    // arbitraryo — at ang bill na hindi maipaliwanag ay
+                    // hindi babayaran nang walang tanong.
+                    if (perGame)
+                      Text(
+                        l10n.moneyPerGameBasis(
+                          formatCentavos(breakdown.courtFeeCentavos),
+                          breakdown.totalPlayerGames,
+                        ),
+                        style: theme.textTheme.bodySmall
+                            ?.copyWith(color: sq.inkFaint)
+                            .tabular,
+                      ),
                   ],
                 ),
               ),
@@ -385,7 +436,7 @@ class _BillHeader extends StatelessWidget {
                     : SQTone.neutral,
               ),
               const Spacer(),
-              if (shares.length == 1)
+              if (showTotalBelow)
                 _Amount(
                   label: l10n.totalCost,
                   centavos: total,
@@ -696,6 +747,7 @@ class _LockBanner extends ConsumerWidget {
           name: line.name,
           courtShareCentavos: line.courtShareCentavos,
           shuttleShareCentavos: line.shuttleShareCentavos,
+          gamesPlayed: line.gamesPlayed,
         ),
     ];
     await ref.read(sessionRepositoryProvider).finalizeBill(sessionId, lines);
@@ -741,11 +793,17 @@ class _FeeTile extends ConsumerWidget {
     required this.line,
     required this.feeMode,
     required this.isLocked,
+    this.avatarSeed,
   });
 
   final String sessionId;
   final FeeLine line;
   final FeeMode feeMode;
+
+  /// Hiwalay sa [line] dahil ang mukha ay HINDI pera. Ang FeeCalculator ay
+  /// may isang trabaho at ang lahat ng laman ng FeeLine ay nasasagot ng
+  /// tanong na "magkano" — manatili sanang ganoon.
+  final int? avatarSeed;
 
   /// Naka-lock na ang halaga: itinatago ang shuttle stepper dahil hindi na
   /// nito mababago ang singil, at nakakalito kung mukhang kaya pa.
@@ -759,11 +817,19 @@ class _FeeTile extends ConsumerWidget {
     final repo = ref.read(playerRepositoryProvider);
     final paid = line.hasPaid;
 
-    final showStepper = feeMode == FeeMode.perHead && !isLocked;
-    final shuttles = feeMode == FeeMode.perHead && line.shuttleShareCentavos > 0
-        ? '${formatCentavos(line.shuttleShareCentavos)} '
-            '${l10n.shuttlesLabel.toLowerCase()}'
-        : null;
+    final showStepper = feeMode.chargesShuttlesIndividually && !isLocked;
+
+    // Ang pangalawang linya ay ang paliwanag ng halaga sa kanan. Sa
+    // per-game, ang bilang ng laro ang unang dahilan kung bakit ₱160 ang
+    // isa at ₱60 ang katabi — kaya iyon ang nauuna sa shuttle.
+    final reasons = <String>[
+      if (feeMode == FeeMode.perGame) l10n.gamesPlayedShort(line.gamesPlayed),
+      if (feeMode.chargesShuttlesIndividually &&
+          line.shuttleShareCentavos > 0)
+        '${formatCentavos(line.shuttleShareCentavos)} '
+            '${l10n.shuttlesLabel.toLowerCase()}',
+    ];
+    final shuttles = reasons.isEmpty ? null : reasons.join(' · ');
 
     return SQPressable(
       // Buong hilera ang target. Isang kamay ang hawak ng pera, ang isa ay
@@ -784,7 +850,17 @@ class _FeeTile extends ConsumerWidget {
         child: Row(
           children: [
             _PaidMark(paid: paid),
-            const SizedBox(width: SQSpace.md),
+            const SizedBox(width: SQSpace.sm),
+            // Ang QM ay nakatingin sa TAO, tapos naghahanap ng hilera.
+            // Ang mukha ang tumutulay sa dalawa — ito ang screen kung saan
+            // pinakamalaki ang halaga niyan, dahil labindalawang pangalan
+            // ang binabasa habang may hawak na pera.
+            PlayerAvatar(
+              name: line.name,
+              seed: avatarSeed,
+              size: 26,
+            ),
+            const SizedBox(width: SQSpace.sm),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,

@@ -136,7 +136,16 @@ class _ImportScreenState extends ConsumerState<ImportScreen> {
         await clubRepo.recordAttendance(clubId, memberId);
       }
 
-      toAdd.add(NewPlayer(name: name, skillTier: tier, memberId: memberId));
+      // Kung regular siya at may mukhang pinili na ang QM dati, dala niya
+      // ito ngayong gabi — kaya si Maricel ay si Maricel pa rin sa pila.
+      toAdd.add(
+        NewPlayer(
+          name: name,
+          skillTier: tier,
+          memberId: memberId,
+          avatarSeed: match.member?.avatarSeed,
+        ),
+      );
     }
 
     for (final name in _rescued) {

@@ -63,3 +63,7 @@ firestore-debug.log
 firebase-debug.log
 ui-debug.log
 test_rules/node_modules/
+
+# Contact sheet ng mga mukha, gawa ng test/avatar_contact_sheet.dart.
+# Kasangkapan sa pagdidisenyo, hindi bahagi ng app.
+avatar_sheet*.png

@@ -13,11 +13,16 @@ class NewPlayer {
     required this.name,
     this.skillTier = SkillTier.intermediate,
     this.memberId,
+    this.avatarSeed,
   });
 
   final String name;
   final SkillTier skillTier;
   final String? memberId;
+
+  /// Ang mukhang naalala ng regulars book, kung regular ang taong ito.
+  /// Null para sa bisita: galing sa pangalan ang mukha niya.
+  final int? avatarSeed;
 }
 
 class PlayerRepository {
@@ -87,6 +92,7 @@ class PlayerRepository {
             gamesPlayed: 0,
             waitingSince: now,
             memberId: player.memberId,
+            avatarSeed: player.avatarSeed,
           ),
         );
       }
@@ -120,8 +126,13 @@ class PlayerRepository {
             name: player.name,
             skillTier: player.skillTier,
             gamesPlayed: baseline,
+            // Itinatago ang pagbuhat para masingil lang siya sa mga larong
+            // tunay niyang nilalaro. Kung hindi, binabayaran niya ang mga
+            // larong wala pa siya, at kulang ang bayad ng lahat ng iba.
+            gamesAtJoin: baseline,
             waitingSince: DateTime.now(),
           memberId: player.memberId,
+          avatarSeed: player.avatarSeed,
         ),
       ),
       onWriteError,
@@ -135,6 +146,7 @@ class PlayerRepository {
     SkillTier? skillTier,
     PlayerStatus? status,
     bool? hasPaid,
+    int? avatarSeed,
   }) async {
     fireAndForget(
       _playersOf(sessionId).doc(playerId).update({
@@ -142,6 +154,7 @@ class PlayerRepository {
       if (skillTier != null) 'skillTier': skillTier.value,
       if (status != null) 'status': status.value,
       'hasPaid': ?hasPaid,
+      'avatarSeed': ?avatarSeed,
       // Kapag bumalik sa pila, ngayon nagsisimula ang paghihintay niya.
       if (status == PlayerStatus.queued)
         'waitingSince': Timestamp.fromDate(DateTime.now()),
@@ -186,6 +199,12 @@ class PlayerRepository {
       'shuttlesUsed': player.shuttlesUsed,
       'hasPaid': player.hasPaid,
       'memberId': player.memberId,
+      // Dati, hindi kasama ang dalawang ito. Ang undo ay nagbabalik ng
+      // taong may ibang mukha at, sa per-game, may ibang singil kaysa sa
+      // inalis — tahimik, at sa isang kilos na mismong para sa pagwawasto
+      // ng mali.
+      'avatarSeed': player.avatarSeed,
+      'gamesAtJoin': player.gamesAtJoin,
         'createdAt': Timestamp.fromDate(player.createdAt),
       }),
       onWriteError,

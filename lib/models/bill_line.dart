@@ -16,12 +16,25 @@ class BillLine {
     required this.name,
     required this.courtShareCentavos,
     required this.shuttleShareCentavos,
+    this.gamesPlayed = 0,
   });
 
   final String playerId;
   final String name;
   final int courtShareCentavos;
   final int shuttleShareCentavos;
+
+  /// Ilang laro ang pinagbatayan ng halagang ito.
+  ///
+  /// Sa `perGame`, ito ang buong paliwanag ng bill: hindi sapat ang
+  /// "₱160" kapag ang katabi ay may "₱60". Naka-freeze ito kasama ng
+  /// halaga — kung sa player doc natin ito kukunin, magbabago ang bilang
+  /// pagkatapos ng lock samantalang ang singil ay hindi, at iyon ang
+  /// eksaktong hindi pagkakatugma na iniiwasan ng lock.
+  ///
+  /// Zero ang default dahil ang mga lumang bill doc na nasa Firestore na
+  /// ay wala pa nito.
+  final int gamesPlayed;
 
   int get totalCentavos => courtShareCentavos + shuttleShareCentavos;
 }

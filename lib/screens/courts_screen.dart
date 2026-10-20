@@ -11,6 +11,7 @@ import '../providers/session_providers.dart';
 import '../services/matchmaking_service.dart';
 import '../theme.dart';
 import '../widgets/motion.dart';
+import '../widgets/player_avatar.dart';
 import '../widgets/skill_badge.dart';
 import '../widgets/surfaces.dart';
 import '../widgets/sync_indicator.dart';
@@ -255,16 +256,23 @@ class _CourtCard extends ConsumerWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
+                // Ang key na nakatali sa match id ang nagpapatakbo muli ng
+                // pagpasok sa bawat BAGONG laro — at hindi sa bawat rebuild
+                // (tumitibok ang minuto sa ulo ng kard kada minuto).
                 _TeamSide(
+                  key: ValueKey('a-${live.id}'),
                   sessionId: sessionId,
                   match: live,
+                  fromLeft: true,
                   players:
                       live.teamA.map((id) => playersById[id]).nonNulls.toList(),
                 ),
                 const _NetLine(),
                 _TeamSide(
+                  key: ValueKey('b-${live.id}'),
                   sessionId: sessionId,
                   match: live,
+                  fromLeft: false,
                   players:
                       live.teamB.map((id) => playersById[id]).nonNulls.toList(),
                 ),
@@ -513,14 +521,19 @@ class _DashedBorderPainter extends CustomPainter {
 /// taong iyon nang hindi kinakansela ang buong laro.
 class _TeamSide extends ConsumerWidget {
   const _TeamSide({
+    super.key,
     required this.sessionId,
     required this.match,
     required this.players,
+    required this.fromLeft,
   });
 
   final String sessionId;
   final GameMatch match;
   final List<SessionPlayer> players;
+
+  /// Aling panig ng net — ito ang nagsasabi kung saan galing ang pagpasok.
+  final bool fromLeft;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -529,9 +542,12 @@ class _TeamSide extends ConsumerWidget {
 
     return Row(
       children: [
-        for (final player in players)
+        for (final (index, player) in players.indexed)
           Expanded(
-            child: SQPressable(
+            child: SQCourtArrival(
+              fromLeft: fromLeft,
+              index: index,
+              child: SQPressable(
               onTap: () => _substitute(context, ref, player),
               borderRadius: const BorderRadius.all(
                 Radius.circular(SQRadius.md),
@@ -544,7 +560,12 @@ class _TeamSide extends ConsumerWidget {
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    SkillBadge(tier: player.skillTier, size: 24),
+                    PlayerAvatar(
+                      name: player.name,
+                      seed: player.avatarSeed,
+                      size: 26,
+                      ringColor: skillColor(context, player.skillTier),
+                    ),
                     const SizedBox(width: SQSpace.sm),
                     Expanded(
                       child: Text(
@@ -556,6 +577,7 @@ class _TeamSide extends ConsumerWidget {
                       ),
                     ),
                   ],
+                  ),
                 ),
               ),
             ),
@@ -757,7 +779,17 @@ class _QueueRow extends StatelessWidget {
                   .scoreboard,
             ),
           ),
-          SkillBadge(tier: player.skillTier, size: 24),
+          // Ang mukha ang nagdadala ng DALAWANG trabaho dito: kung sino,
+          // at kung anong tier (ang singsing). Ang hilera sa pila ay may
+          // anim nang bagay sa loob ng 360dp; ang hiwalay na badge para sa
+          // tier ay magpapaikli sa pangalan hanggang sa mag-ellipsis na
+          // ang kalahati ng roster.
+          PlayerAvatar(
+            name: player.name,
+            seed: player.avatarSeed,
+            size: 28,
+            ringColor: skillColor(context, player.skillTier),
+          ),
           const SizedBox(width: SQSpace.sm),
           Expanded(
             child: Text(
@@ -1054,8 +1086,18 @@ class _SuggestionSheetState extends ConsumerState<_SuggestionSheet> {
                     if (i == 2) const _NetLine(),
                     Row(
                       children: [
-                        SkillBadge(tier: _four[i].skillTier, size: 30),
-                        const SizedBox(width: SQSpace.md),
+                        // Dito, ang tier ang mismong desisyon — kaya nananatili
+                        // ang titik. Ang mukha ay para sa pagtutugma ng pangalan
+                        // sa taong nasa harap ng QM habang pinipili niya kung
+                        // sino ang palitan.
+                        PlayerAvatar(
+                          name: _four[i].name,
+                          seed: _four[i].avatarSeed,
+                          size: 34,
+                        ),
+                        const SizedBox(width: SQSpace.sm),
+                        SkillBadge(tier: _four[i].skillTier, size: 26),
+                        const SizedBox(width: SQSpace.sm),
                         Expanded(
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,

@@ -358,6 +358,66 @@ abstract class AppLocalizations {
   /// **'Court fee is split evenly; each player pays for their own shuttles.'**
   String get feeModePerHeadHelp;
 
+  /// No description provided for @changeFace.
+  ///
+  /// In en, this message translates to:
+  /// **'Change character'**
+  String get changeFace;
+
+  /// No description provided for @faceChanged.
+  ///
+  /// In en, this message translates to:
+  /// **'New character for {name}'**
+  String faceChanged(String name);
+
+  /// No description provided for @feeModePerGame.
+  ///
+  /// In en, this message translates to:
+  /// **'Per game'**
+  String get feeModePerGame;
+
+  /// No description provided for @feeModePerGameHelp.
+  ///
+  /// In en, this message translates to:
+  /// **'Court fee is split by how many games each player got. Play more, pay more. Shuttles stay personal.'**
+  String get feeModePerGameHelp;
+
+  /// No description provided for @courtFeeLabelPerGame.
+  ///
+  /// In en, this message translates to:
+  /// **'Court fee for the night'**
+  String get courtFeeLabelPerGame;
+
+  /// No description provided for @courtFeeHelpPerGame.
+  ///
+  /// In en, this message translates to:
+  /// **'Still the whole night\'s court rent. The app divides it by the games actually played.'**
+  String get courtFeeHelpPerGame;
+
+  /// No description provided for @moneyPerGameRateLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'per game'**
+  String get moneyPerGameRateLabel;
+
+  /// No description provided for @moneyPerGameRate.
+  ///
+  /// In en, this message translates to:
+  /// **'{rate} per game'**
+  String moneyPerGameRate(String rate);
+
+  /// No description provided for @moneyPerGameBasis.
+  ///
+  /// In en, this message translates to:
+  /// **'{fee} court · {games} games played'**
+  String moneyPerGameBasis(String fee, int games);
+
+  /// No description provided for @moneyNoGamesYet.
+  ///
+  /// In en, this message translates to:
+  /// **'Nobody has played yet, so the court is split evenly for now.'**
+  String get moneyNoGamesYet;
+
   /// No description provided for @feeModeAmerican.
   ///
   /// In en, this message translates to:

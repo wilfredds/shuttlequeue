@@ -100,13 +100,31 @@ String buildSessionSnapshot({
     );
 
     if (breakdown.lines.isNotEmpty) {
-      final mode =
-          session.feeMode == FeeMode.perHead ? 'per head' : 'american';
+      // Sadyang switch at hindi ternary: ito ang papel na binabasa ng QM
+      // kapag patay na ang app, at ang maling pamagat dito ay maling
+      // paliwanag sa labindalawang tao. Pinipilit ng switch na may sagot
+      // sa bawat bagong mode.
+      final mode = switch (session.feeMode) {
+        FeeMode.perHead => 'per head',
+        FeeMode.perGame => 'per game',
+        FeeMode.american => 'american',
+      };
       buffer.writeln('COST SPLIT ($mode)');
+      if (session.feeMode == FeeMode.perGame) {
+        // Kung wala ito, mukhang basta-basta ang magkakaibang halaga sa
+        // papel. Ito ang isang linyang nagpapaliwanag ng buong listahan.
+        buffer.writeln(
+          '  ${formatCentavos(breakdown.courtRatePerGameCentavos)} per game '
+          '(${formatCentavos(session.courtFeeCentavos)} court '
+          '/ ${breakdown.totalPlayerGames} games played)',
+        );
+      }
       for (final line in breakdown.lines) {
         final mark = line.hasPaid ? 'PAID' : '    ';
+        final games =
+            session.feeMode == FeeMode.perGame ? ' (${line.gamesPlayed})' : '';
         buffer.writeln(
-          '  $mark ${line.name}: ${formatCentavos(line.totalCentavos)}',
+          '  $mark ${line.name}$games: ${formatCentavos(line.totalCentavos)}',
         );
       }
       buffer.writeln();

@@ -7,12 +7,12 @@ import 'package:wakelock_plus/wakelock_plus.dart';
 
 import '../l10n/app_localizations.dart';
 import '../models/court.dart';
-import '../models/enums.dart';
 import '../models/match.dart';
 import '../models/session_player.dart';
 import '../providers/session_providers.dart';
 import '../theme.dart';
 import '../widgets/motion.dart';
+import '../widgets/player_avatar.dart';
 import '../widgets/skill_badge.dart';
 
 /// Ang "Up Next" board — pangalawang screen na nakaharap sa lahat.
@@ -312,8 +312,13 @@ class _Team extends StatelessWidget {
             padding: const EdgeInsets.symmetric(vertical: 2),
             child: Row(
               children: [
-                _TierDot(tier: player.skillTier),
-                const SizedBox(width: 8),
+                PlayerAvatar(
+                  name: player.name,
+                  seed: player.avatarSeed,
+                  size: 38,
+                  ringColor: skillColor(context, player.skillTier),
+                ),
+                const SizedBox(width: 10),
                 Flexible(
                   child: Text(
                     player.name,
@@ -334,23 +339,6 @@ class _Team extends StatelessWidget {
 }
 
 /// Kulay lang — walang salitang "beginner" sa harap ng lahat (R-16).
-class _TierDot extends StatelessWidget {
-  const _TierDot({required this.tier});
-
-  final SkillTier tier;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      width: 12,
-      height: 12,
-      decoration: BoxDecoration(
-        color: skillColor(context, tier),
-        shape: BoxShape.circle,
-      ),
-    );
-  }
-}
 
 class _Queue extends StatelessWidget {
   const _Queue({required this.queue});
@@ -448,7 +436,12 @@ class _QueueRow extends StatelessWidget {
               ).scoreboard,
             ),
           ),
-          _TierDot(tier: player.skillTier),
+          PlayerAvatar(
+            name: player.name,
+            seed: player.avatarSeed,
+            size: isNextUp ? 36 : 30,
+            ringColor: skillColor(context, player.skillTier),
+          ),
           const SizedBox(width: 10),
           Expanded(
             child: Text(

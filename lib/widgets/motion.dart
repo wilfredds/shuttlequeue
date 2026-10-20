@@ -330,6 +330,159 @@ class _SQLivePulseState extends State<SQLivePulse>
   }
 }
 
+/// Pumapasok sa court mula sa sariling panig.
+///
+/// ANG TANONG NA SINASAGOT: "sino ang nasa court ngayon?" Kapag pinindot ng
+/// QM ang Next match, apat na pangalan ang biglang lumilitaw sa isang kard
+/// na kanina ay walang laman. Ang biglaang paglitaw ay hindi nagsasabi kung
+/// saan sila nanggaling.
+///
+/// Dito, ang Team A ay pumapasok mula sa kaliwa at ang Team B mula sa kanan
+/// — palapit sa net sa gitna, gaya ng tunay na paglakad papasok ng court.
+/// Isang beses lang ito, sa pagsisimula ng laro. Ito ang **tanging
+/// pinalamutian** na sandali sa app; lahat ng iba ay tahimik, at iyon ang
+/// dahilan kung bakit may bigat ito.
+///
+/// Ilagay ang `key: ValueKey(match.id)` sa magulang para muling tumakbo ito
+/// sa bawat bagong laro at hindi sa bawat rebuild.
+class SQCourtArrival extends StatefulWidget {
+  const SQCourtArrival({
+    super.key,
+    required this.child,
+    required this.fromLeft,
+    this.index = 0,
+  });
+
+  final Widget child;
+
+  /// Kaliwang panig ng net? Ang Team A ay totoo, ang Team B ay hindi.
+  final bool fromLeft;
+
+  /// Pang-ilan sa panig — para hindi sabay na sabay ang dalawa.
+  final int index;
+
+  @override
+  State<SQCourtArrival> createState() => _SQCourtArrivalState();
+}
+
+class _SQCourtArrivalState extends State<SQCourtArrival>
+    with SingleTickerProviderStateMixin {
+  // Gaya ng iba dito: laging ginagawa ang controller sa initState, kahit
+  // naka-reduce motion — ang haba na lang ang nagiging zero. Tingnan ang
+  // komento sa SQLivePulse kung bakit.
+  late final AnimationController _controller;
+  late final Animation<double> _curve;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(
+      vsync: this,
+      duration: SQDuration.page + Duration(milliseconds: widget.index * 70),
+    );
+    final start = widget.index == 0
+        ? 0.0
+        : (widget.index * 70) / _controller.duration!.inMilliseconds;
+    _curve = CurvedAnimation(
+      parent: _controller,
+      // `arrive` ang tanging curve na may kaunting tumbok sa dulo. Dito ito
+      // nabibigyan ng saysay: may dumating.
+      curve: Interval(start, 1, curve: SQCurve.arrive),
+    );
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (context.prefersStillness) {
+      _controller.value = 1;
+    } else if (!_controller.isAnimating && _controller.value == 0) {
+      _controller.forward();
+    }
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AnimatedBuilder(
+      animation: _curve,
+      builder: (context, child) {
+        final t = _curve.value;
+        return Opacity(
+          // Mas mabilis kumapit ang opacity kaysa sa posisyon: dumarating
+          // ang tao bago pa siya huminto.
+          opacity: t.clamp(0.0, 1.0),
+          child: Transform.translate(
+            offset: Offset((1 - t) * (widget.fromLeft ? -34 : 34), 0),
+            child: child,
+          ),
+        );
+      },
+      child: widget.child,
+    );
+  }
+}
+
+/// Pumipihit kapag nagbago ang laman.
+///
+/// ANG TANONG NA SINASAGOT: "tumalab ba ang pindot ko?" Ginawa ito para sa
+/// pagpalit ng mukha ng manlalaro sa roster. Kung biglang nagpalit lang ang
+/// guhit, ang pagkakaiba ng dalawang mukha ay madaling hindi mapansin — at
+/// ang QM ay pipindot ulit, iisipin niyang sira.
+///
+/// Ang pihit ay hindi palamuti: ito ang nagsasabing **ito pa rin ang
+/// parehong tao**, bagong mukha lang. Ang pagkupas lang ay magmumukhang
+/// ibang tao ang pumalit.
+class SQFlipSwap extends StatelessWidget {
+  const SQFlipSwap({super.key, required this.child, required this.swapKey});
+
+  final Widget child;
+
+  /// Kapag nagbago ito, pumipihit. Kapag hindi, walang nangyayari.
+  final Object swapKey;
+
+  @override
+  Widget build(BuildContext context) {
+    return AnimatedSwitcher(
+      duration: context.motion(SQDuration.state),
+      switchInCurve: SQCurve.enter,
+      switchOutCurve: SQCurve.exit,
+      // Magkapatong ang luma at bago sa kalagitnaan ng pihit, kaya hindi
+      // lumulukso ang hilera habang nagpapalit.
+      layoutBuilder: (current, previous) => Stack(
+        alignment: Alignment.center,
+        children: [...previous, ?current],
+      ),
+      transitionBuilder: (child, animation) {
+        final isIncoming = child.key == ValueKey(swapKey);
+        return AnimatedBuilder(
+          animation: animation,
+          builder: (context, inner) {
+            // Kalahating pihit kada panig: lumalabas ang luma hanggang
+            // gilid, pumapasok ang bago mula sa gilid.
+            final t = animation.value;
+            final angle = isIncoming ? (1 - t) * 1.5708 : t * -1.5708;
+            return Transform(
+              alignment: Alignment.center,
+              transform: Matrix4.identity()
+                ..setEntry(3, 2, 0.0012)
+                ..rotateY(angle),
+              child: Opacity(opacity: t.clamp(0.0, 1.0), child: inner),
+            );
+          },
+          child: child,
+        );
+      },
+      child: KeyedSubtree(key: ValueKey(swapKey), child: child),
+    );
+  }
+}
+
 /// Umaakyat ang bilang papunta sa bagong halaga.
 ///
 /// Para sa pera at sa bilang ng laro. Ang biglang pagpalit ng numero ay

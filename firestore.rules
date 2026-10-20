@@ -137,7 +137,7 @@ service cloud.firestore {
     function validMember(data) {
       return data.keys().hasOnly([
           'ownerUid', 'name', 'skillTier', 'aliases', 'balanceCentavos',
-          'sessionsAttended', 'lastPlayedAt', 'createdAt'
+          'sessionsAttended', 'lastPlayedAt', 'createdAt', 'avatarSeed'
         ])
         && data.ownerUid is string
         && isText(data.name, 60)
@@ -150,6 +150,10 @@ service cloud.firestore {
         && data.balanceCentavos <= 100000000
         && isCount(data.sessionsAttended, 10000)
         && isNullOrTimestamp(data.lastPlayedAt)
+        // Optional, gaya ng sa players.
+        && (!data.keys().hasAny(['avatarSeed'])
+            || data.avatarSeed == null
+            || isCount(data.avatarSeed, 2147483647))
         && data.createdAt is timestamp;
     }
 
@@ -200,7 +204,7 @@ service cloud.firestore {
         && data.courtCount <= 12
         && isMoney(data.courtFeeCentavos)
         && isMoney(data.shuttlePriceCentavos)
-        && data.feeMode in ['per_head', 'american']
+        && data.feeMode in ['per_head', 'per_game', 'american']
         && isNullOrTimestamp(data.billFinalizedAt)
         && data.createdAt is timestamp
         && data.updatedAt is timestamp;
@@ -247,7 +251,8 @@ service cloud.firestore {
         function validPlayer(data) {
           return data.keys().hasOnly([
               'ownerUid', 'name', 'skillTier', 'gamesPlayed', 'waitingSince',
-              'status', 'shuttlesUsed', 'hasPaid', 'memberId', 'createdAt'
+              'status', 'shuttlesUsed', 'hasPaid', 'memberId', 'createdAt',
+              'avatarSeed', 'gamesAtJoin'
             ])
             && data.ownerUid is string
             && isText(data.name, 60)
@@ -258,6 +263,18 @@ service cloud.firestore {
             && isCount(data.shuttlesUsed, 200)
             && data.hasPaid is bool
             && isNullOrString(data.memberId)
+            // SINADYANG OPTIONAL, kapareho ng gamesPlayed sa bill: may
+            // totoong QM na nasa naka-cache na build. Kung hihingin natin
+            // ang field na wala pa sa build niya, tatanggihan ang bawat
+            // pagsulat niya sa roster sa gitna ng gabi.
+            && (!data.keys().hasAny(['avatarSeed'])
+                || data.avatarSeed == null
+                || isCount(data.avatarSeed, 2147483647))
+            // Optional sa parehong dahilan, at may parehong hangganan ng
+            // gamesPlayed: ito ay bilang ng laro, kaya hindi ito pwedeng
+            // gawing daan para makalusot ang kahit anong numero.
+            && (!data.keys().hasAny(['gamesAtJoin'])
+                || isCount(data.gamesAtJoin, 500))
             && data.createdAt is timestamp;
         }
 
@@ -280,12 +297,20 @@ service cloud.firestore {
       match /bill/{playerId} {
         function validBillLine(data) {
           return data.keys().hasOnly([
-              'ownerUid', 'name', 'courtShareCentavos', 'shuttleShareCentavos'
+              'ownerUid', 'name', 'courtShareCentavos', 'shuttleShareCentavos',
+              'gamesPlayed'
             ])
             && data.ownerUid is string
             && isText(data.name, 60)
             && isMoney(data.courtShareCentavos)
-            && isMoney(data.shuttleShareCentavos);
+            && isMoney(data.shuttleShareCentavos)
+            // SINADYANG OPTIONAL. May totoong user na nasa web build na
+            // naka-cache; kung hihingin natin ang field na hindi pa alam
+            // ng build niya, tatanggihan ang pag-lock ng bill niya sa
+            // gitna ng pangongolekta. Ang dagdag na field ay dapat laging
+            // pwedeng wala pa.
+            && (!data.keys().hasAny(['gamesPlayed'])
+                || isCount(data.gamesPlayed, 500));
         }
 
         allow read, delete: if ownsChildExisting();

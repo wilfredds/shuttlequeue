@@ -92,7 +92,7 @@ sessions/{sessionId}             ownerUid, clubId, title, venue, sessionDate,
                                  createdAt, updatedAt
   players/{playerId}             name, skillTier, gamesPlayed, waitingSince,
                                  status, shuttlesUsed, hasPaid,
-                                 memberId?, createdAt
+                                 memberId?, avatarSeed?, createdAt
   courts/{courtId}               label, status, currentMatchId?
   matches/{matchId}              courtId, teamA[2], teamB[2],
                                  scoreA?, scoreB?, startedAt, endedAt?
@@ -145,9 +145,21 @@ necessary:
 ### FeeCalculator
 
 Per-head splits the court fee evenly and charges each player for their own
-shuttles; American pools everything and divides equally. Integer division
+shuttles; per-game splits it by each player's `gamesPlayed` and charges their
+own shuttles; American pools everything and divides equally. Integer division
 leaves a remainder, which is handed out one centavo at a time to players
 sorted by name — deterministic, so a refresh never changes someone's bill.
+
+**Per-game has two rules of its own.** The remainder is only ever handed to
+players who actually played: a centavo of court fee on someone with zero games
+is a small amount of money saying something false, and it is the first thing
+the eye catches on a bill. And when nobody has played yet, the weights are all
+zero, so it falls back to an even split — otherwise the shares are all zero
+and the Queue Master absorbs the whole rent.
+
+It deliberately splits a fixed rent rather than charging a fixed rate per
+game. A per-game *rate* floats free of what the court actually cost, so it can
+under-collect, and the Queue Master pays the difference.
 
 The invariant, asserted across 200 fee/headcount combinations: **the parts
 sum exactly to the whole.** A centavo lost here is a centavo out of the
@@ -155,6 +167,23 @@ Queue Master's own pocket.
 
 *Assumption:* players who left early still pay (spec §5 over §6's wording —
 they used the court). One flag flips it.
+
+## 5b. Adding a field to a live app
+
+Every field added after the app had a real user is **optional in the rules**,
+and the mapper falls back to a safe default when it is missing. `avatarSeed`
+on players and members, and `gamesPlayed` on bill lines, are all written this
+way.
+
+This is not tidiness. The web build is cached in the Queue Master's browser,
+so at the moment new rules go live there is a real person running the *old*
+code. Rules that require a field the old build does not send would reject
+every one of her writes, in the middle of a night, without her having changed
+anything. The deploy order follows from the same fact: **rules first, then
+hosting** — the new client must never meet the old rules.
+
+`test_rules/` asserts both directions for each of these fields: a document
+without it is accepted, and a document with a malformed one is refused.
 
 ## 6. Security
 
@@ -211,6 +240,32 @@ preferred over extra composite indexes where the collection is small.
 Every entry here was found in the deployed app, not in review. They are
 recorded because each one has a general lesson, and because the symptom in
 each case looked nothing like the cause.
+
+### A counter that two features disagreed about
+
+`gamesPlayed` had one job for most of this app's life: order the queue. A
+player who arrives at nine cannot start at zero, or the algorithm puts them
+ahead of everyone who has been waiting since eight, so `addLateArrival` seeds
+them with the lowest count in the queue. That is correct, and it was invisible,
+because nothing else read the number.
+
+Per-game fees made money read it. The seeded head start instantly became three
+games the late arrival never played, on a bill, in front of their friends. And
+because a weighted split divides a *fixed* rent, the error does not stop there:
+every other player is undercharged to make room for it. One field, two
+features, and only one of them was told about the fudge.
+
+The fix is `gamesAtJoin`, which records the head start so `billableGames` can
+subtract it. The general lesson is the one worth keeping: **a value that was
+quietly approximate for its first reader becomes a lie when a second reader
+arrives.** When a new feature starts reading an existing field, the question to
+ask is not "is this field correct?" but "correct *for what*?" — `gamesPlayed`
+was always correct for sorting a queue and never meant to be correct for
+charging money.
+
+It was caught by walking the flow as a Queue Master rather than by a test,
+which is also the lesson: the tests all passed, because they encoded the same
+assumption the bug did.
 
 ### Firestore rules evaluate against *pre-batch* state
 

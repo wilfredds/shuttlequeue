@@ -22,13 +22,14 @@ State management: Riverpod. **One codebase, two targets: Android and web.**
 | M1 | Queue Master auth (email/password) | ✅ |
 | M2 | Sessions + Messenger roster import + live roster editing | ✅ |
 | M3 | Courts + fair rotation (MatchmakingService) | ✅ |
-| M4 | Cost split (FeeCalculator, per-head / american) | ✅ |
+| M4 | Cost split (FeeCalculator, per-head / per-game / american) | ✅ |
 | M5 | Rules hardening (field validation) + polish + docs | ✅ |
 | M6 | Up Next board — read-only second screen for the hall | ✅ |
 | M7 | Night recap — per-player summary, shareable | ✅ |
 | — | Regulars book, carry-over balances, bill locking, snapshot export | ✅ |
 | — | On-court substitution, session templates, GCash number | ✅ |
 | — | Own brand mark, hardened sign-in, Queue Master dashboard | ✅ |
+| — | Pay-per-game split, player characters, court-arrival motion | ✅ |
 
 Deliberately **not** built: winner-stays / king-of-court rotation, and a GCash
 QR on the bill. Both need the coach's answer first — which format her club
@@ -111,15 +112,56 @@ appears in the Firestore console and the pending-sync banner clears.
 
 Pure, tested services carry the correctness burden: `MatchmakingService`
 (who plays next), `FeeCalculator` (who owes what), `RosterParser` (the
-Messenger paste), `NameMatcher` (recognising regulars) and
-`SessionSnapshot` (the offline backup). See
-[docs/architecture.md](docs/architecture.md).
+Messenger paste), `NameMatcher` (recognising regulars), `PlayerCharacter`
+(which face belongs to a name) and `SessionSnapshot` (the offline backup).
+See [docs/architecture.md](docs/architecture.md).
 
 **Export all my data** (dashboard overflow menu) writes the club, the regulars
 book with its balances, and every session with its players, matches and bill to
 a single JSON file. Firestore's scheduled backups are a paid-tier feature, so on
 the free tier this is the only copy of that data outside Firebase — and it
 doubles as RA 10173 data portability.
+
+## How the money splits
+
+Three ways, chosen per session. All of them obey one rule: **the shares add up
+to exactly the night's cost.** A centavo lost is a centavo out of the Queue
+Master's own pocket, so the invariant is asserted over thousands of generated
+fee-and-headcount combinations.
+
+| Mode | Court fee | Shuttles |
+|---|---|---|
+| Per head | split evenly | each player pays for their own |
+| **Per game** | **split by how many games each player got** | each player pays for their own |
+| American | pooled with the shuttles, split evenly | pooled |
+
+**Per game** is the one to reach for on a queueing night, where some people
+play twelve games and some play three. You still enter the whole night's court
+rent; the app divides it by the games actually played, so a player who got
+eight games pays roughly twice what a player who got four pays, and the total
+still lands exactly on the rent. The bill leads with the rate, because
+"how much per game?" is the question asked twelve times a night.
+
+Someone who paid but never got on court owes nothing for the court, and the
+centavo remainder is never handed to them. Before the first game there is
+nothing to divide by, so the court splits evenly until a game finishes.
+
+It is deliberately **not** a fixed peso-per-game rate. That version can collect
+less than the rent, and the Queue Master covers the gap herself.
+
+## The players
+
+Every player gets a drawn character, derived from their name, so the same
+person looks the same all night and on every later night. It is drawn on a
+canvas rather than loaded as images, for the same reason the fonts are bundled
+and subset: this app has to work for four hours with no internet.
+
+**The app never guesses anyone's gender.** It holds names and skill tiers and
+nothing else, and Filipino names and nicknames do not reliably indicate gender
+anyway. The character comes from an opaque hash of the name, and when it lands
+wrong the Queue Master taps it to change it. For a regular, that choice is
+remembered in the regulars book, so it is a one-time correction rather than a
+nightly one.
 
 **Two safety nets worth knowing about.** *Save a copy of tonight* (the save
 icon) exports the whole session as plain text — it works with no signal and
@@ -305,7 +347,8 @@ lib/
   theme.dart         # THE design system: colour, type, spacing, shadow, motion
   l10n/              # ALL user-facing strings (app_en.arb); Taglish locale later
   models/            # plain Dart data classes mirroring the Firestore contract
-  services/          # PURE logic — matchmaking, fee calc, roster parsing. No Firestore.
+  services/          # PURE logic — matchmaking, fee calc, roster parsing,
+                     #   player characters. No Firestore.
   repositories/      # the ONLY layer that talks to Firestore
   providers/         # Riverpod providers wiring repositories to the UI
   screens/           # one file per screen

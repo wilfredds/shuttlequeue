@@ -125,6 +125,10 @@ BillLine billLineFromDoc(DocumentSnapshot<Map<String, dynamic>> doc) {
     name: _readString(data['name']),
     courtShareCentavos: _readInt(data['courtShareCentavos']),
     shuttleShareCentavos: _readInt(data['shuttleShareCentavos']),
+    // Walang nito ang mga bill na naka-freeze bago idagdag ang per-game.
+    // Zero ang ibabalik ng _readInt, at tama iyon: hindi per-game ang mga
+    // iyon, kaya walang bilang na ipapakita.
+    gamesPlayed: _readInt(data['gamesPlayed']),
   );
 }
 
@@ -134,6 +138,7 @@ Map<String, Object?> billLineToMap(BillLine line, {required String ownerUid}) {
     'name': line.name,
     'courtShareCentavos': line.courtShareCentavos,
     'shuttleShareCentavos': line.shuttleShareCentavos,
+    'gamesPlayed': line.gamesPlayed,
   };
 }
 
@@ -156,6 +161,12 @@ SessionPlayer playerFromDoc(DocumentSnapshot<Map<String, dynamic>> doc) {
     hasPaid: _readBool(data['hasPaid']),
     createdAt: created,
     memberId: data['memberId'] as String?,
+    // Walang nito ang mga lumang player doc, at tama ang null doon: ang
+    // ibig sabihin ay "galing sa pangalan ang mukha".
+    avatarSeed: _readNullableInt(data['avatarSeed']),
+    // Zero para sa bawat lumang player doc, at tama iyon: nandoon na sila
+    // mula sa simula, kaya walang pasimulang ibinuhat sa kanila.
+    gamesAtJoin: _readInt(data['gamesAtJoin']),
   );
 }
 
@@ -166,6 +177,8 @@ Map<String, Object?> playerToCreateMap({
   required int gamesPlayed,
   required DateTime waitingSince,
   String? memberId,
+  int? avatarSeed,
+  int gamesAtJoin = 0,
 }) {
   return {
     // Naka-stamp ang may-ari sa mismong dokumento. Dati, tinitingnan ng
@@ -181,6 +194,8 @@ Map<String, Object?> playerToCreateMap({
     'shuttlesUsed': 0,
     'hasPaid': false,
     'memberId': memberId,
+    'avatarSeed': avatarSeed,
+    'gamesAtJoin': gamesAtJoin,
     'createdAt': FieldValue.serverTimestamp(),
   };
 }
@@ -254,6 +269,7 @@ ClubMember memberFromDoc(DocumentSnapshot<Map<String, dynamic>> doc) {
     sessionsAttended: _readInt(data['sessionsAttended']),
     createdAt: _readDate(data['createdAt']),
     lastPlayedAt: _readNullableDate(data['lastPlayedAt']),
+    avatarSeed: _readNullableInt(data['avatarSeed']),
   );
 }
 

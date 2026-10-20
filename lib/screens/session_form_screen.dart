@@ -314,6 +314,15 @@ class _SessionFormScreenState extends ConsumerState<SessionFormScreen> {
               decoration: InputDecoration(
                 labelText: l10n.courtFeeLabel,
                 prefixText: '₱ ',
+                // ANG BITAG NA SINASARAHAN NITO: ang piniling "Per game" ay
+                // nagmumungkahing presyo kada laro ang hinihingi dito.
+                // Kung "25" ang ilalagay ng QM imbes na "1200", ₱25 lang
+                // ang kabuuang makokolekta para sa buong gabi — at hindi
+                // niya iyon mapapansin hangga't hindi na huli.
+                helperText: _feeMode == FeeMode.perGame
+                    ? l10n.courtFeeHelpPerGame
+                    : null,
+                helperMaxLines: 3,
               ),
               keyboardType: const TextInputType.numberWithOptions(decimal: true),
               textInputAction: TextInputAction.next,
@@ -332,10 +341,18 @@ class _SessionFormScreenState extends ConsumerState<SessionFormScreen> {
             Text(l10n.feeModeLabel, style: theme.textTheme.titleMedium),
             const SizedBox(height: 8),
             SegmentedButton<FeeMode>(
+              // Tatlo na ang pagpipilian, kaya walang tsek na nakadagdag sa
+              // lapad. Sa 360dp na telepono, ang tsek ay sapat na para
+              // i-ellipsis ang "American".
+              showSelectedIcon: false,
               segments: [
                 ButtonSegment(
                   value: FeeMode.perHead,
                   label: Text(l10n.feeModePerHead),
+                ),
+                ButtonSegment(
+                  value: FeeMode.perGame,
+                  label: Text(l10n.feeModePerGame),
                 ),
                 ButtonSegment(
                   value: FeeMode.american,
@@ -348,9 +365,11 @@ class _SessionFormScreenState extends ConsumerState<SessionFormScreen> {
             ),
             const SizedBox(height: 8),
             Text(
-              _feeMode == FeeMode.perHead
-                  ? l10n.feeModePerHeadHelp
-                  : l10n.feeModeAmericanHelp,
+              switch (_feeMode) {
+                FeeMode.perHead => l10n.feeModePerHeadHelp,
+                FeeMode.perGame => l10n.feeModePerGameHelp,
+                FeeMode.american => l10n.feeModeAmericanHelp,
+              },
               style: theme.textTheme.bodyMedium?.copyWith(
                 color: context.sq.inkMuted,
               ),

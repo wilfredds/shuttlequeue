@@ -6,8 +6,10 @@ import '../models/enums.dart';
 import '../models/session_player.dart';
 import '../providers/session_providers.dart';
 import '../repositories/player_repository.dart';
+import '../services/player_character.dart';
 import '../theme.dart';
 import '../widgets/motion.dart';
+import '../widgets/player_avatar.dart';
 import '../widgets/skill_badge.dart';
 import '../widgets/surfaces.dart';
 import '../widgets/sync_indicator.dart';
@@ -463,6 +465,17 @@ class _PlayerTile extends ConsumerWidget {
           ),
           child: Row(
             children: [
+              // Dito lang mapapalitan ang mukha. Ang roster ang lugar ng
+              // pagwawasto — dito rin pinapalitan ang tier at ang pangalan.
+              // Sa pila at sa board, tingin lang: nakatayo ang QM at may
+              // naghihintay, kaya walang aksidenteng pindot doon.
+              PlayerAvatarButton(
+                name: player.name,
+                seed: player.avatarSeed,
+                size: 34,
+                tooltip: l10n.changeFace,
+                onCycle: hasLeft ? null : () => _cycleAvatar(context, ref),
+              ),
               SkillTierSelector(
                 value: player.skillTier,
                 onChanged: hasLeft ? null : (tier) => _changeTier(ref, tier),
@@ -574,6 +587,43 @@ class _PlayerTile extends ConsumerWidget {
           .read(clubRepositoryProvider)
           .updateMember(clubId, memberId, skillTier: tier);
     }
+  }
+
+  /// Susunod na mukha. Kapareho ng [_changeTier], tumatama ito sa dalawang
+  /// lugar kapag regular ang manlalaro: ngayong gabi **at** sa regulars
+  /// book — kung hindi, babalik sa lumang mukha si Maricel sa susunod na
+  /// linggo at mauulit ang pagwawasto tuwing gabi.
+  ///
+  /// DITO NAKATIRA ANG PAGTANGGI SA PAGHULA NG KASARIAN. Hindi hinuhulaan
+  /// ng app kung sino ang ano; kapag mali ang napuntang mukha, isang pindot
+  /// ang sagot — at naaalala ito.
+  Future<void> _cycleAvatar(BuildContext context, WidgetRef ref) async {
+    final l10n = AppLocalizations.of(context)!;
+    final messenger = ScaffoldMessenger.of(context);
+    final next = cycledSeed(player.name, player.avatarSeed);
+
+    await ref.read(playerRepositoryProvider).updatePlayer(
+          sessionId,
+          player.id,
+          avatarSeed: next,
+        );
+
+    final memberId = player.memberId;
+    final clubId = ref.read(defaultClubIdProvider).value;
+    if (memberId != null && clubId != null) {
+      await ref
+          .read(clubRepositoryProvider)
+          .updateMember(clubId, memberId, avatarSeed: next);
+    }
+
+    messenger
+      ..hideCurrentSnackBar()
+      ..showSnackBar(
+        SnackBar(
+          content: Text(l10n.faceChanged(player.name)),
+          duration: const Duration(seconds: 2),
+        ),
+      );
   }
 
   String _statusLabel(AppLocalizations l10n, PlayerStatus status) {

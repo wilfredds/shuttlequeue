@@ -87,12 +87,32 @@ enum FeeMode {
   /// Hati ang court fee, tapos bayad mo ang sarili mong shuttles.
   perHead('per_head'),
 
+  /// Hati ang court fee **ayon sa bilang ng laro**, tapos bayad mo ang
+  /// sarili mong shuttles. Ang naglaro ng walo ay doble ang bayad sa
+  /// naglaro ng apat; iisa pa rin ang renta ng court.
+  perGame('per_game'),
+
   /// Ipunin lahat (court + shuttles) at pantay-pantay ang hati.
   american('american');
 
   const FeeMode(this.value);
 
   final String value;
+
+  /// Sarili mong shuttle ang bayad mo, o nasa isang bunton ang lahat?
+  ///
+  /// NANDITO ITO AT HINDI SA SCREEN dahil dito na ako nadapa: ang bill
+  /// screen ay nagtatanong ng `== FeeMode.perHead` para magpakita ng
+  /// shuttle stepper. Nang dumating ang per-game — na personal din ang
+  /// shuttle — nawala ang stepper, at wala nang paraan ang QM para itala
+  /// kung sino ang kumuha ng bola. Ang tanong ay tungkol sa mode, kaya
+  /// dapat ang mode ang sumasagot; ang bagong mode ay hindi makakalimutang
+  /// sagutin ito.
+  bool get chargesShuttlesIndividually => switch (this) {
+    FeeMode.perHead => true,
+    FeeMode.perGame => true,
+    FeeMode.american => false,
+  };
 
   static FeeMode fromValue(String? value) {
     return FeeMode.values.firstWhere(

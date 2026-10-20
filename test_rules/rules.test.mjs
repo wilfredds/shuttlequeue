@@ -343,6 +343,71 @@ async function main() {
   await check('an invalid fee mode is rejected', () =>
     assertFails(addDoc(collection(ownerDb, 'sessions'), {
       ...validSession(), feeMode: 'free_for_all' })));
+  // Ang per-game ay ang hatian ayon sa bilang ng laro. Kung hindi ito
+  // nakadeploy sa rules, tahimik na babagsak ang pag-save ng QM.
+  await check('the per-game fee mode is accepted', () =>
+    assertSucceeds(addDoc(collection(ownerDb, 'sessions'), {
+      ...validSession(), feeMode: 'per_game' })));
+
+  // -------------------------------------------------------------------------
+  // Ang mga bagong field ay OPTIONAL - ito ang pinaka-mahalagang pagsubok
+  // dito para sa isang app na may totoo nang gumagamit.
+  //
+  // May QM na nasa naka-cache na web build. Kung ang bagong rules ay
+  // HIHINGI ng field na hindi pa alam ng build niya, bawat pagsulat niya
+  // ay tatanggihan sa gitna ng gabi - at mukhang nasira ang app nang
+  // hindi siya naglagay ng anuman. Kaya: tanggap ang luma AT ang bago.
+  // -------------------------------------------------------------------------
+  await check('a player without avatarSeed is accepted (old client)', () =>
+    assertSucceeds(addDoc(
+      collection(ownerDb, 'sessions', SESSION, 'players'), validPlayer())));
+  await check('a player with avatarSeed is accepted (new client)', () =>
+    assertSucceeds(addDoc(
+      collection(ownerDb, 'sessions', SESSION, 'players'),
+      validPlayer({ avatarSeed: 839188941 }))));
+  await check('a null avatarSeed is accepted (means: from the name)', () =>
+    assertSucceeds(addDoc(
+      collection(ownerDb, 'sessions', SESSION, 'players'),
+      validPlayer({ avatarSeed: null }))));
+  await check('a negative avatarSeed is rejected', () =>
+    assertFails(addDoc(
+      collection(ownerDb, 'sessions', SESSION, 'players'),
+      validPlayer({ avatarSeed: -1 }))));
+  await check('an avatarSeed that is not a number is rejected', () =>
+    assertFails(addDoc(
+      collection(ownerDb, 'sessions', SESSION, 'players'),
+      validPlayer({ avatarSeed: 'maricel' }))));
+
+  await check('a player without gamesAtJoin is accepted (old client)', () =>
+    assertSucceeds(addDoc(
+      collection(ownerDb, 'sessions', SESSION, 'players'), validPlayer())));
+  await check('a player with gamesAtJoin is accepted (new client)', () =>
+    assertSucceeds(addDoc(
+      collection(ownerDb, 'sessions', SESSION, 'players'),
+      validPlayer({ gamesPlayed: 7, gamesAtJoin: 3 }))));
+  await check('a negative gamesAtJoin is rejected', () =>
+    assertFails(addDoc(
+      collection(ownerDb, 'sessions', SESSION, 'players'),
+      validPlayer({ gamesAtJoin: -2 }))));
+  await check('an absurd gamesAtJoin is rejected', () =>
+    assertFails(addDoc(
+      collection(ownerDb, 'sessions', SESSION, 'players'),
+      validPlayer({ gamesAtJoin: 99999 }))));
+
+  await check('a bill line without gamesPlayed is accepted (old client)', () =>
+    assertSucceeds(setDoc(doc(ownerDb, 'sessions', SESSION, 'bill', 'p9'), {
+      ownerUid: OWNER, name: 'Jun',
+      courtShareCentavos: 30000, shuttleShareCentavos: 0 })));
+  await check('a bill line with gamesPlayed is accepted (new client)', () =>
+    assertSucceeds(setDoc(doc(ownerDb, 'sessions', SESSION, 'bill', 'p9'), {
+      ownerUid: OWNER, name: 'Jun',
+      courtShareCentavos: 30000, shuttleShareCentavos: 0,
+      gamesPlayed: 8 })));
+  await check('a negative gamesPlayed on a bill line is rejected', () =>
+    assertFails(setDoc(doc(ownerDb, 'sessions', SESSION, 'bill', 'p9'), {
+      ownerUid: OWNER, name: 'Jun',
+      courtShareCentavos: 30000, shuttleShareCentavos: 0,
+      gamesPlayed: -3 })));
   await check('a match with three players per side is rejected', () =>
     assertFails(addDoc(collection(ownerDb, 'sessions', SESSION, 'matches'), {
       courtId: 'court-1',

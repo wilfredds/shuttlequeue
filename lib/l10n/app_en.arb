@@ -54,6 +54,40 @@
   "feeModeLabel": "How to split the cost",
   "feeModePerHead": "Per head",
   "feeModePerHeadHelp": "Court fee is split evenly; each player pays for their own shuttles.",
+  "changeFace": "Change character",
+  "faceChanged": "New character for {name}",
+  "@faceChanged": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "feeModePerGame": "Per game",
+  "feeModePerGameHelp": "Court fee is split by how many games each player got. Play more, pay more. Shuttles stay personal.",
+  "courtFeeLabelPerGame": "Court fee for the night",
+  "courtFeeHelpPerGame": "Still the whole night's court rent. The app divides it by the games actually played.",
+  "moneyPerGameRateLabel": "per game",
+  "moneyPerGameRate": "{rate} per game",
+  "@moneyPerGameRate": {
+    "placeholders": {
+      "rate": {
+        "type": "String"
+      }
+    }
+  },
+  "moneyPerGameBasis": "{fee} court · {games} games played",
+  "@moneyPerGameBasis": {
+    "placeholders": {
+      "fee": {
+        "type": "String"
+      },
+      "games": {
+        "type": "int"
+      }
+    }
+  },
+  "moneyNoGamesYet": "Nobody has played yet, so the court is split evenly for now.",
   "feeModeAmerican": "American",
   "feeModeAmericanHelp": "Everything is pooled — court and shuttles — then split evenly.",
   "createSessionButton": "Create session",

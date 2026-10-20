@@ -224,11 +224,16 @@ class ClubRepository {
     String? name,
     SkillTier? skillTier,
     List<String>? aliases,
+    int? avatarSeed,
   }) {
     return membersOf(clubId).doc(memberId).update({
       'name': ?name,
       if (skillTier != null) 'skillTier': skillTier.value,
       'aliases': ?aliases,
+      // Ang mukhang pinili ng QM ngayong gabi ay naaalala sa susunod.
+      // Dito ang tamang lugar nito: ang regulars book ang may hawak ng
+      // kung ano ang tumatagal sa pagitan ng mga gabi.
+      'avatarSeed': ?avatarSeed,
     });
   }
 

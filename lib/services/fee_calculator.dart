@@ -17,6 +17,7 @@ class FeeLine {
     required this.name,
     required this.courtShareCentavos,
     required this.shuttleShareCentavos,
+    required this.gamesPlayed,
     required this.hasPaid,
     required this.hasLeft,
   });
@@ -25,6 +26,12 @@ class FeeLine {
   final String name;
   final int courtShareCentavos;
   final int shuttleShareCentavos;
+
+  /// Ilang laro ang sinisingil sa hilerang ito. Sa `perGame` ito ang
+  /// batayan ng court share; sa iba, pang-konteksto lang — pero kailangan
+  /// pa rin ito ng bill screen para maipakita kung bakit ganoon ang halaga.
+  final int gamesPlayed;
+
   final bool hasPaid;
   final bool hasLeft;
 
@@ -36,6 +43,8 @@ class FeeBreakdown {
     required this.lines,
     required this.mode,
     required this.expectedTotalCentavos,
+    this.courtFeeCentavos = 0,
+    this.totalPlayerGames = 0,
   });
 
   final List<FeeLine> lines;
@@ -43,6 +52,20 @@ class FeeBreakdown {
 
   /// Ang totoong gastos ng gabi: court fee + lahat ng shuttle.
   final int expectedTotalCentavos;
+
+  /// Ang renta ng court lang, bukod sa shuttle.
+  final int courtFeeCentavos;
+
+  /// Suma ng `gamesPlayed` ng lahat ng dumalo. Sa doubles, apat na
+  /// player-game ang isang laro — kaya ito ang bilang ng upuan sa court
+  /// na binayaran ngayong gabi, hindi ang bilang ng laro.
+  final int totalPlayerGames;
+
+  /// **Pang-display lang.** Humigit-kumulang kung magkano ang isang laro
+  /// kada tao, para may masabi ang QM kapag tinanong. Ang tunay na singil
+  /// ay nasa bawat [FeeLine]; dito may tinatapyas na centavo ang paghahati.
+  int get courtRatePerGameCentavos =>
+      totalPlayerGames == 0 ? 0 : courtFeeCentavos ~/ totalPlayerGames;
 
   int get chargedTotalCentavos =>
       lines.fold(0, (sum, line) => sum + line.totalCentavos);
@@ -90,6 +113,11 @@ class FeeCalculator {
         attendees.fold(0, (sum, p) => sum + p.shuttlesUsed);
     final shuttleCost = totalShuttles * shuttlePriceCentavos;
     final expectedTotal = courtFeeCentavos + shuttleCost;
+    // billableGames, HINDI gamesPlayed. Ang dumating nang huli ay binubuhat
+    // sa pinakamababa sa pila para patas ang pagkakasunod — at ang pagbuhat
+    // na iyon ay hindi laro na nilaro niya. Tingnan ang SessionPlayer.
+    final totalPlayerGames =
+        attendees.fold(0, (sum, p) => sum + p.billableGames);
 
     // Walang dumalo: walang hahatiin. Nagbabalik ng walang laman kaysa
     // mag-divide by zero at pumatay sa screen.
@@ -114,6 +142,35 @@ class FeeCalculator {
               name: player.name,
               courtShareCentavos: courtShares[i],
               shuttleShareCentavos: player.shuttlesUsed * shuttlePriceCentavos,
+              gamesPlayed: player.billableGames,
+              hasPaid: player.hasPaid,
+              hasLeft: player.status == PlayerStatus.left,
+            ),
+          );
+        }
+
+      case FeeMode.perGame:
+        // ANG HINAHANAP NG QM: lumalaki ang bayad habang dumadami ang laro.
+        //
+        // Isang halaga pa rin ang renta ng court — hindi ito bagong presyo
+        // kada laro. Hinahati natin ang renta ayon sa bilang ng laro, kaya
+        // ang naglaro ng walo ay doble ang bayad sa naglaro ng apat, at ang
+        // kabuuan ay napupunta pa rin nang eksakto sa renta. Ang bersyon na
+        // may takdang presyo kada laro ay nanganganib na magkulang sa renta,
+        // at ang QM ang aabono.
+        final courtShares = _splitByWeight(
+          courtFeeCentavos,
+          [for (final p in attendees) p.billableGames],
+        );
+        for (var i = 0; i < attendees.length; i++) {
+          final player = attendees[i];
+          lines.add(
+            FeeLine(
+              playerId: player.id,
+              name: player.name,
+              courtShareCentavos: courtShares[i],
+              shuttleShareCentavos: player.shuttlesUsed * shuttlePriceCentavos,
+              gamesPlayed: player.billableGames,
               hasPaid: player.hasPaid,
               hasLeft: player.status == PlayerStatus.left,
             ),
@@ -131,6 +188,7 @@ class FeeCalculator {
               name: player.name,
               courtShareCentavos: shares[i],
               shuttleShareCentavos: 0,
+              gamesPlayed: player.billableGames,
               hasPaid: player.hasPaid,
               hasLeft: player.status == PlayerStatus.left,
             ),
@@ -142,6 +200,8 @@ class FeeCalculator {
       lines: lines,
       mode: feeMode,
       expectedTotalCentavos: expectedTotal,
+      courtFeeCentavos: courtFeeCentavos,
+      totalPlayerGames: totalPlayerGames,
     );
   }
 
@@ -158,5 +218,39 @@ class FeeCalculator {
     return [
       for (var i = 0; i < count; i++) base + (i < remainder ? 1 : 0),
     ];
+  }
+
+  /// Hinahati ang [total] ayon sa [weights] — at **eksaktong nagsusuma**
+  /// pa rin pabalik sa total.
+  ///
+  /// Dalawang panuntunan ang mahalaga dito:
+  ///
+  ///  * **Ang walang timbang ay walang bayad.** Ang tira ay ipinapamigay
+  ///    lang sa may timbang. Kung hindi, ang hindi nakalaro ay masisingil
+  ///    ng isang centavo para sa court — maliit na halaga, pero mali ang
+  ///    sinasabi nito, at iyon ang unang pupulot ng mata sa bill.
+  ///  * **Kapag walang timbang ang lahat, pantay-pantay.** Nangyayari ito
+  ///    bago ang unang laro: may renta na ang court pero wala pang laro.
+  ///    Kung ayon sa laro ang hatian, zero ang lahat at ang QM ang aabono
+  ///    ng buong renta.
+  List<int> _splitByWeight(int total, List<int> weights) {
+    if (weights.isEmpty) return const [];
+
+    final totalWeight = weights.fold(0, (sum, w) => sum + w);
+    if (totalWeight <= 0) return _split(total, weights.length);
+
+    final shares = [for (final w in weights) total * w ~/ totalWeight];
+
+    // Ang bawat paghati ay tumatapyas ng kulang sa isang centavo, kaya ang
+    // tira ay laging mas maliit sa bilang ng may timbang — hindi tayo
+    // mauuwi sa loop na may natitira pa.
+    var remainder = total - shares.fold(0, (sum, v) => sum + v);
+    for (var i = 0; i < shares.length && remainder > 0; i++) {
+      if (weights[i] <= 0) continue;
+      shares[i] += 1;
+      remainder--;
+    }
+
+    return shares;
   }
 }
