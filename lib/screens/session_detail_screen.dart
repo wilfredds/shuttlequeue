@@ -10,6 +10,7 @@ import '../services/session_snapshot.dart';
 import '../theme.dart';
 import '../widgets/motion.dart';
 import 'board_screen.dart';
+import 'end_session_action.dart';
 import 'cost_split_screen.dart';
 import 'courts_screen.dart';
 import 'recap_screen.dart';
@@ -81,6 +82,17 @@ class _SessionDetailScreenState extends ConsumerState<SessionDetailScreen> {
         ref.watch(courtsProvider(widget.sessionId)).value?.data ?? const [];
     final queue = ref.watch(queueOrderProvider(widget.sessionId));
 
+    // Sinasadyang pinapanood kahit hindi ginagamit dito.
+    //
+    // Binabasa ito ng _shareSnapshot sa pamamagitan ng `read`, at ang isang
+    // StreamProvider na walang nanonood ay nagbabalik ng wala habang naka-
+    // loading pa. Kung hindi pa nabubuksan ng QM ang Courts tab, ang "Save
+    // a copy of tonight" ay maglalabas ng papel na walang kahit isang laro
+    // — at iyon ang mismong kopyang pinagkakatiwalaan kapag patay na ang
+    // baterya. Ang papel na mukhang buo pero walang laman ay mas masahol
+    // pa kaysa sa walang papel.
+    ref.watch(matchesProvider(widget.sessionId));
+
     final onCourt =
         players.where((p) => p.status == PlayerStatus.playing).length;
     final freeCourts = courts.where((c) => c.status == CourtStatus.free).length;
@@ -115,6 +127,18 @@ class _SessionDetailScreenState extends ConsumerState<SessionDetailScreen> {
                   Text(
                     l10n.sessionStatusLive.toUpperCase(),
                     style: theme.textTheme.labelSmall?.copyWith(color: sq.live),
+                  ),
+                  _Sep(),
+                ],
+                // Dati, ang tapos na gabi ay kamukhang-kamukha ng tumatakbo
+                // pa. Walang nagsasabi kung alin ang alin.
+                if (session?.status == SessionStatus.ended) ...[
+                  Icon(Icons.check_circle, size: 11, color: sq.inkMuted),
+                  const SizedBox(width: SQSpace.xs),
+                  Text(
+                    l10n.sessionStatusEnded.toUpperCase(),
+                    style:
+                        theme.textTheme.labelSmall?.copyWith(color: sq.inkMuted),
                   ),
                   _Sep(),
                 ],
@@ -168,6 +192,42 @@ class _SessionDetailScreenState extends ConsumerState<SessionDetailScreen> {
                   builder: (_) => SessionFormScreen(existing: session),
                 ),
               ),
+            ),
+            // Ang pagtatapos ng gabi ay dapat may sariling pindutan. Dati,
+            // ang tanging daan ay ang "Lock the amounts" sa Money tab —
+            // hindi ito nahanap ng totoong QM, dahil hindi iyon ang
+            // tinatanong niya.
+            PopupMenuButton<String>(
+              tooltip: l10n.endSession,
+              icon: const Icon(Icons.more_vert),
+              onSelected: (value) {
+                if (value == 'end') confirmEndSession(context, ref, widget.sessionId);
+                if (value == 'resume') resumeSession(context, ref, widget.sessionId);
+              },
+              itemBuilder: (context) => [
+                if (session.status != SessionStatus.ended)
+                  PopupMenuItem(
+                    value: 'end',
+                    child: Row(
+                      children: [
+                        const Icon(Icons.flag_outlined, size: 20),
+                        const SizedBox(width: SQSpace.md),
+                        Text(l10n.endSession),
+                      ],
+                    ),
+                  )
+                else
+                  PopupMenuItem(
+                    value: 'resume',
+                    child: Row(
+                      children: [
+                        const Icon(Icons.play_arrow_outlined, size: 20),
+                        const SizedBox(width: SQSpace.md),
+                        Text(l10n.resumeSession),
+                      ],
+                    ),
+                  ),
+              ],
             ),
           ],
           const SizedBox(width: SQSpace.xs),

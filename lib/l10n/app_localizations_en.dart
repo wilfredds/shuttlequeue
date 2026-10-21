@@ -156,6 +156,43 @@ class AppLocalizationsEn extends AppLocalizations {
       'Court fee is split evenly; each player pays for their own shuttles.';
 
   @override
+  String get endSession => 'End session';
+
+  @override
+  String get endSessionConfirmTitle => 'End tonight?';
+
+  @override
+  String get endSessionConfirmBody =>
+      'The queue stops and waiting times stop counting. You can still collect payments and reopen it if someone stays on.';
+
+  @override
+  String get endSessionCta => 'End session';
+
+  @override
+  String get sessionEnded => 'Session ended';
+
+  @override
+  String endSessionBlocked(String court) {
+    return 'Finish the game on $court first';
+  }
+
+  @override
+  String get resumeSession => 'Reopen session';
+
+  @override
+  String get sessionResumed => 'Session reopened';
+
+  @override
+  String get courtsEndedTitle => 'Tonight is done';
+
+  @override
+  String get courtsEndedBody =>
+      'Reopen the session if people are still playing.';
+
+  @override
+  String get queueWaitPaused => 'paused';
+
+  @override
   String get changeFace => 'Change character';
 
   @override

@@ -54,6 +54,25 @@
   "feeModeLabel": "How to split the cost",
   "feeModePerHead": "Per head",
   "feeModePerHeadHelp": "Court fee is split evenly; each player pays for their own shuttles.",
+  "endSession": "End session",
+  "endSessionConfirmTitle": "End tonight?",
+  "endSessionConfirmBody": "The queue stops and waiting times stop counting. You can still collect payments and reopen it if someone stays on.",
+  "endSessionCta": "End session",
+  "sessionEnded": "Session ended",
+  "endSessionBlocked": "Finish the game on {court} first",
+  "@endSessionBlocked": {
+    "placeholders": {
+      "court": {
+        "type": "String"
+      }
+    }
+  },
+  "resumeSession": "Reopen session",
+  "sessionResumed": "Session reopened",
+  "sessionStatusEnded": "Ended",
+  "courtsEndedTitle": "Tonight is done",
+  "courtsEndedBody": "Reopen the session if people are still playing.",
+  "queueWaitPaused": "paused",
   "changeFace": "Change character",
   "faceChanged": "New character for {name}",
   "@faceChanged": {

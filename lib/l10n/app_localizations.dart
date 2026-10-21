@@ -358,6 +358,72 @@ abstract class AppLocalizations {
   /// **'Court fee is split evenly; each player pays for their own shuttles.'**
   String get feeModePerHeadHelp;
 
+  /// No description provided for @endSession.
+  ///
+  /// In en, this message translates to:
+  /// **'End session'**
+  String get endSession;
+
+  /// No description provided for @endSessionConfirmTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'End tonight?'**
+  String get endSessionConfirmTitle;
+
+  /// No description provided for @endSessionConfirmBody.
+  ///
+  /// In en, this message translates to:
+  /// **'The queue stops and waiting times stop counting. You can still collect payments and reopen it if someone stays on.'**
+  String get endSessionConfirmBody;
+
+  /// No description provided for @endSessionCta.
+  ///
+  /// In en, this message translates to:
+  /// **'End session'**
+  String get endSessionCta;
+
+  /// No description provided for @sessionEnded.
+  ///
+  /// In en, this message translates to:
+  /// **'Session ended'**
+  String get sessionEnded;
+
+  /// No description provided for @endSessionBlocked.
+  ///
+  /// In en, this message translates to:
+  /// **'Finish the game on {court} first'**
+  String endSessionBlocked(String court);
+
+  /// No description provided for @resumeSession.
+  ///
+  /// In en, this message translates to:
+  /// **'Reopen session'**
+  String get resumeSession;
+
+  /// No description provided for @sessionResumed.
+  ///
+  /// In en, this message translates to:
+  /// **'Session reopened'**
+  String get sessionResumed;
+
+  /// No description provided for @courtsEndedTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Tonight is done'**
+  String get courtsEndedTitle;
+
+  /// No description provided for @courtsEndedBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Reopen the session if people are still playing.'**
+  String get courtsEndedBody;
+
+  /// No description provided for @queueWaitPaused.
+  ///
+  /// In en, this message translates to:
+  /// **'paused'**
+  String get queueWaitPaused;
+
   /// No description provided for @changeFace.
   ///
   /// In en, this message translates to:

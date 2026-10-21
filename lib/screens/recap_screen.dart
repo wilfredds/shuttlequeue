@@ -3,10 +3,12 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:share_plus/share_plus.dart';
 
 import '../l10n/app_localizations.dart';
+import '../models/enums.dart';
 import '../models/session.dart';
 import '../providers/session_providers.dart';
 import '../services/night_recap.dart';
 import '../theme.dart';
+import 'end_session_action.dart';
 import '../widgets/motion.dart';
 import '../widgets/player_avatar.dart';
 import '../widgets/surfaces.dart';
@@ -120,6 +122,49 @@ class RecapScreen extends ConsumerWidget {
                 ),
               ),
             ),
+          // ANG PANGALAWANG PASUKAN, at ang mas mahalaga sa dalawa.
+          //
+          // Dito nakaupo ang QM kapag tapos na ang gabi — binabasa niya ang
+          // buod at ipinapadala ito sa group chat. Ang menu sa app bar ang
+          // nakasanayang lugar, pero ito ang lugar na TINITINGNAN niya.
+          if (session.status != SessionStatus.ended) ...[
+            const SizedBox(height: SQSpace.xl),
+            SQCard(
+              padding: const EdgeInsets.fromLTRB(
+                SQSpace.lg,
+                SQSpace.lg,
+                SQSpace.lg,
+                SQSpace.lg,
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    l10n.courtsEndedTitle,
+                    style: Theme.of(context).textTheme.titleMedium,
+                  ),
+                  const SizedBox(height: SQSpace.xs),
+                  Text(
+                    l10n.endSessionConfirmBody,
+                    style: Theme.of(context)
+                        .textTheme
+                        .bodySmall
+                        ?.copyWith(color: context.sq.inkMuted),
+                  ),
+                  const SizedBox(height: SQSpace.md),
+                  SizedBox(
+                    width: double.infinity,
+                    child: OutlinedButton.icon(
+                      onPressed: () =>
+                          confirmEndSession(context, ref, sessionId),
+                      icon: const Icon(Icons.flag_outlined, size: 19),
+                      label: Text(l10n.endSession),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
         ],
       ),
       floatingActionButton: FloatingActionButton.extended(

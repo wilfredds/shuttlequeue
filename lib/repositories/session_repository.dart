@@ -255,6 +255,52 @@ class SessionRepository {
     fireAndForget(batch.commit(), onWriteError);
   }
 
+  /// Tapos na ang gabi.
+  ///
+  /// BAKIT HIWALAY ITO SA [finalizeBill]: dati, ang pag-lock ng bayarin ang
+  /// TANGING paraan para matapos ang isang session — "walang dagdag na
+  /// pindot", sabi ko. Isang totoong QM ang sumubok ng app at hindi niya ito
+  /// nahanap, dahil ang hinahanap niya ay "tapusin ang gabi" at ang nakasulat
+  /// ay "i-lock ang halaga". Dalawang magkaibang tanong iyon:
+  ///
+  ///   * ang lock ay tungkol sa PERA — huwag nang gumalaw ang singil habang
+  ///     nangongolekta ako, at pwede itong mangyari habang may naglalaro pa;
+  ///   * ang pagtatapos ay tungkol sa GABI — uwian na.
+  ///
+  /// Ang halaga ng pagkakamali ay hindi lang nawawalang pindutan. Ang
+  /// session na hindi natapos ay nananatiling `live` habambuhay: lumalaki
+  /// nang walang hanggan ang oras ng paghihintay ng bawat tao, at sa
+  /// dashboard ay inaagaw nito ang puwesto ng "tonight" magpakailanman
+  /// (tingnan ang `groupSessions` — ang live ang laging nananalo, kahit
+  /// noong isang linggo pa iyon).
+  ///
+  /// HINDI nito ginagalaw ang bayarin. Ang gabing binayaran nang cash habang
+  /// naglalaro ay hindi kailangang mag-lock ng bill para matapos.
+  Future<void> endSession(String sessionId) async {
+    fireAndForget(
+      _sessions.doc(sessionId).update({
+        'status': SessionStatus.ended.value,
+        'updatedAt': FieldValue.serverTimestamp(),
+      }),
+      onWriteError,
+    );
+  }
+
+  /// Nagkamali ng pindot, o may bumalik pang naglaro.
+  ///
+  /// Hindi rin nito ginagalaw ang bayarin: kung naka-lock ito, naka-lock pa
+  /// rin. Ang pagbubukas ng bill ay sariling aksyon na may sariling babala
+  /// ([reopenBill]), dahil doon may pera nang nakasalalay.
+  Future<void> resumeSession(String sessionId) async {
+    fireAndForget(
+      _sessions.doc(sessionId).update({
+        'status': SessionStatus.live.value,
+        'updatedAt': FieldValue.serverTimestamp(),
+      }),
+      onWriteError,
+    );
+  }
+
   /// Buong pagbura ng session at ng lahat ng laman nito.
   ///
   /// **Hindi cascade ang Firestore** — kapag binura ang parent doc, nananatili

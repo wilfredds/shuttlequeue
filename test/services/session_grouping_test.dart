@@ -56,6 +56,21 @@ void main() {
     expect(g.tonight?.id, 'kahapon-tuloy');
   });
 
+  test('ang nakalimutang live noong isang linggo ay hindi na nananaig', () {
+    // ITO ANG GALING SA TOTOONG PAGSUBOK: walang paraan noon para tapusin
+    // ang session, kaya nanatiling live ang isang lumang pagsubok at inagaw
+    // nito ang hero araw-araw mula noon. Ang tunay na gabi ngayon ay
+    // naitulak pababa, at mukhang sira ang dashboard.
+    final g = groupSessions([
+      _s('ngayon', DateTime(2026, 9, 7, 21)),
+      _s('lumang-test', DateTime(2026, 8, 31, 20), status: SessionStatus.live),
+    ], _now);
+
+    expect(g.tonight?.id, 'ngayon');
+    // Hindi ito nawawala — nasa nakaraan lang ito, kung saan nararapat.
+    expect(g.earlier.map((s) => s.id), contains('lumang-test'));
+  });
+
   test('ang gabing tapos na ngayong araw ay itinataas pa rin', () {
     // Karaniwang pagkatapos ng laro kinokolekta ang bayad — kailangan
     // pa rin niyang mabilis itong mabuksan.

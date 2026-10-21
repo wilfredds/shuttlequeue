@@ -41,8 +41,27 @@ GroupedSessions groupSessions(List<Session> sessions, DateTime now) {
   final upcoming = <Session>[];
   final earlier = <Session>[];
 
+  // Kahapon pa rin ang bilang, para sa gabing lumagpas ng hatinggabi.
+  final yesterday = now.subtract(const Duration(days: 1));
+
   for (final session in sessions) {
-    if (session.status == SessionStatus.live) {
+    // ANG DAGDAG NA TANONG DITO AY "KAILAN?", AT MAY PINAGMULAN ITO.
+    //
+    // Dati, ang kahit anong `live` ay nananalo sa hero, kahit kailan pa ang
+    // petsa nito. Mukhang tama — pero walang paraan noon para tapusin ang
+    // isang session, kaya ang isang pagsubok noong isang linggo ay nanatiling
+    // live magpakailanman at inagaw nito ang puwesto ng "tonight" araw-araw
+    // mula noon. Ang tunay na gabi ngayon ay naitulak pababa sa listahan.
+    //
+    // Mayroon nang "End session" ngayon, pero hindi iyon sapat: makakalimutan
+    // ito, at hindi dapat permanenteng masira ang dashboard ng isang
+    // nakalimutang pindot. Ang live na mas matanda pa sa kahapon ay itinuturing
+    // nang lipas — babalik ito sa pagkakasunod-sunod ayon sa petsa, kung saan
+    // nararapat.
+    final isRecent = _sameDay(session.sessionDate, now) ||
+        _sameDay(session.sessionDate, yesterday);
+
+    if (session.status == SessionStatus.live && isRecent) {
       live.add(session);
     } else if (_sameDay(session.sessionDate, now)) {
       today.add(session);

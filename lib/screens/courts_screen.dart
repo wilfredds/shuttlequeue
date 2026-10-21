@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../l10n/app_localizations.dart';
+import '../models/enums.dart';
 import '../models/court.dart';
 import '../models/match.dart';
 import '../models/session_player.dart';
@@ -47,7 +48,15 @@ class _CourtsScreenState extends ConsumerState<CourtsScreen> {
     // nang tumatakbo — at doon nawawala ang tiwala sa buong screen.
     _ticker = Timer.periodic(
       const Duration(seconds: 20),
-      (_) => setState(() {}),
+      (_) {
+        // Walang gumagalaw sa tapos nang gabi, kaya walang dapat iguhit
+        // muli. Ang telepono ng QM ang buong sistema; huwag itong ubusin
+        // sa pag-redraw ng mga bilang na hindi na nagbabago.
+        if (!mounted) return;
+        final session = ref.read(sessionProvider(widget.sessionId)).value;
+        if (session?.status == SessionStatus.ended) return;
+        setState(() {});
+      },
     );
   }
 
@@ -71,9 +80,21 @@ class _CourtsScreenState extends ConsumerState<CourtsScreen> {
     final liveMatches = ref.watch(liveMatchesProvider(sessionId));
     final queue = ref.watch(queueOrderProvider(sessionId));
 
+    // Tapos na ba ang gabi? Dito nakasalalay kung may umaandar pang orasan.
+    //
+    // ANG BUG NA ITO AY GALING SA TOTOONG GABI: walang paraan noon para
+    // tapusin ang session, kaya nanatili itong `live` magpakailanman — at
+    // ang oras ng paghihintay ng bawat tao ay patuloy na lumaki nang walang
+    // hanggan. Pagbalik mo kinabukasan, "1,340m wait" ang nakasulat sa
+    // tabi ng lahat. Ang bilang na walang katotohanan ay mas masahol pa
+    // kaysa walang bilang.
+    final ended =
+        ref.watch(sessionProvider(sessionId)).value?.status ==
+            SessionStatus.ended;
+
     final playersById = {for (final p in players) p.id: p};
     final freeCourt = courts.where((c) => c.isFree).firstOrNull;
-    final canStart = freeCourt != null && queue.length >= 4;
+    final canStart = !ended && freeCourt != null && queue.length >= 4;
 
     return Scaffold(
       backgroundColor: context.sq.canvas,
@@ -106,7 +127,7 @@ class _CourtsScreenState extends ConsumerState<CourtsScreen> {
                         ),
                       ),
                     ),
-                  _QueueSection(queue: queue),
+                  _QueueSection(queue: queue, ended: ended),
                 ],
               ),
             ),
@@ -114,13 +135,15 @@ class _CourtsScreenState extends ConsumerState<CourtsScreen> {
               enabled: canStart,
               // Kapag naka-dim ang pindutan, sinasabi kung bakit — at ang
               // dahilan ay may kasamang gagawin, hindi lang balita.
-              reason: courts.isEmpty
-                  ? null
-                  : freeCourt == null
-                      ? l10n.allCourtsBusy
-                      : queue.length < 4
-                          ? l10n.needFourPlayers
-                          : null,
+              reason: ended
+                  ? l10n.courtsEndedBody
+                  : courts.isEmpty
+                      ? null
+                      : freeCourt == null
+                          ? l10n.allCourtsBusy
+                          : queue.length < 4
+                              ? l10n.needFourPlayers
+                              : null,
               // Kapag puwede nang magsimula, ang puwang na iyon ay
               // sinasabi kung SINO ang susunod. Ito ang tanong na
               // paulit-ulit itinatanong sa QM buong gabi, at dati ay
@@ -654,9 +677,13 @@ class _TeamSide extends ConsumerWidget {
 /// pamagat — ito ang pangako ng app, at dapat nakikita, hindi ipinapangako
 /// lang.
 class _QueueSection extends StatelessWidget {
-  const _QueueSection({required this.queue});
+  const _QueueSection({required this.queue, this.ended = false});
 
   final List<SessionPlayer> queue;
+
+  /// Tapos na ang gabi: nananatili ang pila para makita pa rin kung sino
+  /// ang nandoon, pero huminto na ang orasan.
+  final bool ended;
 
   @override
   Widget build(BuildContext context) {
@@ -718,6 +745,7 @@ class _QueueSection extends StatelessWidget {
                   upNext: i < 4,
                   waitedMinutes:
                       now.difference(queue[i].waitingSince).inMinutes,
+                  ended: ended,
                 ),
               ],
               if (queue.length > 12)
@@ -766,12 +794,18 @@ class _QueueRow extends StatelessWidget {
     required this.position,
     required this.upNext,
     required this.waitedMinutes,
+    this.ended = false,
   });
 
   final SessionPlayer player;
   final int position;
   final bool upNext;
   final int waitedMinutes;
+
+  /// Huminto na ang orasan. Hindi natin iniimbak ang huling hintay, kaya
+  /// gitling ang ipinapakita — mas tapat iyon kaysa sa bilang na patuloy
+  /// na lumalaki matapos nang matapos ang gabi.
+  final bool ended;
 
   @override
   Widget build(BuildContext context) {
@@ -831,11 +865,15 @@ class _QueueRow extends StatelessWidget {
           SizedBox(
             width: 44,
             child: Text(
-              l10n.waitingTime(waitedMinutes < 0 ? 0 : waitedMinutes),
+              ended
+                  ? '—'
+                  : l10n.waitingTime(waitedMinutes < 0 ? 0 : waitedMinutes),
               textAlign: TextAlign.right,
               style: theme.textTheme.bodySmall
                   ?.copyWith(
-                    color: waitedMinutes >= 20 ? sq.attention : sq.inkFaint,
+                    color: !ended && waitedMinutes >= 20
+                        ? sq.attention
+                        : sq.inkFaint,
                   )
                   .tabular,
             ),
