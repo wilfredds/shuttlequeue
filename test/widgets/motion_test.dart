@@ -96,6 +96,41 @@ void main() {
       expect(tester.takeException(), isNull);
     });
 
+    testWidgets('SQGameProgress', (tester) async {
+      await tester.pumpWidget(
+        _wrap(
+          const SQGameProgress(elapsed: Duration(minutes: 10)),
+          stillness: true,
+        ),
+      );
+      await tester.pump();
+
+      final bar = tester.widget<LinearProgressIndicator>(
+        find.byType(LinearProgressIndicator),
+      );
+      expect(bar.value, closeTo(0.5, 0.01));
+
+      await tester.pumpWidget(const SizedBox.shrink());
+      expect(tester.takeException(), isNull);
+    });
+
+    testWidgets('SQLongGameBreath', (tester) async {
+      // Ang pinakamahalagang linya dito ay ang pag-alis: may ticker ito.
+      await tester.pumpWidget(
+        _wrap(
+          const SQLongGameBreath(active: true, child: Text('Court 1')),
+          stillness: true,
+        ),
+      );
+      await tester.pump();
+      expect(find.text('Court 1'), findsOneWidget);
+      // Walang humihinga kapag ayaw ng may-ari ng galaw.
+      expect(tester.hasRunningAnimations, isFalse);
+
+      await tester.pumpWidget(const SizedBox.shrink());
+      expect(tester.takeException(), isNull);
+    });
+
     testWidgets('SQEntrance', (tester) async {
       await tester.pumpWidget(
         _wrap(const SQEntrance(index: 3, child: Text('Ana')), stillness: true),
@@ -165,6 +200,53 @@ void main() {
     final start =
         tester.widget<Transform>(_arrivalShift).transform.getTranslation().x;
     expect(start, greaterThan(0));
+
+    await tester.pumpWidget(const SizedBox.shrink());
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('SQGameProgress: puno at amber kapag mahaba na ang laro',
+      (tester) async {
+    await tester.pumpWidget(
+      _wrap(
+        const SQGameProgress(elapsed: Duration(minutes: 40)),
+        stillness: false,
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    // Hindi lumalagpas sa puno kahit gaano katagal.
+    final bar = tester.widget<LinearProgressIndicator>(
+      find.byType(LinearProgressIndicator),
+    );
+    expect(bar.value, 1.0);
+
+    await tester.pumpWidget(const SizedBox.shrink());
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('SQLongGameBreath: humihinga lang ang mahaba, hindi ang lahat',
+      (tester) async {
+    // ANG BUONG PUNTO: kung lahat ng live court ay humihinga, wala itong
+    // itinuturo. Ang hindi pa mahabang laro ay dapat tahimik.
+    await tester.pumpWidget(
+      _wrap(
+        const SQLongGameBreath(active: false, child: Text('Court 2')),
+        stillness: false,
+      ),
+    );
+    await tester.pump(const Duration(milliseconds: 400));
+    expect(tester.hasRunningAnimations, isFalse);
+
+    // At kapag lumagpas na, humihinga.
+    await tester.pumpWidget(
+      _wrap(
+        const SQLongGameBreath(active: true, child: Text('Court 2')),
+        stillness: false,
+      ),
+    );
+    await tester.pump(const Duration(milliseconds: 400));
+    expect(tester.hasRunningAnimations, isTrue);
 
     await tester.pumpWidget(const SizedBox.shrink());
     expect(tester.takeException(), isNull);

@@ -11,6 +11,7 @@ import '../models/enums.dart';
 import '../models/session.dart';
 import '../models/session_player.dart';
 import '../providers/session_providers.dart';
+import '../services/bill_share.dart';
 import '../services/fee_calculator.dart';
 import '../services/money.dart';
 import '../theme.dart';
@@ -60,6 +61,7 @@ class CostSplitScreen extends ConsumerWidget {
     // Ang mukha ay buhay kahit naka-lock ang bill: ang naka-freeze ay ang
     // HALAGA, hindi kung ano ang hitsura ng tao.
     final seedById = {for (final p in players) p.id: p.avatarSeed};
+    final shuttlesById = {for (final p in players) p.id: p.shuttlesUsed};
 
     // R-09: kapag naka-lock, ang naka-imbak na halaga ang totoo. Ang live
     // na kuwenta ay ginagamit lang bago mag-lock.
@@ -110,6 +112,8 @@ class CostSplitScreen extends ConsumerWidget {
                               feeMode: session.feeMode,
                               isLocked: session.isBillFinalized,
                               avatarSeed: seedById[breakdown.lines[i].playerId],
+                              shuttlesUsed:
+                                  shuttlesById[breakdown.lines[i].playerId] ?? 0,
                             ),
                           ),
                         ),
@@ -255,36 +259,37 @@ class CostSplitScreen extends ConsumerWidget {
     final l10n = AppLocalizations.of(context)!;
     final date = DateFormat('EEE, MMM d, y').format(session.sessionDate);
 
-    final buffer = StringBuffer()
-      ..writeln(session.title)
-      ..writeln(date)
-      ..writeln(session.venue)
-      ..writeln();
+    // Sa per-game, ang listahan ay may magkakaibang halaga. Isang linya sa
+    // itaas ang nagpapaliwanag ng lahat ng iyon, at ang bilang ng laro ang
+    // nasa tabi ng bawat pangalan — kung hindi, ang teksto sa group chat ay
+    // mukhang pagkakamali at ang QM ang sasagot ng labindalawang tanong.
+    final perGame = breakdown.mode == FeeMode.perGame &&
+        breakdown.totalPlayerGames > 0;
 
-    for (final line in breakdown.lines) {
-      final mark = line.hasPaid ? '✅' : '—';
-      buffer.writeln(
-        '$mark ${line.name}: ${formatCentavos(line.totalCentavos)}',
-      );
-    }
-
-    if (gcash != null && gcash.hasGcash) {
-      buffer
-        ..writeln()
-        ..writeln('${l10n.gcashTitle}: ${gcash.formattedGcash}');
-    }
-
-    buffer
-      ..writeln()
-      ..writeln('${l10n.totalCost}: '
-          '${formatCentavos(breakdown.chargedTotalCentavos)}')
-      ..writeln('${l10n.collected}: '
-          '${formatCentavos(breakdown.collectedCentavos)}')
-      ..writeln('${l10n.outstanding}: '
-          '${formatCentavos(breakdown.outstandingCentavos)}');
+    final text = buildBillShareText(
+      title: session.title,
+      dateLabel: date,
+      venue: session.venue,
+      breakdown: breakdown,
+      gcashTitle: l10n.gcashTitle,
+      gcashNumber:
+          gcash != null && gcash.hasGcash ? gcash.formattedGcash : null,
+      totalLabel: l10n.totalCost,
+      collectedLabel: l10n.collected,
+      outstandingLabel: l10n.outstanding,
+      gamesLabel: perGame ? l10n.gamesPlayedShort : null,
+      basisLine: perGame
+          ? '${l10n.moneyPerGameRate(
+              formatCentavos(breakdown.courtRatePerGameCentavos),
+            )} · ${l10n.moneyPerGameBasis(
+              formatCentavos(breakdown.courtFeeCentavos),
+              breakdown.totalPlayerGames,
+            )}'
+          : null,
+    );
 
     await SharePlus.instance.share(
-      ShareParams(text: buffer.toString(), subject: session.title),
+      ShareParams(text: text, subject: session.title),
     );
   }
 }
@@ -794,6 +799,7 @@ class _FeeTile extends ConsumerWidget {
     required this.feeMode,
     required this.isLocked,
     this.avatarSeed,
+    this.shuttlesUsed = 0,
   });
 
   final String sessionId;
@@ -804,6 +810,10 @@ class _FeeTile extends ConsumerWidget {
   /// may isang trabaho at ang lahat ng laman ng FeeLine ay nasasagot ng
   /// tanong na "magkano" — manatili sanang ganoon.
   final int? avatarSeed;
+
+  /// Bilang ng shuttle, hiwalay sa halaga nito sa [line] sa parehong
+  /// dahilan. Kailangan ito ng stepper para malaman kung nasa zero na.
+  final int shuttlesUsed;
 
   /// Naka-lock na ang halaga: itinatago ang shuttle stepper dahil hindi na
   /// nito mababago ang singil, at nakakalito kung mukhang kaya pa.
@@ -909,9 +919,18 @@ class _FeeTile extends ConsumerWidget {
               const SizedBox(width: SQSpace.xs),
               IconButton(
                 visualDensity: VisualDensity.compact,
-                icon: Icon(Icons.remove_circle_outline, color: sq.inkFaint),
-                onPressed: () =>
-                    repo.adjustShuttles(sessionId, line.playerId, -1),
+                icon: Icon(
+                  Icons.remove_circle_outline,
+                  color: shuttlesUsed > 0 ? sq.inkFaint : sq.line,
+                ),
+                // WALANG NEGATIBONG SHUTTLE. Tinatanggihan ito ng rules
+                // (isCount >= 0), at ang pagtanggi ay dumarating bilang
+                // sync-error sa gitna ng pangongolekta — para sa pindutang
+                // mukhang pwedeng pindutin. Mas mabuting patay ang pindutan
+                // kaysa pindutang nabibigo.
+                onPressed: shuttlesUsed > 0
+                    ? () => repo.adjustShuttles(sessionId, line.playerId, -1)
+                    : null,
               ),
               IconButton(
                 visualDensity: VisualDensity.compact,

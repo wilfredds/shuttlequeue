@@ -197,9 +197,15 @@ class _CourtCard extends ConsumerWidget {
     }
 
     final live = match!;
-    final minutes = DateTime.now().difference(live.startedAt).inMinutes;
+    final elapsed = DateTime.now().difference(live.startedAt);
+    final minutes = elapsed.inMinutes;
 
-    return SQCard(
+    // Lumagpas na sa karaniwang haba ng isang laro ng doubles. Walang
+    // pinipigilan dito — pahiwatig lang na malapit nang bumakante.
+    const longGame = Duration(minutes: 20);
+    final isLong = elapsed >= longGame;
+
+    final card = SQCard(
       tone: SQTone.live,
       lifted: true,
       padding: EdgeInsets.zero,
@@ -240,12 +246,21 @@ class _CourtCard extends ConsumerWidget {
                 Text(
                   l10n.courtPlayingFor(minutes < 0 ? 0 : minutes),
                   style: theme.textTheme.labelMedium
-                      ?.copyWith(color: Colors.white.withValues(alpha: 0.85))
+                      ?.copyWith(
+                        color: isLong
+                            ? sq.attentionWash
+                            : Colors.white.withValues(alpha: 0.85),
+                        fontWeight: isLong ? FontWeight.w600 : null,
+                      )
                       .tabular,
                 ),
               ],
             ),
           ),
+
+          // Ang oras bilang guhit, hindi lang bilang teksto. Nakikita ito
+          // sa gilid ng mata habang may kausap ang QM.
+          SQGameProgress(elapsed: elapsed, longGame: longGame),
           Padding(
             padding: const EdgeInsets.fromLTRB(
               SQSpace.lg,
@@ -316,6 +331,10 @@ class _CourtCard extends ConsumerWidget {
         ],
       ),
     );
+
+    // Humihinga lang ang court na lumagpas na sa karaniwang haba. Tingnan
+    // ang SQLongGameBreath kung bakit hindi lahat ng live court.
+    return SQLongGameBreath(active: isLong, child: card);
   }
 
   /// Tapos na ang laro. Walang tanong tungkol sa score — opsyonal iyon at

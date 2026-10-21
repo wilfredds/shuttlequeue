@@ -8,10 +8,23 @@
 ///  * [SQPressable] — "natamaan ko ba?" Sa gym, hindi mo maririnig ang
 ///    tap; kailangang makita at maramdaman.
 ///  * [SQEntrance] — "bago ba ito?" Isang beses lang, sa pagpasok.
-///  * [SQLivePulse] — "buhay pa ba?" Ang tanging bagay na paulit-ulit
-///    gumagalaw sa app, at isa lang ang kahulugan niya: may laro ngayon.
+///  * [SQLivePulse] — "buhay pa ba?" May laro ngayon sa court na ito.
+///  * [SQGameProgress] — "gaano na katagal sila?" Habang tumatagal ang
+///    laro, umuusad ang guhit. Ito ang sumasagot sa tanong na hindi
+///    naitatanong nang malakas: kailan ko ihahanda ang susunod na apat?
+///  * [SQLongGameBreath] — "may dapat ba akong asikasuhin?" Humihinga lang
+///    ang court na **lumagpas na sa karaniwang haba**. Nakatigil ang lahat
+///    ng iba, kaya ang humihinga ay agad na nakikita.
 ///  * [SQCountUp] — "gumalaw ba ang bilang?" Kapag tumalon ang numero
 ///    nang hindi napapansin, may nagagalit sa dulo ng gabi tungkol sa pera.
+///
+/// BAKIT HINDI LAHAT NG LIVE COURT ANG HUMIHINGA: sinubukan ko, at mali.
+/// Ang tuldok na tumitibok ay sinasabi nang "may laro dito"; ang humihingang
+/// kard ay magiging pangalawang boses na nagsasabi ng parehong bagay, at sa
+/// tatlong court ay tatlo iyon na walang tigil sa loob ng apat na oras.
+/// Ang galaw na nasa lahat ng dako ay katumbas ng walang galaw — hindi na
+/// ito nagtuturo ng kahit saan. Kaya ang paghinga ay inilaan sa **iisang
+/// bagay na kailangan ng pansin**, at doon ito nagkaroon ng kahulugan.
 ///
 /// Lahat sila ay tumatahimik kapag naka-"reduce motion" ang telepono. Hindi
 /// ito pagsunod sa checklist — may tao talagang nahihilo sa gumagalaw na
@@ -326,6 +339,162 @@ class _SQLivePulseState extends State<SQLivePulse>
         },
         child: core,
       ),
+    );
+  }
+}
+
+/// Gaano katagal nang tumatakbo ang laro, bilang umuusad na guhit.
+///
+/// ANG TANONG NA SINASAGOT: "kailan ko ihahanda ang susunod na apat?" Ang
+/// "12m" na teksto ay kailangang basahin at ihambing; ang guhit ay nakikita
+/// nang hindi tinitingnan nang diretso — at iyon ang pagkakaiba kapag may
+/// kausap ang QM habang tumitingin sa court.
+///
+/// Umuusad ito tuwing tumitibok ang screen (bawat 20 segundo), kaya ang
+/// galaw ay tunay na pag-usad ng oras at hindi palamuti. Kapag lumagpas na
+/// sa [longGame], nagiging amber ito — ang kulay ng "may dapat asikasuhin"
+/// sa buong app.
+class SQGameProgress extends StatelessWidget {
+  const SQGameProgress({
+    super.key,
+    required this.elapsed,
+    this.longGame = const Duration(minutes: 20),
+    this.height = 3,
+  });
+
+  final Duration elapsed;
+
+  /// Ang karaniwang haba ng isang laro ng doubles bago ito maituring na
+  /// mahaba. Hindi ito hangganan — walang pinipigilan ang app. Pahiwatig
+  /// lang ito sa QM na malapit nang bumakante ang court.
+  final Duration longGame;
+
+  final double height;
+
+  /// Lumagpas na ba sa karaniwang haba?
+  bool get isLong => elapsed >= longGame;
+
+  @override
+  Widget build(BuildContext context) {
+    final sq = context.sq;
+    final target = longGame.inSeconds <= 0
+        ? 1.0
+        : (elapsed.inSeconds / longGame.inSeconds).clamp(0.0, 1.0);
+
+    return SizedBox(
+      height: height,
+      child: TweenAnimationBuilder<double>(
+        tween: Tween<double>(begin: target, end: target),
+        duration: context.motion(SQDuration.count),
+        curve: SQCurve.enter,
+        builder: (context, value, _) {
+          return LinearProgressIndicator(
+            value: value,
+            minHeight: height,
+            backgroundColor: Colors.white.withValues(alpha: 0.22),
+            valueColor: AlwaysStoppedAnimation<Color>(
+              isLong ? sq.attentionWash : Colors.white,
+            ),
+          );
+        },
+      ),
+    );
+  }
+}
+
+/// Dahan-dahang paghinga para sa court na matagal nang naglalaro.
+///
+/// ANG TANONG NA SINASAGOT: "alin sa tatlong court ang kailangan ko nang
+/// asikasuhin?" Hindi ito nakabukas sa bawat live court — kung ganoon,
+/// wala itong itinuturo. Isang court lang ang humihinga: ang lumagpas na
+/// sa karaniwang haba.
+///
+/// Mabagal at mababaw ang galaw. Hindi ito alarma; pahiwatig lang na
+/// nakikita sa gilid ng mata habang may kausap ang QM.
+class SQLongGameBreath extends StatefulWidget {
+  const SQLongGameBreath({
+    super.key,
+    required this.child,
+    required this.active,
+  });
+
+  final Widget child;
+
+  /// Humihinga lang kapag totoo. Kapag hindi, walang ticker na tumatakbo.
+  final bool active;
+
+  @override
+  State<SQLongGameBreath> createState() => _SQLongGameBreathState();
+}
+
+class _SQLongGameBreathState extends State<SQLongGameBreath>
+    with SingleTickerProviderStateMixin {
+  // Gaya ng lahat dito: ginagawa sa initState, kahit naka-reduce motion.
+  // Tingnan ang komento sa SQLivePulse kung bakit ito mahalaga.
+  late final AnimationController _controller;
+
+  // Mas mabagal pa sa pulse. Ito ay paghinga, hindi tibok.
+  static const Duration _breath = Duration(milliseconds: 3200);
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(vsync: this, duration: _breath);
+  }
+
+  void _sync() {
+    final shouldRun = widget.active && !context.prefersStillness;
+    if (shouldRun && !_controller.isAnimating) {
+      _controller.repeat(reverse: true);
+    } else if (!shouldRun && _controller.isAnimating) {
+      _controller.stop();
+      _controller.value = 0;
+    }
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    _sync();
+  }
+
+  @override
+  void didUpdateWidget(SQLongGameBreath old) {
+    super.didUpdateWidget(old);
+    // Ang court ay nagiging mahaba habang nasa screen, hindi lang sa
+    // pagpasok — kaya kailangang makinig dito at hindi sa initState lang.
+    if (old.active != widget.active) _sync();
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (!widget.active || context.prefersStillness) return widget.child;
+
+    return AnimatedBuilder(
+      animation: _controller,
+      builder: (context, child) {
+        final t = Curves.easeInOut.transform(_controller.value);
+        return DecoratedBox(
+          decoration: BoxDecoration(
+            borderRadius: SQRadius.cardShape,
+            boxShadow: [
+              BoxShadow(
+                color: context.sq.attention.withValues(alpha: 0.10 + t * 0.22),
+                blurRadius: 10 + t * 16,
+                spreadRadius: t * 2,
+              ),
+            ],
+          ),
+          child: child,
+        );
+      },
+      child: widget.child,
     );
   }
 }
